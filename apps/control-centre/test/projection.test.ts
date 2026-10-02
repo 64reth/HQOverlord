@@ -42,6 +42,7 @@ test("approval projection uses exact persisted pending/granted/rejected state an
   const tools = new ToolRegistry(); tools.register({ definition: { id: toolId, name: "release", description: "release", effect: "consequential" }, async execute() { throw new Error("not before approval"); } });
   await runtime.executeJob(context("run"), job.id, { async next() { return { kind: "tool", toolId, input: { artifactId: "exact" } }; } }, tools);
   const pending = projectBusiness(runtime.snapshot(), businessId); assert.equal(pending.agents[0]!.visualState, "waiting-for-approval"); assert.equal(pending.summary.pendingApprovals, 1);
+  assert.deepEqual(pending.approvals[0]!.operation, { toolId, input: { artifactId: "exact" } });
   await runtime.approveOperation(context("approve"), pending.approvals[0]!.id);
   assert.equal(projectBusiness(runtime.snapshot(), businessId).approvals[0]!.status, "approved");
   await runtime.cancelJob(context("cancel"), job.id); assert.equal(projectBusiness(runtime.snapshot(), businessId).agents[0]!.visualState, "cancelled");
@@ -51,6 +52,9 @@ test("ledger projection retains exact recorded money and does not invent revenue
   const entry = { id: ids.ledgerEntry("real"), businessId, kind: "expense" as const, amount: { currency: "GBP" as ReturnType<typeof import('@hqoverlord/core').currencyCode>, minorUnits: 999999999999999999n }, description: "real", occurredAt: now };
   const projection = projectBusiness({ ...state, ledger: [entry] }, businessId);
   assert.equal(projection.ledger[0]!.amount.minorUnits, 999999999999999999n); assert.match(wireJson(projection), /999999999999999999/); assert.equal(projectBusiness({ ...state, ledger: [entry] }, foreign).ledger.length, 0);
+  assert.deepEqual(projection.revenue, [{ currency: "GBP", minorUnits: 0n }]);
+  const actualRevenue = { ...entry, kind: "revenue" as const };
+  assert.deepEqual(projectBusiness({ ...state, ledger: [actualRevenue] }, businessId).revenue, [{ currency: "GBP", minorUnits: 999999999999999999n }]);
 });
 test("frontend disconnect marks visual activity unknown; reconnect rehydrates without fabricated events", async () => {
   // Import the actual browser transport-state module, not a duplicate test reducer.

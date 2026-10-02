@@ -28,14 +28,19 @@ export function projectBusiness(state: DurableState, businessId: BusinessId, act
     const current = assigned.find(j => j.status === "running") ?? assigned.find(j => j.status === "queued") ?? assigned.at(-1);
     return { ...agent, visualState: current?.visualState ?? "idle", currentJobId: current?.id ?? null, model: current?.model ? { provider: current.model.provider, model: current.model.model } : null };
   });
-  const approvals = (state.approvals ?? []).filter(a => a.businessId === businessId).map(a => ({ ...a }));
+  const approvals = (state.approvals ?? []).filter(a => a.businessId === businessId).map(a => {
+    const operation = state.executions?.find(e => e.businessId === businessId && e.jobId === a.jobId && e.operation?.id === a.operationId)?.operation;
+    return { ...a, operation: operation ? { toolId: operation.call.toolId, input: operation.call.input } : null };
+  });
   const ledger = (state.ledger ?? []).filter(e => e.businessId === businessId);
   const expenses = (state.meteredExpenses ?? []).filter(e => e.businessId === businessId);
   const nanodollars = expenses.reduce((sum, e) => sum + e.cost.nanodollars, 0n);
-  const activity = state.facts.filter(f => f.businessId === businessId).slice(-60).map(f => ({ id: f.id, type: f.type, occurredAt: f.occurredAt, actor: f.actor,
+  const revenue = new Map<string, bigint>([["GBP", 0n]]);
+  for (const entry of ledger) if (entry.kind === "revenue") revenue.set(entry.amount.currency, (revenue.get(entry.amount.currency) ?? 0n) + entry.amount.minorUnits);
+  const activity = state.facts.filter(f => f.businessId === businessId).slice(-60).map(f => ({ id: f.id, businessId: f.businessId, type: f.type, occurredAt: f.occurredAt, actor: f.actor,
     correlationId: f.correlationId, causationId: f.causationId, producer: f.producer, payload: f.payload }));
   return structuredClone({ business, agents, jobs, approvals, artifacts, sources: (state.sources ?? []).filter(s => s.businessId === businessId),
-    knowledge: (state.knowledge ?? []).filter(k => k.businessId === businessId), ledger, expenses,
+    knowledge: (state.knowledge ?? []).filter(k => k.businessId === businessId), ledger, expenses, revenue: [...revenue].map(([currency, minorUnits]) => ({ currency, minorUnits })),
     summary: { businessCount: 1, agents: agents.length, running: jobs.filter(j => j.status === "running").length,
       queued: jobs.filter(j => j.status === "queued").length, pendingApprovals: approvals.filter(a => a.status === "pending").length,
       modelSpend: formatNanoUsd({ version: 1, currency: "USD", unit: "nanodollar", nanodollars }), unsettledInvocations: jobs.flatMap(j => j.model?.invocations ?? []).filter(i => i.status !== "settled").length }, activity });

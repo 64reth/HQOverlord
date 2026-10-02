@@ -21,12 +21,12 @@ export function createControlCentre(options: ControlCentreOptions) {
   const token = randomBytes(32).toString("hex");
   const clients = new Map<ServerResponse, BusinessId>();
   const epoch = randomBytes(8).toString("hex"); let sequence = 0;
-  const assets = new Set(["index.html", "app.js", "client-state.js", "room.js", "style.css", "assets/agent.svg", "assets/workstation.svg"]);
+  const assets = new Set(["index.html", "app.js", "client-state.js", "station-model.js", "world.js", "navdock.js", "style.css", "assets/agent.svg", "assets/fonts/vt323.woff2", "notices/STARNET-MIT.txt", "notices/VT323-OFL.txt"]);
   function project(businessId: BusinessId) {
     const snapshot = options.runtime.snapshot(), context = options.context(businessId);
     const active = new Set(snapshot.authority.jobs.filter(j => j.businessId === businessId && options.runtime.isJobActive(context, j.id)).map(j => j.id));
     return { ...projectBusiness(snapshot, businessId, active), businesses: snapshot.authority.businesses.filter(b => options.businessIds.includes(b.id)),
-      metadata: options.metadata?.[businessId] ?? null, modelEnabled: !!options.modelEnabled };
+      metadata: options.metadata?.[businessId] ?? null, modelEnabled: !!options.modelEnabled, preparationEnabled: !!options.prepare };
   }
   function send(res: ServerResponse, businessId: BusinessId) {
     try {
@@ -55,7 +55,7 @@ export function createControlCentre(options: ControlCentreOptions) {
         const content = await readFile(new URL(asset, root));
         // HttpOnly local session; master token is never placed in URLs, logs or JS.
         if (asset === "index.html") res.setHeader("Set-Cookie", `hq_session=${token}; HttpOnly; SameSite=Strict; Path=/`);
-        res.setHeader("Content-Type", asset.endsWith(".js") ? "text/javascript" : asset.endsWith(".css") ? "text/css" : asset.endsWith(".svg") ? "image/svg+xml" : "text/html; charset=utf-8");
+        res.setHeader("Content-Type", asset.endsWith(".js") ? "text/javascript" : asset.endsWith(".css") ? "text/css" : asset.endsWith(".svg") ? "image/svg+xml" : asset.endsWith(".woff2") ? "font/woff2" : asset.endsWith(".txt") ? "text/plain; charset=utf-8" : "text/html; charset=utf-8");
         res.end(content); return;
       }
       const supplied = /(?:^|;\s*)hq_session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie ?? "")?.[1] ?? "";
@@ -73,7 +73,11 @@ export function createControlCentre(options: ControlCentreOptions) {
       for await (const chunk of req) { size += chunk.length; if (size > 64_000) { res.writeHead(413).end(); return; } chunks.push(chunk); }
       const input = JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
       const context = options.context(businessId); let result: unknown;
-      if (url.pathname === "/api/cancel" && typeof input.jobId === "string") result = await options.runtime.cancelJob(context, options.runtime.snapshot().authority.jobs.find(j => j.id === input.jobId && j.businessId === businessId)?.id ?? (() => { throw new Error("Job unavailable"); })());
+      if (url.pathname === "/api/job" && typeof input.agentId === "string" && typeof input.objective === "string" && input.objective.trim() && input.objective.length <= 12000) {
+        const agent = options.runtime.snapshot().authority.agents.find(a => a.id === input.agentId && a.businessId === businessId);
+        if (!agent) throw new Error("Agent unavailable");
+        result = await options.runtime.createJob(context, { agentId: agent.id, objective: input.objective.trim() });
+      } else if (url.pathname === "/api/cancel" && typeof input.jobId === "string") result = await options.runtime.cancelJob(context, options.runtime.snapshot().authority.jobs.find(j => j.id === input.jobId && j.businessId === businessId)?.id ?? (() => { throw new Error("Job unavailable"); })());
       else if (url.pathname === "/api/approval" && typeof input.approvalId === "string" && ["approve", "reject"].includes(String(input.decision))) {
         const approval = options.runtime.snapshot().approvals?.find(a => a.id === input.approvalId && a.businessId === businessId);
         if (!approval) throw new Error("Approval unavailable");

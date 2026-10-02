@@ -13,19 +13,11 @@ export const workers = [
 export type WorkerRole = typeof workers[number]["role"];
 
 export const workflow: Workflow = {
-  id: ids.workflow("business-001-first-customer"), businessId, name: "First £10 Customer",
-  description: "Secure and deliver one useful AI website assistant for a real small business; success requires genuine external payment", status: "active",
+  id: ids.workflow("business-001-assistant-service"), businessId, name: "Website assistant preparation",
+  description: "Source-backed research, knowledge, assistant drafting, QA and human-reviewed delivery preparation", status: "active",
 };
 export const manifest = {
   identity: { id: businessId, name: "Business 001", purpose: "Affordable AI website assistants for small businesses" },
-  offer: { name: "£10 Website AI Assistant — Weekend Launch Offer", price: money(1000n, gbp) },
-  mission: {
-    name: workflow.name, workflowId: workflow.id, deadline: "2026-10-04", timezone: "Europe/London",
-    goal: "Secure and deliver one useful AI website assistant for a real small business and record £10 genuine external revenue",
-    success: { kind: "human-confirmed-external-payment", amount: money(1000n, gbp), requiresPaymentEvidence: true },
-    status: "awaiting-human-supplied-prospect-and-source-material",
-    exclusions: ["simulated sale", "internal transfer", "unpaid invoice", "invented revenue"],
-  },
   budgets: {
     internalAllocation: { amount: money(500n, gbp), kind: "internal-operating-allocation", status: "configuration-only-no-cross-currency-aggregate-enforcement" },
     fundingContext: { amount: money(2000n, gbp), source: "user-stated", providerTelemetry: false },

@@ -1,15 +1,15 @@
 # Business 001
 
-Neutral identity: affordable AI website assistants for small businesses. This directory is a customer of HQ; generic packages do not import it. No permanent brand has been chosen.
+Configured business: AI website assistant service. This directory is a customer of HQ; generic packages do not import it. Its workforce is Prospect Research, Knowledge Builder, Assistant Builder, QA and Delivery.
 
-The first mission is **First £10 Customer**, due **Sunday 4 October 2026 (Europe/London)**. Success means a genuine external customer pays £10, supported by human-confirmed payment evidence. Drafts, invoices, internal transfers and simulated sales are not revenue.
+`manifest.ts` supplies workforce, workflow dependencies, routing and authority rules. Bootstrap creates five agents and no jobs. Operator-supplied sources create durable jobs through `prepareWork`; generic jobs can also be queued from COMMS. No customer, payment or revenue is created by preparation.
 
-`manifest.ts` owns the offer, mission, workflow dependencies, five workforce roles, routing and authority rules. `load.ts` loads it through the existing generic authority store and durable commands, creating five agents and one queued analysis job. The workflow remains a manifest, not an implemented scheduler. Supply a prospect and source material before executing the analysis job. No web-fetch/contact/deployment tools are registered.
+Research may use the guarded public-text `web.read` tool. Sources remain untrusted reference data. Knowledge remains explicitly unverified. Delivery requires exact human approval and produces a local packet; contact, publication, deployment and payment confirmation remain manual.
 
-Human approval/manual handoff is mandatory before customer contact, publication, deployment, changing prices, purchases or spend outside admitted model budgets. The Delivery worker drafts handoff material; it does not perform external delivery. Human payment confirmation and ordinary GBP revenue recording are manual handoffs: HQ currently has no revenue-recording command. This configuration never creates a revenue entry or customer.
+The GBP allocation and user-stated funding are configuration metadata, not provider telemetry or an enforced aggregate budget. Each model job separately enforces a five-cent USD hard limit with exact nanodollar accounting. There is no currency conversion.
 
-The £5 allocation is GBP configuration metadata, not an enforced aggregate budget or a USD conversion. The user-stated £20 funding context is not OpenAI account telemetry. Each model job has a separate enforced **five-cent USD hard limit**, using versioned nanodollar pricing through `executeModelJob`; no exchange rate is assumed. Track the aggregate GBP allocation manually until HQ has the necessary currency/budget primitive.
+`jobModelOptions()` selects the configured provider/model per job, independently of agent identity. Credentials stay in the host environment. Paid model execution is disabled by default.
 
-`jobModelOptions()` chooses the inexpensive default `gpt-6-luna` for a job; agent identity carries no model. A different model requires explicit matching pricing. Provider credentials remain the caller's environment concern, outside this directory.
+Run `npm run business:001:bootstrap` for the ignored local store, `npm run business:001:preview` for an offline disposable preview, and `npm run test:business-001` for deterministic acceptance. One runtime writer must own a store.
 
-Run `npm run business:001:bootstrap` to instantiate the business in `.local/state.json` (ignored by Git). It does not invoke any model or external integration. Run `npm run business:001:preview` for a disposable, offline load demonstration and `npm run test:business-001` for deterministic acceptance. For an operator-selected durable store, call `loadBusiness001(store, clock, ids)` once at bootstrap; it is idempotent for identical configuration and must not run concurrently against the same store. No permanent state is created by the preview or tests. Deleting this directory leaves HQ packages and runtime intact.
+Startup removes only the obsolete, never-executed development fixture identified by its original bootstrap command. It refuses cleanup if execution, accounting, artifacts, dependencies or surviving causal history exist. All genuine work and financial history are retained. The cleanup is idempotent and business-scoped.

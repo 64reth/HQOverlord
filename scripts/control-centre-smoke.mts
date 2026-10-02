@@ -8,7 +8,8 @@ const directory = await mkdtemp(join(tmpdir(), "hq-ui-smoke-"));
 const output = resolve("apps/control-centre/.local/smoke"); await mkdir(output, { recursive: true });
 async function freePort() { const s = createServer(); await new Promise<void>(r => s.listen(0,"127.0.0.1",r)); const a = s.address(); if (!a || typeof a === "string") throw new Error("No port"); await new Promise<void>(r => s.close(() => r())); return a.port; }
 const port = await freePort(), debugPort = await freePort();
-const server = spawn(process.execPath, ["apps/control-centre/src/main.ts"], { windowsHide: true, env: { ...process.env, HQ_STATE_PATH: join(directory,"state.json"), HQ_ENABLE_MODEL_EXECUTION:"0", HQ_PORT:String(port) }, stdio:"ignore" });
+const launchServer = () => spawn(process.execPath, ["apps/control-centre/src/main.ts"], { windowsHide: true, env: { ...process.env, HQ_STATE_PATH: join(directory,"state.json"), HQ_ENABLE_MODEL_EXECUTION:"0", HQ_PORT:String(port) }, stdio:"ignore" });
+let server = launchServer();
 const browser = spawn("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-background-networking", "--disable-component-update", "--disable-sync", "--disable-default-apps", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${join(directory,"chrome")}`, "about:blank"], { windowsHide:true,stdio:"ignore" });
 const sleep = (ms:number) => new Promise(r => setTimeout(r,ms));
 async function ready(url:string) { for (let i=0;i<100;i++) { try { const r=await fetch(url,{signal:AbortSignal.timeout(500)}); if(r.ok)return; }catch{} await sleep(100); } throw new Error(`Local service did not start: ${url}`); }
@@ -33,15 +34,42 @@ try {
     await call("Emulation.setDeviceMetricsOverride",{width,height:1000,deviceScaleFactor:1,mobile:width===390});
     await call("Page.navigate",{url:`http://127.0.0.1:${port}/`});
     let connected=false;for(let i=0;i<100;i++){if(await evaluate("document.getElementById('connection')?.textContent === 'Live'")){connected=true;break;}await sleep(100);}if(!connected)throw new Error("UI did not hydrate");
+    await evaluate("document.querySelectorAll('.bb-grp')[1].click()");
+    if(!await evaluate("document.querySelectorAll('.bb-group')[1].classList.contains('open')"))throw new Error('WORK dock did not open');
+    await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+    if(await evaluate("!!document.querySelector('.bb-group.open')"))throw new Error('Escape did not close dock');
     const pages=[];
-    for(const page of ["Overview","Businesses","Agents","Jobs","Approvals","Ledger","Activity"]){
-      await evaluate(`document.querySelector('[data-page="${page}"]').click()`);
-      const dimensions=await evaluate("({width:innerWidth,scroll:document.documentElement.scrollWidth,title:document.getElementById('page-title').textContent,text:document.getElementById('content').textContent})") as {width:number;scroll:number;title:string;text:string};
-      if(dimensions.scroll>width||dimensions.title!==page||!dimensions.text)throw new Error(`Bad ${width}px ${page}: ${JSON.stringify(dimensions)}`);pages.push({page,width:dimensions.width,scrollWidth:dimensions.scroll});
+    const baseDimensions = await evaluate("({width:innerWidth,scroll:document.documentElement.scrollWidth,crew:document.querySelectorAll('#crew [data-agent-id]').length,revenue:document.getElementById('revenue').textContent,text:document.body.textContent})") as {width:number;scroll:number;crew:number;revenue:string;text:string};
+    if(baseDimensions.scroll>width||baseDimensions.crew!==5||baseDimensions.revenue!=="£0.00"||/First.*Customer|2026-10-04|£10/.test(baseDimensions.text)) throw new Error(`Bad cabinet ${width}: ${JSON.stringify(baseDimensions)}`);
+    await evaluate("document.getElementById('camera-reset').click()");
+    const hit=await evaluate("(()=>{const r=document.getElementById('stage').getBoundingClientRect(),s=Math.min(r.width/960,r.height/650);return {x:r.left+r.width/2+(475-480)*s,y:r.top+r.height/2+(455-325)*s}})()") as {x:number;y:number};
+    await call("Input.dispatchMouseEvent",{type:"mousePressed",...hit,button:"left",clickCount:1});
+    await call("Input.dispatchMouseEvent",{type:"mouseReleased",...hit,button:"left",clickCount:1});
+    if(!await evaluate("document.getElementById('comms-agent-select').selectedOptions[0].textContent==='Delivery'"))throw new Error('Canvas selection did not reach COMMS');
+    await evaluate("document.querySelectorAll('#crew [data-agent-id]')[1].click()");
+    const selection=await evaluate("document.querySelector('#crew .selected').dataset.agentId === document.getElementById('comms-agent-select').value");
+    if(!selection)throw new Error('Crew/COMMS selection diverged');
+    for(const page of ["Agent dossier","Tools","Jobs","Knowledge","Artifacts","Activity","Approvals","Ledger","Business","Notices","Source-backed work"]){
+      await evaluate(`document.querySelector('[data-term="${page}"]').click()`);
+      const dimensions=await evaluate("({width:innerWidth,scroll:document.documentElement.scrollWidth,title:document.getElementById('panel-title').textContent,text:document.getElementById('panel-content').textContent})") as {width:number;scroll:number;title:string;text:string};
+      if(dimensions.scroll>width||dimensions.title!==page.toUpperCase()||!dimensions.text)throw new Error(`Bad ${width}px ${page}: ${JSON.stringify(dimensions)}`);pages.push({page,width:dimensions.width,scrollWidth:dimensions.scroll});
+      if(page==='Agent dossier'||page==='Ledger'){const screenshot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true});await writeFile(join(output,`${width}-${page.replaceAll(' ','-')}.png`),Buffer.from(screenshot.data as string,"base64"));}
+      await evaluate("document.getElementById('panel-close').click()");
     }
-    await evaluate("document.querySelector('[data-page=Overview]').click()");
+    // Real local durable mutation, no provider or external web I/O.
+    const objective = `Inspect supplied material (${width}px)`;
+    await evaluate(`document.getElementById('job-objective').value=${JSON.stringify(objective)};document.getElementById('job-composer').requestSubmit()`);
+    let queued=false;for(let i=0;i<50;i++){if(await evaluate(`document.getElementById('chat-log').textContent.includes(${JSON.stringify(objective)}) && document.getElementById('job-objective').value === '' && document.getElementById('notice').textContent === 'Saved by HQ runtime.'`)){queued=true;break;}await sleep(100);}if(!queued)throw new Error('Job mutation did not reach authoritative SSE');
+    await evaluate("document.getElementById('crew-search').value='';document.getElementById('crew-search').dispatchEvent(new Event('input'))");
+    server.kill();
+    let stale=false;for(let i=0;i<70;i++){if(await evaluate("document.getElementById('connection').textContent==='Disconnected'")){stale=true;break;}await sleep(100);}
+    if(!stale)throw new Error('Lost network did not mark activity unknown');
+    if(!await evaluate("[...document.querySelectorAll('[data-mutation]')].every(b=>b.disabled)&&document.getElementById('chat-status').textContent==='UNKNOWN'"))throw new Error('Stale transport did not disable mutations / mark selected agent unknown');
+    await sleep(300); server = launchServer(); await ready(`http://127.0.0.1:${port}/`);
+    let restored=false;for(let i=0;i<100;i++){if(await evaluate("document.getElementById('connection').textContent==='Live'")){restored=true;break;}await sleep(100);}if(!restored)throw new Error('Reconnect did not hydrate');
+    await evaluate("document.getElementById('camera-reset').click()");
     const shot=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true}); await writeFile(join(output,`${width}.png`),Buffer.from(shot.data as string,"base64"));
-    reports.push({width,pages,hydrated:true});
+    reports.push({width,pages,hydrated:true,canvasSelection:true,authoritativeMutation:true,disconnectUnknown:true,mutationsDisabledOnDisconnect:true,restartHydration:true});
   }
   if(errors.length)throw new Error(`Browser errors: ${errors.join(', ')}`);
   await writeFile(join(output,"results.json"),JSON.stringify({reports,browserErrors:errors},null,2));console.log(JSON.stringify({reports,browserErrors:errors},null,2));

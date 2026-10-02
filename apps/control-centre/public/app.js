@@ -1,102 +1,110 @@
-import { initialView, hydrate, disconnected } from './client-state.js';
-import { renderRoom } from './room.js';
-let view = initialView(), page = 'Overview', stream = null, lastSeen = 0, business = '', busy = false;
-const pages = ['Overview','Businesses','Agents','Jobs','Approvals','Ledger','Activity'];
-const $ = id => document.getElementById(id);
-const node = (tag, text, className) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (className) n.className = className; return n; };
-const card = title => { const n = node('section', undefined, 'card'); n.append(node('h2', title)); return n; };
-const badge = state => node('span', state.replaceAll('-', ' '), `pill ${state}`);
-const detail = (label, value) => { const d = node('details'); d.append(node('summary', label), node('pre', JSON.stringify(value, null, 2))); return d; };
-const btn = (label, action) => { const b = node('button', label); b.type = 'button'; b.disabled = busy || view.connection !== 'connected'; b.onclick = action; return b; };
-const empty = text => node('p', text, 'empty');
-for (const name of pages) { const button = btn(name, () => { page = name; render(); }); button.disabled = false; button.dataset.page = name; $('nav').append(button); }
-async function command(path, input) {
-  if (view.connection !== 'connected' || busy) return;
-  busy = true; $('notice').textContent = 'Submitting to HQ runtime…'; render();
-  try { const response = await fetch(`/api/${path}?business=${encodeURIComponent(business)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
-    const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Operation refused'); $('notice').textContent = path === 'run' ? 'Run submitted. Progress comes from runtime telemetry.' : 'Saved by HQ runtime.';
-  } catch (error) { $('notice').textContent = error.message; } finally { busy = false; render(); }
+import { initialView, hydrate, disconnected, selectAgent, mutationsAllowed, expireTransport } from './client-state.js';
+import { stationModel, exactMoney, revenueText } from './station-model.js';
+import { createWorld } from './world.js';
+let view=initialView(),model=stationModel(view),stream=null,lastSeen=0,business='',busy=false,panel=null,returnFocus=null,reconnectTimer=null;
+const $=id=>document.getElementById(id);
+const node=(tag,text,className)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;if(className)element.className=className;return element;};
+const detail=(label,value)=>{const d=node('details');d.append(node('summary',label),node('pre',JSON.stringify(value,null,2)));return d;};
+function button(label,action,mutation=false){const b=node('button',label);b.type='button';b.onclick=action;if(mutation){b.dataset.mutation='';b.disabled=busy||!mutationsAllowed(view);}return b;}
+const world=createWorld($('stage'),id=>choose(id,false));
+function choose(id,focus=true){view=selectAgent(view,id);render();if(focus)world.focus(id);}
+async function command(path,input){if(!mutationsAllowed(view)||busy)return;busy=true;$('notice').textContent='Submitting to HQ runtime…';render();try{const response=await fetch(`/api/${path}?business=${encodeURIComponent(business)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Operation refused');$('notice').textContent=path==='run'?'Run submitted. Awaiting runtime telemetry.':'Saved by HQ runtime.';if(path==='job')$('job-objective').value='';}catch(error){$('notice').textContent=error.message;}finally{busy=false;render();}}
+function jobActions(job,target){const snapshot=view.snapshot,agent=model.agents.find(a=>a.id===job.agentId);if(['queued','running'].includes(job.status))target.append(button('CANCEL',()=>command('cancel',{jobId:job.id}),true));
+  const pending=model.approvals.some(a=>a.jobId===job.id&&a.status==='pending');const runnable=job.status==='queued'||job.execution?.status==='waiting_for_approval'&&!pending;
+  if(runnable&&!job.blockedBy.length&&(snapshot.modelEnabled||agent?.toolIds.includes('artifact.release')))target.append(button(job.status==='queued'?'RUN':'RESUME',()=>command('run',{jobId:job.id}),true));
 }
-function mission(snapshot) {
-  const metadata = snapshot.metadata; if (!metadata) return empty('No mission metadata configured.');
-  const panel = node('section', undefined, 'mission'), copy = node('div');
-  copy.append(node('p', snapshot.business.name.toUpperCase(), 'eyebrow'), node('h2', metadata.mission.name), node('p', metadata.mission.goal), badge(snapshot.business.status));
-  const deadline = node('div', undefined, 'deadline'); deadline.append(node('p', 'MISSION DEADLINE', 'eyebrow'), node('strong', metadata.mission.deadline), node('p', metadata.mission.timezone, 'muted'));
-  panel.append(copy, deadline); return panel;
-}
-function activity(snapshot, limit = 15) { const section = card('Runtime activity'); const rows = snapshot.activity.slice(-limit).reverse();
-  if (!rows.length) section.append(empty('No recorded events.'));
-  for (const fact of rows) { const row = node('div', undefined, 'activity-row'); row.append(node('strong', fact.type), node('time', `${fact.occurredAt} · ${fact.actor.kind}: ${fact.actor.id}`), detail('Provenance / event', fact)); section.append(row); } return section;
-}
-function jobs(snapshot) { const list = node('div'); if (!snapshot.jobs.length) return empty('No jobs.');
-  for (const job of snapshot.jobs) {
-    const c = card(job.objective), row = node('div', undefined, 'row');
-    row.append(badge(view.connection === 'connected' ? job.visualState : 'unknown'), node('span', snapshot.agents.find(a => a.id === job.agentId)?.name || 'Unassigned', 'muted')); c.append(row);
-    c.append(node('p', `Job ${job.id} · ${job.model ? `${job.model.provider} / ${job.model.model}` : 'No provider invocation recorded'}`, 'muted'));
-    if (job.blockedBy.length) c.append(node('p', `Blocked by: ${job.blockedBy.join(', ')}`, 'status-note'));
-    c.append(detail('Dependencies and input/output artifacts', { dependencies: job.dependsOn || [], inputArtifacts: job.inputs, outputArtifacts: job.outputs,
-      artifacts: snapshot.artifacts.filter(a => job.inputs.includes(a.id) || job.outputs.includes(a.id)) }));
-    c.append(detail('Usage, cost and tool activity', { model: job.model, meteredExpenses: job.spend, execution: job.execution }));
-    const actions = node('div', undefined, 'actions');
-    const delivery = snapshot.agents.find(a => a.id === job.agentId)?.toolIds.includes('artifact.release');
-    const approved = snapshot.approvals.some(a => a.jobId === job.id && a.status === 'approved');
-    if (job.visualState === 'queued' || job.visualState === 'waiting-for-approval' && approved) {
-      if (snapshot.modelEnabled || delivery) actions.append(btn(approved ? 'Resume approved handoff' : delivery ? 'Request human release' : 'Run job', () => command('run', { jobId: job.id })));
-      else c.append(node('p', 'Paid execution disabled. Start server with explicit model execution enabled to run this job.', 'muted'));
+function jobEntry(job,compact=false){const e=node('section',undefined,compact?'entry':'record');e.append(node('h3',job.objective),node('p',view.connection==='connected'?job.visualState.replaceAll('-',' '):'unknown — transport disconnected','status'),node('small',`JOB ${job.id}`));if(job.model)e.append(node('p',`${job.model.provider} / ${job.model.model}`));if(job.execution?.operation)e.append(node('p',`TOOL ${job.execution.operation.toolId} / ${job.execution.operation.dispatched?'dispatched':'not dispatched'}`));if(job.blockedBy.length)e.append(node('p',`Waiting for ${job.blockedBy.join(', ')}`));if(job.execution?.error)e.append(node('p',job.execution.error));e.append(node('small',`${job.outputs.length} recorded outputs · ${job.inputs.length} inputs`));jobActions(job,e);if(!compact)e.append(detail('Execution / inputs / provenance',job));
+  for(const approval of model.approvals.filter(a=>a.jobId===job.id&&a.status==='pending')){
+    e.append(node('p',`Consent required: ${approval.operation?.toolId??approval.operationId} — ${approval.reason}`),detail('Exact operation awaiting consent',approval),button('APPROVE',()=>command('approval',{approvalId:approval.id,decision:'approve'}),true),button('REJECT',()=>command('approval',{approvalId:approval.id,decision:'reject'}),true));
+  }return e;}
+function openPanel(name){panel=name;returnFocus=document.activeElement;$('operator-window').hidden=false;$('panel-title').textContent=name.toUpperCase();renderPanel();$('panel-close').focus();document.querySelectorAll('.bb-group').forEach(g=>{g.classList.remove('open');g.querySelector('.bb-grp').setAttribute('aria-expanded','false');g.querySelector('.bb-menu').inert=true;});}
+function closePanel(){panel=null;$('operator-window').hidden=true;returnFocus?.focus();}
+$('panel-close').onclick=closePanel;
+document.addEventListener('keydown',event=>{if(!panel)return;if(event.key==='Escape'){event.preventDefault();closePanel();}if(event.key==='Tab'){const focusable=[...$('operator-window').querySelectorAll('button:not(:disabled),input,select,textarea,summary,a[href]')];const first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}});
+const groups={CREW:['Agent dossier','Tools'],WORK:['Jobs','Knowledge','Artifacts','Activity','Source-backed work'],SYSTEM:['Approvals','Ledger','Business','Notices']};
+for(const [label,items]of Object.entries(groups)){const group=node('div',undefined,'bb-group'),trigger=button(label,()=>{}),menu=node('div',undefined,'bb-menu');trigger.className='bb-grp';trigger.setAttribute('aria-haspopup','menu');trigger.setAttribute('aria-expanded','false');menu.setAttribute('role','menu');menu.inert=true;for(const item of items){const b=button(item,()=>openPanel(item));b.className='bb';b.dataset.term=item;b.setAttribute('role','menuitem');menu.append(b);}group.append(trigger,menu);$('dock-groups').append(group);}
+await import('./navdock.js');
+function record(title,value){const e=node('section',undefined,'record');e.append(node('h3',title),detail('Recorded data',value));return e;}
+function renderPanel(){if(!panel||!view.snapshot)return;const content=$('panel-content'),snapshot=view.snapshot; // Preserve unsent source-work drafts across snapshots.
+  if(panel==='Source-backed work'&&content.querySelector('form'))return;
+  content.replaceChildren();
+  if(panel==='Agent dossier'){
+    const a=model.selected;if(!a){content.append(node('p','Select a crew member.','empty'));return;}
+    const brief=record(a.name,{id:a.id,businessId:a.businessId,status:a.status,model:a.model});
+    brief.append(node('p',a.state.toUpperCase(),'status'),node('p',`CAN DO: ${a.capabilities.join(', ')||'No configured capabilities'}`),node('p',`KIT: ${a.toolIds.join(', ')||'No tools assigned'}`));
+    if(a.outcome)brief.append(node('p',`Latest recorded outcome: ${a.outcome}`));content.append(brief,node('h3','RECORD'));
+    for(const j of a.assigned.toReversed())content.append(jobEntry(j));if(!a.assigned.length)content.append(node('p','No recorded jobs.','empty'));
+  }
+  else if(panel==='Tools'){
+    for(const a of model.agents){const e=record(a.name,{toolIds:a.toolIds,capabilities:a.capabilities});e.append(node('p',a.toolIds.join(' / ')||'No assigned tools'),node('p',`Capability gates: ${a.capabilities.join(', ')||'none'}`));content.append(e);}
+    for(const f of model.activity.filter(f=>f.type.startsWith('tool.')).toReversed())content.append(record(f.type,f));
+  }
+  else if(panel==='Jobs'){for(const j of model.jobs.toReversed())content.append(jobEntry(j));}
+  else if(panel==='Knowledge'){
+    for(const k of model.knowledge){const e=record(k.statement,k);e.append(node('p',`Verification: ${k.verification} · Evidence: ${k.references.map(r=>r.artifactId).join(', ')||'none'}`));content.append(e);}
+    for(const s of model.sources){const e=record(`SOURCE ${s.uri}`,s);e.append(node('p',`Retrieved ${s.retrievedAt} / untrusted reference material`),node('pre',s.content));content.append(e);}
+  }
+  else if(panel==='Artifacts'){
+    for(const a of model.artifacts){const e=record(`${a.category} / ${a.id}`,a);e.append(node('pre',typeof a.content==='string'?a.content:JSON.stringify(a.content,null,2)),node('p',`Sources: ${a.sourceIds.join(', ')||'none'} / References: ${a.references.map(r=>r.artifactId).join(', ')||'none'}`));content.append(e);}
+  }
+  else if(panel==='Activity'){for(const f of model.activity.toReversed())content.append(record(`${f.occurredAt} / ${f.type}`,f));}
+  else if(panel==='Approvals'){
+    for(const a of model.approvals){const e=record(`${a.status.toUpperCase()} / ${a.operation?.toolId??a.operationId}`,a);e.append(node('p',a.reason));if(a.operation)e.append(node('pre',JSON.stringify(a.operation.input,null,2)));
+      if(a.status==='pending')e.append(button('APPROVE EXACT OPERATION',()=>command('approval',{approvalId:a.id,decision:'approve'}),true),button('REJECT',()=>command('approval',{approvalId:a.id,decision:'reject'}),true));content.append(e);
     }
-    if (['queued','running'].includes(job.status)) actions.append(btn('Cancel job', () => command('cancel', { jobId: job.id })));
-    c.append(actions); list.append(c);
-  } return list;
+  }
+  else if(panel==='Ledger'){
+    content.append(node('h3',`RECORDED REVENUE ${revenueText(snapshot.revenue)}`),node('p',`Recorded model spend: ${snapshot.summary.modelSpend}. Currencies are not converted.`));
+    for(const e of model.ledger)content.append(record(`${e.kind.toUpperCase()} ${exactMoney(e.amount)} / ${e.description}`,e));
+    for(const e of model.expenses)content.append(record(`METERED MODEL EXPENSE / ${e.cost.nanodollars} nanodollars`,e));
+    if(snapshot.summary.unsettledInvocations)content.append(node('p',`${snapshot.summary.unsettledInvocations} unsettled invocations — not represented as zero cost.`));
+    const budgets=snapshot.metadata?.budgets;
+    if(budgets?.perJobUsdLimit)content.append(node('p',`Configured per-job model limit: ${exactMoney(budgets.perJobUsdLimit)} USD. Not recorded spend.`));
+    if(budgets?.internalAllocation)content.append(node('p',`Configured internal allocation: ${exactMoney(budgets.internalAllocation.amount)}. No aggregate cross-currency enforcement.`));
+  }
+  else if(panel==='Business'){content.append(record(snapshot.business.name,snapshot.business),record('Runtime configuration',snapshot.metadata),node('p',`Transport: ${view.connection}. Jobs and permissions are backend-owned.`));}
+  else if(panel==='Notices'){content.append(node('p','Interface layout and grouped navigation reference: StarNet, Copyright (c) 2026 Andrew Sims. HQ station artwork is original.'));for(const [title,path]of [['StarNet MIT licence','STARNET-MIT.txt'],['VT323 font licence','VT323-OFL.txt']]){const a=node('a',title);a.href=`/notices/${path}`;a.target='_blank';a.rel='noopener';content.append(a,node('br'));}}
+  else if(panel==='Source-backed work'){const form=node('form',undefined,'form-grid');const fields={};for(const [key,label,type]of [['id','Request identifier','text'],['url','Source URL (optional with supplied material)','url'],['material','Supplied source material','textarea']]){const l=node('label',label),input=node(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type;input.required=key==='id';input.name=key;fields[key]=input;l.append(input);form.append(l);}const submit=node('button','PREPARE DURABLE JOBS');submit.dataset.mutation='';submit.disabled=busy||!mutationsAllowed(view);form.append(submit,node('small','Creates jobs and records supplied evidence. Does not run models, contact customers or record revenue.'));form.onsubmit=event=>{event.preventDefault();command('prepare',Object.fromEntries(Object.entries(fields).map(([key,input])=>[key,input.value])));};content.append(form);}
+  if(!content.children.length)content.append(node('p','No recorded data.','empty'));
 }
-function render() {
-  $('page-title').textContent = page; for (const button of $('nav').children) button.classList.toggle('active', button.dataset.page === page);
-  $('connection').textContent = view.connection === 'connected' ? 'Live' : view.connection === 'disconnected' ? 'Disconnected · stale' : 'Connecting'; $('link-lamp').className = `lamp ${view.connection}`;
-  const content = $('content'); content.replaceChildren(); const s = view.snapshot;
-  if (!s) { content.append(empty('Waiting for an authoritative snapshot.')); return; }
-  if (page === 'Overview') {
-    content.append(mission(s)); const metrics = node('div', undefined, 'metrics');
-    for (const [label, value] of [['Businesses in scope',s.businesses.length],['Agents',s.summary.agents],['Running / queued',`${s.summary.running} / ${s.summary.queued}`],['Pending approvals',s.summary.pendingApprovals],['Model spend · USD',s.summary.modelSpend]]) {
-      const m = node('div', undefined, 'metric'); m.append(node('small',label),node('strong',String(value), label.includes('spend') ? 'money' : '')); metrics.append(m);
-    } content.append(metrics);
-    if (s.summary.unsettledInvocations) content.append(node('p', `${s.summary.unsettledInvocations} unsettled provider invocation(s): shown spend is known cost only; reservations remain held.`, 'status-note'));
-    content.append(renderRoom(s.agents, view.connection), activity(s, 6));
-  } else if (page === 'Businesses') {
-    content.append(mission(s)); const budget = card('Business budget & authority'); budget.append(detail('Configured allocation, model routing and manual boundaries', { budgets: s.metadata?.budgets, routing: s.metadata?.modelRouting, authority: s.metadata?.authority }), node('p', 'GBP allocation is configuration. No FX conversion, provider balance or earned revenue is inferred.', 'muted')); content.append(budget);
-    const prepare = card('Prepare a mission attempt'); prepare.append(node('p', 'Supply genuine prospect/source material. This creates five dependent jobs and durable source evidence; preparation makes no model call or customer contact.', 'muted'));
-    const form = node('form', undefined, 'form'); for (const [name,label,tag] of [['id','Stable attempt identifier','input'],['url','Public source URL (optional)','input'],['material','Human-supplied source material','textarea']]) {
-      const l = node('label',label), field = node(tag); field.name = name; field.required = name !== 'url'; l.append(field); form.append(l);
-    } const submit = btn('Prepare dependent jobs', () => {}); submit.type = 'submit'; form.append(submit); form.onsubmit = event => { event.preventDefault(); command('prepare', Object.fromEntries(new FormData(form))); }; prepare.append(form); content.append(prepare);
-    content.append(renderRoom(s.agents, view.connection), jobs(s));
-  } else if (page === 'Agents') {
-    const grid = node('div', undefined, 'grid'); for (const agent of s.agents) {
-      const c = card(agent.name); c.append(badge(view.connection === 'connected' ? agent.visualState : 'unknown'), node('p', `${s.business.name} · ${agent.currentJobId || 'No assigned job'}`, 'muted'), node('p', agent.model ? `${agent.model.provider} / ${agent.model.model}` : 'Model not yet known', 'muted'), detail('Allowed capabilities / tool IDs', { capabilities: agent.capabilities, toolIds: agent.toolIds }));
-      c.append(detail('Recent activity', s.activity.filter(f => f.payload.agentId === agent.id || f.actor.id === agent.id || f.payload.jobId && s.jobs.some(j => j.id === f.payload.jobId && j.agentId === agent.id)).slice(-8))); grid.append(c);
-    } content.append(grid);
-  } else if (page === 'Jobs') content.append(jobs(s));
-  else if (page === 'Approvals') {
-    if (!s.approvals.length) content.append(empty('No approvals requested.'));
-    for (const approval of s.approvals) { const c = card(approval.reason); c.append(badge(approval.status), node('p', `Job ${approval.jobId} · operation ${approval.operationId}`, 'muted'), detail('Exact operation for review', approval.toolCall));
-      if (approval.status === 'pending') { const actions = node('div',undefined,'actions'); actions.append(btn('Approve exact operation', () => command('approval',{ approvalId:approval.id,decision:'approve' })),btn('Reject', () => command('approval',{ approvalId:approval.id,decision:'reject' }))); c.append(actions); } content.append(c);
-    }
-  } else if (page === 'Ledger') {
-    const c = card('Recorded money'); c.append(node('p', `Known provider spend: ${s.summary.modelSpend}. No expense is inferred from a reservation.`, 'muted'));
-    if (!s.ledger.length && !s.expenses.length) c.append(empty('No recorded expenses or revenue.'));
-    for (const expense of s.expenses) c.append(detail(`${expense.description} · ${expense.occurredAt}`, expense));
-    for (const entry of s.ledger) c.append(detail(`${entry.kind} · ${entry.amount.currency} ${entry.amount.minorUnits} minor units`, entry)); content.append(c);
-  } else content.append(activity(s,60));
+function render(){model=stationModel(view);document.body.classList.toggle('connected',view.connection==='connected');document.body.classList.toggle('disconnected',view.connection!=='connected');$('connection').textContent=view.connection==='connected'?'Live':view.connection==='connecting'?'Connecting':'Disconnected';$('sig').textContent=view.receivedAt?`Last snapshot ${new Date(view.receivedAt).toLocaleTimeString()}`:'Awaiting authoritative state';
+  if(!view.snapshot){
+    world.update(model);$('crew').replaceChildren();$('workstreams').replaceChildren();$('chat-log').replaceChildren(node('p','Awaiting authoritative state.','empty'));$('comms-agent-select').replaceChildren();$('stage-summary').textContent='Operational activity unknown';$('cam-rec').textContent='UNKNOWN';
+    document.querySelectorAll('[data-mutation]').forEach(b=>{b.disabled=true;});$('job-objective').disabled=true;return;
+  }const snapshot=view.snapshot;
+  if($('business').options.length!==snapshot.businesses.length){$('business').replaceChildren(...snapshot.businesses.map(b=>{const o=node('option',b.name);o.value=b.id;return o;}));}$('business').value=snapshot.business.id;
+  $('spend').textContent=snapshot.summary.modelSpend;$('revenue').textContent=revenueText(snapshot.revenue);
+  const search=$('crew-search').value.toLowerCase();$('crew').replaceChildren(...model.agents.filter(a=>a.name.toLowerCase().includes(search)).map(a=>{const li=node('li'),b=button('',()=>choose(a.id));b.dataset.agentId=a.id;b.classList.toggle('selected',a.id===view.selectedAgentId);b.append(node('span',a.name,'crew-name'),node('span',a.state.replaceAll('-',' '),'crew-state'));li.append(b);return li;}));
+  $('crew-sum').textContent=`${model.agents.length} crew / ${view.connection==='connected'?'live state':'activity unknown'}`;
+  $('workstreams').replaceChildren(...model.jobs.slice(-10).toReversed().map(j=>{const li=node('li');li.append(button(`${j.status.toUpperCase()} · ${j.objective}`,()=>{if(j.agentId)choose(j.agentId);openPanel('Jobs');}));return li;}));
+  $('comms-agent-select').replaceChildren(...model.agents.map(a=>{const o=node('option',a.name);o.value=a.id;return o;}));if(!model.selected){const o=node('option',view.selectionLost?'Selection unavailable':'Select crew');o.value='';$('comms-agent-select').prepend(o);}$('comms-agent-select').value=model.selected?.id??'';
+  $('chat-status').textContent=model.selected?.state.toUpperCase()??'NO SELECTION';$('comms-agent-model').textContent=model.selected?.model?`${model.selected.model.provider} / ${model.selected.model.model}`:'No provider invocation recorded';
+  $('chat-log').replaceChildren();if(model.selected?.assigned.length)for(const j of model.selected.assigned.toReversed())$('chat-log').append(jobEntry(j,true));else $('chat-log').append(node('p',model.selected?(view.connection==='connected'?'No recorded jobs. Agent is idle.':'No recorded jobs. Operational activity unknown.'):'Choose a crew member.','empty'));
+  $('execution-mode').textContent=snapshot.modelEnabled?'Model execution explicitly enabled. Jobs run only on operator command.':'Paid model execution disabled. Queuing a job does not execute it.';
+  $('stage-summary').textContent=model.agents.map(a=>`${a.name}: ${a.state}`).join('; ');$('cam-rec').textContent=view.connection==='connected'?'LINK':'UNKNOWN';$('cam-feed').textContent='STATION / '+(view.connection==='connected'?'LIVE STATE':'LAST KNOWN STATE');
+  const latest=model.activity.at(-1);$('world-ticker').textContent=view.connection!=='connected'?'TRANSPORT DISCONNECTED / operational activity unknown':latest?`${latest.occurredAt} / ${latest.type} / ${latest.actor.kind}:${latest.actor.id}`:'No recorded runtime events';world.update(model);renderPanel();
+  document.querySelectorAll('[data-mutation]').forEach(b=>{b.disabled=busy||!mutationsAllowed(view);});$('create-job').disabled||=!model.selected;$('job-objective').disabled=busy||!mutationsAllowed(view)||!model.selected;
+  const count=model.approvals.filter(a=>a.status==='pending').length;document.querySelector('[data-term="Approvals"]').textContent=count?`Approvals (${count})`:'Approvals';
+  document.querySelector('[data-term="Source-backed work"]').hidden=!snapshot.preparationEnabled;
 }
-function connect() {
-  stream?.close(); view = { ...view, connection:'connecting' }; render();
-  const source = new EventSource(`/api/events${business ? `?business=${encodeURIComponent(business)}` : ''}`); stream = source;
-  source.addEventListener('snapshot', event => { if (source !== stream) return;
-    try { const snapshot = JSON.parse(event.data); lastSeen = Date.now(); view = hydrate(view,snapshot,lastSeen); business = snapshot.business.id;
-      const select = $('business-select'); select.replaceChildren(); for (const b of snapshot.businesses) { const option = node('option',b.name); option.value = b.id; option.selected = b.id === business; select.append(option); }
-      if ($('notice').textContent.startsWith('Loading') || $('notice').textContent.startsWith('Telemetry')) $('notice').textContent = ''; render();
-    } catch { view = disconnected(view); $('notice').textContent = 'Telemetry payload unavailable; displayed values are stale.'; render(); }
-  });
-  source.addEventListener('heartbeat', () => { if (source === stream) lastSeen = Date.now(); });
-  source.onerror = () => { if (source !== stream) return; view = disconnected(view); $('notice').textContent = 'Telemetry disconnected. Displayed values are stale; reconnect will hydrate from HQ.'; render(); };
+$('crew-search').oninput=render;$('comms-agent-select').onchange=()=>choose($('comms-agent-select').value);$('agent-details').onclick=()=>openPanel('Agent dossier');
+$('job-composer').onsubmit=e=>{e.preventDefault();if(model.selected)command('job',{agentId:model.selected.id,objective:$('job-objective').value});};
+$('crew-hide').onclick=()=>{document.body.classList.add('crew-collapsed');$('crew-show').hidden=false;};$('crew-show').onclick=()=>{document.body.classList.remove('crew-collapsed');$('crew-show').hidden=true;};
+$('zoom-in').onclick=()=>world.zoom(1.2);$('zoom-out').onclick=()=>world.zoom(1/1.2);$('camera-reset').onclick=()=>world.reset();$('cinema').onclick=()=>{document.body.classList.toggle('cinema');$('cinema').textContent=document.body.classList.contains('cinema')?'EXIT':'CINEMA';};$('comms-expand').onclick=()=>document.body.classList.toggle('comms-expanded');
+function scheduleReconnect(source){
+  if(reconnectTimer||source!==stream)return;
+  reconnectTimer=setTimeout(async()=>{
+    reconnectTimer=null;if(source!==stream)return;
+    try{
+      // A restarted local host mints a fresh HttpOnly session. No token enters JS.
+      const response=await fetch('/',{credentials:'same-origin',signal:AbortSignal.timeout(5000)});
+      if(source!==stream)return;
+      if(response.ok){connect();return;}
+    }catch{}
+    scheduleReconnect(source);
+  },2000);
 }
-$('business-select').onchange = event => { business = event.target.value; view = initialView(); connect(); };
-setInterval(() => { if (view.connection === 'connected' && Date.now() - lastSeen > 25000) { view = disconnected(view); $('notice').textContent = 'Telemetry stale. Reconnecting to HQ…'; connect(); } },5000);
+function connect(){clearTimeout(reconnectTimer);reconnectTimer=null;stream?.close();view=disconnected(view);render();const next=new EventSource(`/api/events${business?`?business=${encodeURIComponent(business)}`:''}`);stream=next;next.addEventListener('snapshot',event=>{if(stream!==next)return;try{const snapshot=JSON.parse(event.data);lastSeen=Date.now();view=hydrate(view,snapshot,lastSeen);business=snapshot.business.id;render();}catch{$('notice').textContent='Invalid snapshot; activity unknown.';view=disconnected(view);render();}});next.addEventListener('heartbeat',()=>{if(stream===next)lastSeen=Date.now();});next.onerror=()=>{if(stream!==next)return;view=disconnected(view);render();scheduleReconnect(next);};}
+$('business').onchange=()=>{business=$('business').value;view=initialView();panel=null;$('operator-window').hidden=true;$('panel-content').replaceChildren();$('notice').textContent='';$('job-objective').value='';connect();};
+setInterval(()=>{const next=expireTransport(view,lastSeen,Date.now());if(next!==view){view=next;render();scheduleReconnect(stream);}},1000);
 connect();

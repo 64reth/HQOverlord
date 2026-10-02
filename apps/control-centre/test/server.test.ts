@@ -21,10 +21,16 @@ test("local API/SSE require session, reject foreign scope/origin and hydrate/rec
     assert.equal((await fetch(`${base}/api/cancel`, { method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json" }, body: "{}" })).status, 403);
     const first = await fetch(`${base}/api/events`, { headers: { Cookie: cookie } }); const reader = first.body!.getReader();
     const frame = new TextDecoder().decode((await reader.read()).value); assert.match(frame, /event: snapshot/); assert.match(frame, /"agents":\[\]/); assert.doesNotMatch(frame, /"denied"/);
-    await runtime.createAgent(context(), { name: "Saved worker" });
+    const agent = (await runtime.createAgent(context(), { name: "Saved worker" })).record;
     const next = new TextDecoder().decode((await reader.read()).value); assert.match(next, /Saved worker/); await reader.cancel();
     const reconnected = await fetch(`${base}/api/events`, { headers: { Cookie: cookie, "Last-Event-ID": "old-epoch:0" } }); const again = reconnected.body!.getReader();
     assert.match(new TextDecoder().decode((await again.read()).value), /Saved worker/); await again.cancel();
+    const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
+    const refused = await fetch(`${base}/api/job`, { method: "POST", headers, body: JSON.stringify({ agentId: "foreign-agent", objective: "Denied" }) });
+    assert.equal(refused.status, 409); assert.equal(runtime.snapshot().authority.jobs.length, 0);
+    const created = await fetch(`${base}/api/job`, { method: "POST", headers, body: JSON.stringify({ agentId: agent.id, objective: "Operator supplied work", actor: { kind: "agent", id: "untrusted" } }) });
+    assert.equal(created.status, 200); assert.equal(runtime.snapshot().authority.jobs[0]!.status, "queued");
+    assert.deepEqual(runtime.snapshot().facts.at(-1)!.actor, { kind: "human", id: "operator" }); assert.equal(runtime.snapshot().facts.at(-1)!.producer, "hq.runtime");
     const snapshot = await (await fetch(`${base}/api/snapshot`, { headers: { Cookie: cookie } })).json() as { agents: unknown[] }; assert.equal(snapshot.agents.length, 1);
   } finally { await app.close(); }
 });

@@ -7,23 +7,20 @@ import type { loadBusiness001 } from "./load.ts";
 
 export const releaseToolId = ids.tool("artifact.release");
 export function ownerContext(label: string): CommandContext {
-  return { commandId: commandId(label), businessId, principal: { kind: "human", id: "local-owner" }, correlationId: correlationId("business-001-first-customer") };
+  return { commandId: commandId(label), businessId, principal: { kind: "human", id: "local-owner" }, correlationId: correlationId("business-001-service") };
 }
 
 /** Bootstrap v1 stays replayable. New capabilities are explicit backend permission configuration. */
-export async function enableMission(loaded: Awaited<ReturnType<typeof loadBusiness001>>) {
+export async function enableWorkforce(loaded: Awaited<ReturnType<typeof loadBusiness001>>) {
   for (const worker of loaded.agents) await loaded.runtime.configureAgentTools(ownerContext(`configure-${worker.role}`), worker.record.id,
     worker.role === "prospect-research" ? [ids.tool("web.read")] : worker.role === "delivery" ? [releaseToolId] : []);
-  // The v1 placeholder is superseded by a source-backed attempt, not silently redefined.
-  if (loaded.runtime.inspectJob(ownerContext("legacy-read"), loaded.firstJob.id).status === "queued")
-    await loaded.runtime.cancelJob(ownerContext("supersede-v1-placeholder"), loaded.firstJob.id);
 }
 
-/** Human-supplied material starts a distinct durable mission attempt; no fabricated prospect/customer. */
-export async function prepareMission(loaded: Awaited<ReturnType<typeof loadBusiness001>>, input: { id: string; url: string; material: string }) {
-  if (!input.id.trim() || !input.material.trim()) throw new TypeError("Mission requires supplied source material and a stable attempt identifier");
-  await enableMission(loaded);
-  const runtime = loaded.runtime, context = ownerContext(`mission-${input.id}`);
+/** Human-supplied material starts a distinct durable service request; no fabricated prospect/customer. */
+export async function prepareWork(loaded: Awaited<ReturnType<typeof loadBusiness001>>, input: { id: string; url: string; material: string }) {
+  if (!input.id.trim() || !input.material.trim()) throw new TypeError("Service request requires supplied source material and a stable attempt identifier");
+  await enableWorkforce(loaded);
+  const runtime = loaded.runtime, context = ownerContext(`service-${input.id}`);
   const prior = runtime.snapshot().sources?.find(s => s.id === `supplied:${input.id}`);
   const source = await runtime.recordSource(context, { id: `supplied:${input.id}`, uri: input.url || "human:provided", content: input.material,
     contentType: "text/plain", retrievedAt: prior?.retrievedAt ?? new Date().toISOString() });
@@ -38,14 +35,14 @@ export async function prepareMission(loaded: Awaited<ReturnType<typeof loadBusin
   const jobs: Job[] = [];
   for (let i = 0; i < loaded.agents.length; i++) {
     const previous = jobs[i - 1];
-    const job = (await runtime.createJob(ownerContext(`mission-${input.id}-${i}`), { objective: objectives[i]!, agentId: loaded.agents[i]!.record.id,
+    const job = (await runtime.createJob(ownerContext(`service-${input.id}-${i}`), { objective: objectives[i]!, agentId: loaded.agents[i]!.record.id,
       workflowId: workflow.id, inputArtifactIds: [artifact.id], dependsOn: previous ? jobs.map(j => j.id) : [] })).record;
     jobs.push(job);
   }
   return jobs;
 }
 
-export function missionTools(runtime: DurableRuntime, webDependencies: WebReadDependencies = {}): ToolRegistry {
+export function serviceTools(runtime: DurableRuntime, webDependencies: WebReadDependencies = {}): ToolRegistry {
   const tools = new ToolRegistry(), web = createWebReadTool(webDependencies);
   tools.register({ ...web, async execute(input, execution) {
     const result = await web.execute(input, execution);
@@ -69,7 +66,7 @@ export function missionTools(runtime: DurableRuntime, webDependencies: WebReadDe
 }
 
 /** Mandatory host-side Delivery gate, independent of whether a model asks for consent. */
-export async function runMissionJob(runtime: DurableRuntime, jobId: ReturnType<typeof ids.job>, provider: ModelProvider, tools: ToolRegistry,
+export async function runServiceJob(runtime: DurableRuntime, jobId: ReturnType<typeof ids.job>, provider: ModelProvider, tools: ToolRegistry,
   options: ModelExecutionOptions = jobModelOptions()) {
   const context = ownerContext(`run-${jobId}`), job = runtime.inspectJob(context, jobId);
   const agent = runtime.snapshot().authority.agents.find(a => a.id === job.agentId)!;

@@ -6,5 +6,5 @@ const path = fileURLToPath(new URL(".local/state.json", import.meta.url));
 const loaded = await loadBusiness001(new FileDurableStore(path), systemClock, systemIds);
 console.log(`Business 001 loaded in local durable state: ${path}`);
 console.log(`Workforce: ${loaded.agents.map(a => a.record.name).join(", ")}`);
-console.log(`Mission: ${loaded.manifest.mission.name}; job=${loaded.firstJob.id}; status=${loaded.firstJob.status}`);
+console.log(`Service: ${loaded.manifest.identity.purpose}; jobs are created only from operator input.`);
 console.log("No model/network call, customer, payment or revenue created. Local state is excluded from Git.");
