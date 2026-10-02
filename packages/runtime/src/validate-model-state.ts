@@ -4,6 +4,8 @@ import { commandFingerprint } from "./command-fingerprint.ts";
 import { maximumModelCost, priceModelUsage, validateModelPricing } from "./model-pricing.ts";
 import { validModelUsage } from "./model-provider.ts";
 import type { Money } from "@hqoverlord/core";
+import { maximumMeteredCost, validateMeteredPricing } from "./metered-cost.ts";
+import { validateMeteredState } from "./validate-metered-state.ts";
 
 export function validateModelState(state: DurableState): void {
   const invalid = (): never => { throw new RuntimeError("INVALID_STATE", "Invalid durable model accounting"); };
@@ -29,8 +31,11 @@ export function validateModelState(state: DurableState): void {
     if (!p || typeof p.provider !== "string" || !p.provider || typeof p.model !== "string" || !p.model.trim()
       || ![p.maxInputTokens, p.maxOutputTokens].every(n => Number.isSafeInteger(n) && n > 0)) invalid();
     try { if (p.pricing) validateModelPricing(p.pricing); } catch { invalid(); }
+    try { if (p.meteredPricing) validateMeteredPricing(p.meteredPricing); } catch { invalid(); }
+    if (p.pricing && p.meteredPricing) invalid();
     const maximum = p.pricing && maximumModelCost(p.provider, p.model, p.maxInputTokens, p.maxOutputTokens, p.pricing);
-    if (p.budget && (!validMoney(p.budget) || !maximum || maximum.currency !== p.budget.currency)) invalid();
+    const meteredMaximum = p.meteredPricing && maximumMeteredCost(p.provider, p.model, p.maxInputTokens, p.maxOutputTokens, p.meteredPricing);
+    if (p.budget && (!validMoney(p.budget) || (p.meteredPricing ? !meteredMaximum || p.budget.currency !== "USD" : !maximum || maximum.currency !== p.budget.currency))) invalid();
     for (const call of account.invocations) {
       if (!call || typeof call.id !== "string" || !call.id || calls.has(call.id) || !["reserved", "unknown", "settled"].includes(call.status)) invalid();
       calls.add(call.id);
@@ -64,4 +69,5 @@ export function validateModelState(state: DurableState): void {
   for (const fact of state.facts) {
     if (fact.type === "model.usage_recorded" && !calls.has(fact.payload.invocationId)) invalid();
   }
+  validateMeteredState(state);
 }

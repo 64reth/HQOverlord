@@ -104,6 +104,15 @@ export interface LedgerEntryRecordedPayload {
  * add new facts rather than silently redefining historical ones.
  */
 export interface HQEventPayloadMap {
+  readonly "model.expense_recorded.v1": {
+    readonly id: string;
+    readonly jobId: JobId;
+    readonly invocationId: string;
+    readonly kind: "expense";
+    readonly cost: { readonly version: 1; readonly currency: "USD"; readonly unit: "nanodollar"; readonly nanodollars: bigint };
+    readonly description: "Model/API usage";
+    readonly occurredAt: string;
+  };
   readonly "business.created": BusinessCreatedPayload;
   readonly "agent.created": AgentCreatedPayload;
   readonly "job.created": JobCreatedPayload;

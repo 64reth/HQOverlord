@@ -3,6 +3,7 @@ import type { Approval, AgentId, BusinessId, JobId, OperationId } from "@hqoverl
 import type { AgentObservation, ExecutionResult, ToolCall } from "./execution-contracts.ts";
 import type { LedgerEntry } from "@hqoverlord/core";
 import type { JobModelAccount } from "./model-state.ts";
+import type { MeteredExpense } from "./metered-cost.ts";
 
 export interface DurableExecution {
   readonly jobId: JobId;
@@ -65,6 +66,7 @@ export interface DurableState {
   readonly executions?: readonly DurableExecution[];
   readonly modelAccounts?: readonly JobModelAccount[];
   readonly ledger?: readonly LedgerEntry[];
+  readonly meteredExpenses?: readonly MeteredExpense[];
 }
 
 export function emptyDurableState(): DurableState {

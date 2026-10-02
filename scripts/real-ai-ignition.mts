@@ -7,8 +7,9 @@ import { currencyCode, ids, money } from "@hqoverlord/core";
 import { correlationId } from "@hqoverlord/events";
 import {
   AuthorityStore, DurableRuntime, FileDurableStore, OpenAIModelProvider, ToolRegistry,
-  commandId, emptyDurableState, modelAccountTotals, systemClock, systemIds,
-  type CommandContext, type ModelProvider, type ModelPricing,
+  commandId, emptyDurableState, modelMeteredTotals, systemClock, systemIds,
+  nanoUsd, formatNanoUsd, usdCentsToNanoUsd, NANODOLLARS_PER_CENT,
+  type CommandContext, type ModelProvider, type MeteredPricing,
 } from "../packages/runtime/src/index.ts";
 
 // Explicit/manual only: never imported by automated tests. All data is disposable.
@@ -37,13 +38,13 @@ async function main(): Promise<void> {
   }
   // Supplied ignition rates are configuration, not an assertion about other models' prices.
   // Overrides require their own explicit rates rather than silently inheriting Luna pricing.
-  let pricing: ModelPricing;
+  let pricing: MeteredPricing;
   try {
-    pricing = { provider: "openai", model, currency, tokensPerBlock: 1_000_000n,
-      inputMinorUnits: rate("HQ_MODEL_INPUT_CENTS_PER_MILLION", model === defaultModel ? 10n : undefined),
-      outputMinorUnits: rate("HQ_MODEL_OUTPUT_CENTS_PER_MILLION", model === defaultModel ? 50n : undefined),
-      ...(process.env.HQ_MODEL_CACHED_INPUT_CENTS_PER_MILLION !== undefined
-        ? { cachedInputMinorUnits: rate("HQ_MODEL_CACHED_INPUT_CENTS_PER_MILLION") } : {}),
+    const inputRate = rate("HQ_MODEL_INPUT_CENTS_PER_MILLION", model === defaultModel ? 10n : undefined);
+    pricing = { version: 1, provider: "openai", model, currency: "USD", unit: "nanodollar", tokensPerBlock: 1_000_000n,
+      inputNanodollars: inputRate * NANODOLLARS_PER_CENT,
+      outputNanodollars: rate("HQ_MODEL_OUTPUT_CENTS_PER_MILLION", model === defaultModel ? 50n : undefined) * NANODOLLARS_PER_CENT,
+      cachedInputNanodollars: rate("HQ_MODEL_CACHED_INPUT_CENTS_PER_MILLION", inputRate) * NANODOLLARS_PER_CENT,
     };
   } catch {
     console.error("Invalid pricing configuration. For HQ_MODEL overrides, set HQ_MODEL_INPUT_CENTS_PER_MILLION and HQ_MODEL_OUTPUT_CENTS_PER_MILLION to integer USD cents per million tokens. Cached input can be configured with HQ_MODEL_CACHED_INPUT_CENTS_PER_MILLION. No request made.");
@@ -52,7 +53,7 @@ async function main(): Promise<void> {
   }
   print("MODEL", model);
   print("BUDGET", `${budget.minorUnits} USD cents hard limit`);
-  print("PRICING", `per million tokens: input=${pricing.inputMinorUnits}, output=${pricing.outputMinorUnits}, cached input=${pricing.cachedInputMinorUnits ?? pricing.inputMinorUnits} USD cents (configured rates; each call rounds up to a cent)`);
+  print("PRICING", `per million tokens: input=${formatNanoUsd(nanoUsd(pricing.inputNanodollars))}, output=${formatNanoUsd(nanoUsd(pricing.outputNanodollars))}, cached input=${formatNanoUsd(nanoUsd(pricing.cachedInputNanodollars!))}; versioned nanodollar metering`);
   const directory = await mkdtemp(join(tmpdir(), "hq-real-ignition-"));
   try {
     phase = "temporary runtime boot";
@@ -101,7 +102,7 @@ async function main(): Promise<void> {
       phase = "real provider request";
       const account = runtime!.inspectModelAccount(context(), job.id)!;
       assert.equal(account.invocations.at(-1)!.status, "reserved");
-      print("HQ", `budget admitted; reservation=${modelAccountTotals(account).reserved} USD cents (durably saved)`);
+      print("HQ", `budget admitted; reservation=${formatNanoUsd(nanoUsd(modelMeteredTotals(account).reservedNanodollars))} (durably saved)`);
       const input = JSON.parse(request.input) as { observations: unknown[] };
       if (toolExecutions > 0) {
         assert.equal(input.observations.length, toolExecutions);
@@ -117,7 +118,7 @@ async function main(): Promise<void> {
     } };
     phase = "model execution";
     const result = await runtime.executeModelJob(context(), job.id, provider, tools, {
-      model, maxInputTokens: 4096, maxOutputTokens: 1024, maxTurns: 3, budget, pricing,
+      model, maxInputTokens: 4096, maxOutputTokens: 1024, maxTurns: 3, budget, meteredPricing: pricing,
       instructions: "Use the available addition tool for the job's operands. After receiving its observation, report that sum and complete. Do not calculate instead of requesting the tool.",
     });
     if (result.status !== "completed") {
@@ -129,18 +130,18 @@ async function main(): Promise<void> {
     assert.equal(runtime.inspectJob(context(), job.id).status, "completed");
     const account = runtime.inspectModelAccount(context(), job.id)!;
     assert.equal(account.invocations.length, toolExecutions + 1);
-    assert.ok(account.invocations.every(c => c.status === "settled" && c.usage && c.cost && c.ledgerEntryId));
+    assert.ok(account.invocations.every(c => c.status === "settled" && c.usage && c.meteredCost && c.meteredExpenseId));
     for (const call of account.invocations) {
       const usage = call.usage!;
       print("USAGE", `${usage.provider}/${usage.model}: input=${usage.inputTokens}, output=${usage.outputTokens}, cached input=${usage.cachedInputTokens ?? "not reported"}`);
     }
-    const totals = modelAccountTotals(account), ledger = runtime.inspectLedger(context(), job.id);
+    const totals = modelMeteredTotals(account), ledger = runtime.inspectMeteredExpenses(context(), job.id);
     assert.equal(ledger.length, account.invocations.length);
-    assert.equal(ledger.reduce((sum, e) => sum + e.amount.minorUnits, 0n), totals.spent);
+    assert.equal(ledger.reduce((sum, e) => sum + e.cost.nanodollars, 0n), totals.spentNanodollars);
     assert.ok(ledger.every(e => e.businessId === businessId && e.jobId === job.id && e.kind === "expense"));
-    assert.equal(totals.reserved, 0n); assert.ok(totals.spent <= budget.minorUnits);
+    assert.equal(totals.reservedNanodollars, 0n); assert.ok(totals.spentNanodollars <= usdCentsToNanoUsd(budget).nanodollars);
     print("JOB", "COMPLETED");
-    print("COST", `calculated model expense=${totals.spent} USD cents; remaining=${budget.minorUnits - totals.spent} USD cents`);
+    print("COST", `exact metered expense=${totals.spentNanodollars} nanodollars (${formatNanoUsd(nanoUsd(totals.spentNanodollars))}); remaining hard budget=${formatNanoUsd(nanoUsd(usdCentsToNanoUsd(budget).nanodollars - totals.spentNanodollars))}`);
     phase = "durable restart verification";
     const before = runtime.snapshot();
     runtime = undefined;
@@ -148,7 +149,7 @@ async function main(): Promise<void> {
     assert.deepEqual(runtime.snapshot(), before);
     assert.equal(runtime.inspectJob(context(), job.id).status, "completed");
     assert.deepEqual(runtime.inspectModelAccount(context(), job.id), account);
-    assert.deepEqual(runtime.inspectLedger(context(), job.id), ledger);
+    assert.deepEqual(runtime.inspectMeteredExpenses(context(), job.id), ledger);
     print("RESTART", "completed job, model usage, ledger expenses and durable facts survived reopening");
   } finally {
     assert.equal(resolve(dirname(directory)), resolve(tmpdir()));

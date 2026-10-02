@@ -44,6 +44,7 @@ function describeFact(event: HQEvent): string {
     case "approval.rejected": return event.payload.reason;
     case "ledger.entry_recorded": return event.payload.entry.amount.minorUnits.toString();
     case "model.usage_recorded": return event.payload.model;
+    case "model.expense_recorded.v1": return event.payload.cost.nanodollars.toString();
     default: {
       const exhaustive: never = event;
       return exhaustive;

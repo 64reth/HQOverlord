@@ -16,7 +16,8 @@ import { ToolRegistry } from "./tool-registry.ts";
 import { ModelDrivenAgentDriver, type ModelDriverOptions } from "./model-driven-agent-driver.ts";
 import { normalizeModelUsage, type ModelProvider, type ModelRequest, type ModelResult } from "./model-provider.ts";
 import { maximumModelCost, priceModelUsage, validateModelPricing, type ModelPricing } from "./model-pricing.ts";
-import { modelAccountTotals, type JobModelAccount, type ModelInvocation, type ModelPolicy } from "./model-state.ts";
+import { modelAccountTotals, modelMeteredTotals, type JobModelAccount, type ModelInvocation, type ModelPolicy } from "./model-state.ts";
+import { maximumMeteredCost, priceMeteredUsage, usdCentsToNanoUsd, validateMeteredPricing, type MeteredExpense, type MeteredPricing } from "./metered-cost.ts";
 
 import type {
   HQEvent,
@@ -77,6 +78,7 @@ type JobResult = CommandResult<
 export interface ModelExecutionOptions extends ModelDriverOptions {
   readonly maxTurns?: number;
   readonly pricing?: ModelPricing;
+  readonly meteredPricing?: MeteredPricing;
   readonly budget?: Money;
 }
 
@@ -293,12 +295,18 @@ export class DurableRuntime {
     return structuredClone((this.#state.ledger ?? []).filter(e => e.jobId === jobId));
   }
 
+  inspectMeteredExpenses(context: CommandContext, jobId: JobId): readonly MeteredExpense[] {
+    this.#job(context, jobId);
+    return structuredClone((this.#state.meteredExpenses ?? []).filter(e => e.jobId === jobId));
+  }
+
   async executeModelJob(context: CommandContext, jobId: JobId, provider: ModelProvider, tools: ToolRegistry,
     options: ModelExecutionOptions): Promise<ExecutionResult> {
     this.#job(context, jobId);
     const policy: ModelPolicy = structuredClone({ provider: provider.name, model: options.model,
       maxInputTokens: options.maxInputTokens, maxOutputTokens: options.maxOutputTokens,
-      ...(options.pricing ? { pricing: options.pricing } : {}), ...(options.budget ? { budget: options.budget } : {}) });
+      ...(options.pricing ? { pricing: options.pricing } : {}), ...(options.budget ? { budget: options.budget } : {}),
+      ...(options.meteredPricing ? { meteredPricing: options.meteredPricing } : {}) });
     const existing = this.#state.modelAccounts?.find(a => a.jobId === jobId);
     if (existing && commandFingerprint(existing.policy) !== commandFingerprint(policy)) {
       throw new RuntimeError("COMMAND_CONFLICT", "Job model policy cannot change after admission");
@@ -317,20 +325,31 @@ export class DurableRuntime {
         try { validateModelPricing(policy.pricing); }
         catch { throw new RuntimeError("MODEL_CONFIGURATION_INVALID", "Model pricing configuration is invalid"); }
       }
+      if (policy.pricing && policy.meteredPricing) throw new RuntimeError("MODEL_CONFIGURATION_INVALID", "Choose one explicit accounting scale");
+      if (policy.meteredPricing) {
+        try { validateMeteredPricing(policy.meteredPricing); }
+        catch { throw new RuntimeError("MODEL_CONFIGURATION_INVALID", "Invalid nanodollar pricing"); }
+      }
       const reservation = policy.pricing && maximumModelCost(provider.name, request.model, request.maxInputTokens, request.maxOutputTokens, policy.pricing);
+      const meteredReservation = policy.meteredPricing && maximumMeteredCost(provider.name, request.model, request.maxInputTokens, request.maxOutputTokens, policy.meteredPricing);
       if (policy.budget && (typeof policy.budget.minorUnits !== "bigint" || policy.budget.minorUnits < 0n
-        || !reservation || reservation.currency !== policy.budget.currency)) {
+        || (policy.meteredPricing ? !meteredReservation || policy.budget.currency !== "USD" : !reservation || reservation.currency !== policy.budget.currency))) {
         throw new RuntimeError("MODEL_CONFIGURATION_INVALID", "Hard budget requires matching exact pricing and currency");
       }
       const account = this.#state.modelAccounts?.find(a => a.jobId === jobId)
         ?? { jobId, businessId: context.businessId, policy, invocations: [] };
       if (commandFingerprint(account.policy) !== commandFingerprint(policy)) throw new RuntimeError("COMMAND_CONFLICT", "Job model policy cannot change");
       if (account.invocations.some(c => c.status !== "settled")) throw new RuntimeError("MODEL_USAGE_UNKNOWN", "Unsettled model invocation requires inspection");
-      const totals = modelAccountTotals(account);
-      if (policy.budget && totals.spent + totals.reserved + reservation!.minorUnits > policy.budget.minorUnits) {
+      const committed = policy.meteredPricing
+        ? modelMeteredTotals(account).spentNanodollars + modelMeteredTotals(account).reservedNanodollars
+        : modelAccountTotals(account).spent + modelAccountTotals(account).reserved;
+      const required = policy.meteredPricing ? meteredReservation?.nanodollars : reservation?.minorUnits;
+      const limit = policy.budget && (policy.meteredPricing ? usdCentsToNanoUsd(policy.budget).nanodollars : policy.budget.minorUnits);
+      if (limit !== undefined && committed + required! > limit) {
         throw new RuntimeError("MODEL_BUDGET_DENIED", "Model request reservation exceeds the job budget");
       }
-      const call: ModelInvocation = { id: this.#ids.event(), status: "reserved", ...(reservation ? { reservation } : {}) };
+      const call: ModelInvocation = { id: this.#ids.event(), status: "reserved", ...(reservation ? { reservation } : {}),
+        ...(meteredReservation ? { meteredReservation } : {}) };
       await this.#saveModel({ ...account, invocations: [...account.invocations, call] });
       return call;
     });
@@ -344,6 +363,7 @@ export class DurableRuntime {
     const normalized = normalizeModelUsage(result?.usage);
     const usage = normalized?.provider === provider.name ? normalized : undefined;
     const cost = usage && policy.pricing ? priceModelUsage(usage, policy.pricing) : undefined;
+    const meteredCost = usage && policy.meteredPricing ? priceMeteredUsage(usage, policy.meteredPricing) : undefined;
     await this.#serialize(async () => {
       this.#job(context, jobId);
       const account = this.#state.modelAccounts!.find(a => a.jobId === jobId)!;
@@ -351,30 +371,41 @@ export class DurableRuntime {
         id: ids.ledgerEntry(this.#ids.event()), businessId: context.businessId, jobId, kind: "expense",
         amount: cost, description: "Model/API usage", occurredAt: this.#clock.now(),
       } : undefined;
+      const meteredEntry: MeteredExpense | undefined = meteredCost ? {
+        id: this.#ids.event(), businessId: context.businessId, jobId, invocationId: invocation.id,
+        kind: "expense", cost: meteredCost, description: "Model/API usage", occurredAt: this.#clock.now(),
+      } : undefined;
       const settled: ModelInvocation = { ...invocation,
-        status: usage && (!policy.pricing || cost) ? "settled" : "unknown",
+        status: usage && ((!policy.pricing && !policy.meteredPricing) || cost || meteredCost) ? "settled" : "unknown",
         ...(usage ? { usage } : {}), ...(cost ? { cost } : {}), ...(entry ? { ledgerEntryId: entry.id } : {}),
+        ...(meteredCost ? { meteredCost } : {}), ...(meteredEntry ? { meteredExpenseId: meteredEntry.id } : {}),
       };
       const facts: HQEvent[] = usage ? [this.#fact(context, "model.usage_recorded", { jobId, invocationId: invocation.id, ...usage })] : [];
       if (entry) facts.push(this.#fact(context, "ledger.entry_recorded", { entry }, facts[0]!.id));
-      await this.#saveModel({ ...account, invocations: account.invocations.map(c => c.id === invocation.id ? settled : c) }, entry, facts);
+      if (meteredEntry) {
+        const { businessId: _businessId, ...payload } = meteredEntry;
+        facts.push(this.#fact(context, "model.expense_recorded.v1", payload, facts[0]!.id));
+      }
+      await this.#saveModel({ ...account, invocations: account.invocations.map(c => c.id === invocation.id ? settled : c) }, entry, facts, meteredEntry);
     });
-    if (policy.budget && (!usage || !cost)) {
+    if (policy.budget && (!usage || (!cost && !meteredCost))) {
       if (result?.decision?.kind === "failure") return result;
       throw new RuntimeError("MODEL_USAGE_UNKNOWN", "Model usage or price is unknown; reservation retained");
     }
     if (policy.budget && (usage!.inputTokens > policy.maxInputTokens || usage!.outputTokens > policy.maxOutputTokens
-      || modelAccountTotals(this.#state.modelAccounts!.find(a => a.jobId === jobId)!).spent > policy.budget.minorUnits)) {
+      || (policy.meteredPricing ? modelMeteredTotals(this.#state.modelAccounts!.find(a => a.jobId === jobId)!).spentNanodollars > usdCentsToNanoUsd(policy.budget).nanodollars
+        : modelAccountTotals(this.#state.modelAccounts!.find(a => a.jobId === jobId)!).spent > policy.budget.minorUnits))) {
       throw new RuntimeError("MODEL_BUDGET_DENIED", "Provider exceeded the admitted request limits; actual cost recorded");
     }
     return result;
   }
 
-  async #saveModel(account: JobModelAccount, entry?: LedgerEntry, facts: readonly HQEvent[] = []): Promise<void> {
+  async #saveModel(account: JobModelAccount, entry?: LedgerEntry, facts: readonly HQEvent[] = [], meteredEntry?: MeteredExpense): Promise<void> {
     try {
       await this.#save({ ...this.#state,
         modelAccounts: [...(this.#state.modelAccounts ?? []).filter(a => a.jobId !== account.jobId), account],
         ledger: [...(this.#state.ledger ?? []), ...(entry ? [entry] : [])], facts: [...this.#state.facts, ...facts],
+        ...(meteredEntry ? { meteredExpenses: [...(this.#state.meteredExpenses ?? []), meteredEntry] } : {}),
       });
     } catch { throw new PersistenceBoundaryError(); }
   }

@@ -9,7 +9,10 @@
   ],
   "scripts": {
     "live:acceptance": "node scripts/live-acceptance.ts",
-    "live:openai": "node scripts/real-ai-ignition.ts",
+    "live:openai": "node scripts/real-ai-ignition.mts",
+    "business:001:preview": "node businesses/business-001/preview.ts",
+    "business:001:bootstrap": "node businesses/business-001/bootstrap.ts",
+    "test:business-001": "node --test businesses/business-001/test/*.test.ts",
     "test": "node --test packages/core/test/*.test.ts packages/events/test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
