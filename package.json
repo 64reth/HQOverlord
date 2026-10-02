@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "live:acceptance": "node scripts/live-acceptance.ts",
     "test": "node --test packages/core/test/*.test.ts packages/events/test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
