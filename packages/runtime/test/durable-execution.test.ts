@@ -88,7 +88,7 @@ test("queued job is durably running before its driver executes and completes wit
   assert.equal(s.calls(), 1);
   assert.equal(s.runtime.inspectJob(runContext, s.job.id).status, "completed");
   const facts = s.runtime.snapshot().facts.slice(2);
-  assert.deepEqual(facts.map(f => f.type), ["job.started", "job.completed"]);
+  assert.deepEqual(facts.map(f => f.type), ["job.started", "tool.dispatched.v1", "tool.completed.v1", "job.completed", "artifact.created.v1"]);
   for (const fact of facts) {
     assert.deepEqual(fact.actor, runContext.principal);
     assert.equal(fact.producer, "hq.runtime");
@@ -137,7 +137,7 @@ test("approved operation resumes captured input once and retains its observation
   const s = await setup("consequential");
   await s.runtime.executeJob(context("execute"), s.job.id, s.driver, s.tools);
   const approval = s.runtime.snapshot().approvals![0]!;
-  const approver = { ...context("approve"), principal: { kind: "system" as const, id: "trusted-approver" } };
+  const approver = { ...context("approve"), principal: { kind: "human" as const, id: "trusted-approver" } };
   await s.runtime.approveOperation(approver, approval.id);
   await s.runtime.approveOperation(approver, approval.id);
   assert.equal(s.calls(), 0);

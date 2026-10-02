@@ -58,6 +58,9 @@ export interface ProcessedCommand {
 }
 
 export interface DurableState {
+  readonly sources?: readonly import("./knowledge.ts").Source[];
+  readonly artifacts?: readonly import("./knowledge.ts").Artifact[];
+  readonly knowledge?: readonly import("./knowledge.ts").KnowledgeFact[];
   readonly version: typeof DURABLE_STATE_VERSION;
   readonly authority: AuthoritySnapshot;
   readonly facts: readonly HQEvent[];

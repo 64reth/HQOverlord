@@ -21,7 +21,7 @@ function isEncodedBigInt(value: unknown): value is EncodedBigInt {
   return (
     Object.keys(record).length === 1 &&
     typeof record[BIGINT_TAG] === "string" &&
-    /^(0|[1-9][0-9]*)$/.test(record[BIGINT_TAG])
+    /^(0|-?[1-9][0-9]*)$/.test(record[BIGINT_TAG])
   );
 }
 

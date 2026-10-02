@@ -36,8 +36,10 @@ export const manifest = {
   authority: {
     autonomous: ["analyse supplied/public information", "organise knowledge", "draft configuration", "test content", "draft outreach/delivery material"],
     humanApprovalRequired: ["customer/prospect contact", "external publication", "customer deployment", "customer-facing price change", "purchases", "external spend beyond an admitted model budget"],
-    externalToolsAvailable: false,
-    rule: "No external action is automated. Missing capabilities stop at explicit human approval/manual handoff. Any future executable external tool must be consequential and pass HQ's exact-operation approval gate.",
+    externalToolsAvailable: true,
+    publicReadTools: ["web.read"],
+    externalConsequentialToolsAvailable: false,
+    rule: "Public textual web reads are capability-gated. Contact, deployment and payment remain manual. Delivery preparation requires HQ's exact-operation human approval; it does not perform an external action.",
   },
   steps: [
     { id: "prospect", mode: "human-supplied-input", worker: "prospect-research", dependsOn: [] },

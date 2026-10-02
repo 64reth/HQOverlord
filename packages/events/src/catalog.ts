@@ -104,6 +104,12 @@ export interface LedgerEntryRecordedPayload {
  * add new facts rather than silently redefining historical ones.
  */
 export interface HQEventPayloadMap {
+  readonly "artifact.created.v1": { readonly artifactId: string; readonly jobId?: JobId; readonly category: string };
+  readonly "source.recorded.v1": { readonly sourceId: string; readonly jobId?: JobId };
+  readonly "knowledge.recorded.v1": { readonly knowledgeId: string };
+  readonly "agent.tools_configured.v1": { readonly agentId: AgentId; readonly toolIds: readonly ToolId[] };
+  readonly "tool.dispatched.v1": { readonly jobId: JobId; readonly agentId: AgentId; readonly operationId: OperationId; readonly toolId: ToolId };
+  readonly "tool.completed.v1": { readonly jobId: JobId; readonly operationId: OperationId; readonly toolId: ToolId };
   readonly "model.expense_recorded.v1": {
     readonly id: string;
     readonly jobId: JobId;

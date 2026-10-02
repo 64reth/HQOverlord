@@ -8,6 +8,8 @@
     "packages/*"
   ],
   "scripts": {
+    "control-centre": "node apps/control-centre/src/main.ts",
+    "build:web": "npm run build --workspace @hqoverlord/control-centre",
     "live:acceptance": "node scripts/live-acceptance.ts",
     "live:openai": "node scripts/real-ai-ignition.mts",
     "business:001:preview": "node businesses/business-001/preview.ts",

@@ -32,6 +32,12 @@ test("events retain business scope, correlation and immediate causation", () => 
 
 function describeFact(event: HQEvent): string {
   switch (event.type) {
+    case "artifact.created.v1": return event.payload.artifactId;
+    case "source.recorded.v1": return event.payload.sourceId;
+    case "knowledge.recorded.v1": return event.payload.knowledgeId;
+    case "agent.tools_configured.v1": return event.payload.agentId;
+    case "tool.dispatched.v1":
+    case "tool.completed.v1": return event.payload.operationId;
     case "business.created": return event.payload.business.name;
     case "agent.created": return event.payload.name;
     case "job.created": return event.payload.objective;

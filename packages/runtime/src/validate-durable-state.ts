@@ -7,6 +7,7 @@ import {
 } from "./runtime-error.ts";
 import { commandFingerprint } from "./command-fingerprint.ts";
 import { validateModelState } from "./validate-model-state.ts";
+import { validateKnowledge } from "./validate-knowledge.ts";
 
 export function validateDurableState(
   state: DurableState,
@@ -190,4 +191,5 @@ export function validateDurableState(
     if (execution.status === "waiting_for_approval" && (!operation?.approvalId || operation.dispatched)) invalid("Waiting execution has no undispatched approval");
   }
   validateModelState(state);
+  validateKnowledge(state);
 }

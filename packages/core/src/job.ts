@@ -9,4 +9,7 @@ export interface Job {
   readonly workflowId?: WorkflowId;
   readonly objective: string;
   readonly status: JobStatus;
+  /** Dependencies require a completed upstream job with a durable output artifact. */
+  readonly dependsOn?: readonly JobId[];
+  readonly inputArtifactIds?: readonly string[];
 }

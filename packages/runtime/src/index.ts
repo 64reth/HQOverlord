@@ -23,3 +23,5 @@ export * from "./model-driven-agent-driver.ts";
 export * from "./fake-model-provider.ts";
 export * from "./openai-model-provider.ts";
 export * from "./metered-cost.ts";
+export * from "./knowledge.ts";
+export * from "./web-read.ts";

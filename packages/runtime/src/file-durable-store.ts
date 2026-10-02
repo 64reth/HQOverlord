@@ -3,7 +3,7 @@ import {
   readFile,
   rename,
   rm,
-  writeFile,
+  open,
 } from "node:fs/promises";
 
 import { dirname } from "node:path";
@@ -57,16 +57,15 @@ export class FileDurableStore implements DurableStore {
     });
 
     try {
-      await writeFile(
-        temporaryPath,
-        encodeDurableState(state),
-        {
-          encoding: "utf8",
-          flag: "w",
-        },
-      );
+      const file = await open(temporaryPath, "w", 0o600);
+      try { await file.writeFile(encodeDurableState(state), "utf8"); await file.sync(); }
+      finally { await file.close(); }
 
       await rename(temporaryPath, this.#path);
+      try {
+        const directory = await open(dirname(this.#path), "r");
+        try { await directory.sync(); } finally { await directory.close(); }
+      } catch { /* Directory fsync is unsupported on Windows. */ }
     } catch (error: unknown) {
       await rm(temporaryPath, {
         force: true,

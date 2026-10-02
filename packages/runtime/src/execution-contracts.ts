@@ -48,6 +48,7 @@ export interface AgentObservation {
 }
 
 export interface AgentTurnContext {
+  readonly inputs?: readonly import("./knowledge.ts").Artifact[];
   readonly signal?: AbortSignal;
   readonly businessId: BusinessId;
   readonly job: Job;

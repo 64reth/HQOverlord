@@ -33,6 +33,8 @@ export interface CreateAgentCommand {
 }
 
 export interface CreateJobCommand {
+  readonly dependsOn?: readonly JobId[];
+  readonly inputArtifactIds?: readonly string[];
   readonly objective: string;
   readonly agentId?: AgentId;
   readonly workflowId?: WorkflowId;
@@ -140,6 +142,7 @@ export class CommandService {
     HQEvent<"job.created">
   > {
     this.#store.requireBusiness(context);
+    for (const upstream of command.dependsOn ?? []) this.#store.requireJob(context, upstream);
 
     const objective = command.objective.trim();
 
@@ -161,6 +164,8 @@ export class CommandService {
       businessId: context.businessId,
       objective,
       status: "queued",
+      ...(command.dependsOn ? { dependsOn: [...command.dependsOn] } : {}),
+      ...(command.inputArtifactIds ? { inputArtifactIds: [...command.inputArtifactIds] } : {}),
 
       ...(command.agentId !== undefined
         ? {

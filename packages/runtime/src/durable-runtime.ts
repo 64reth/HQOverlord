@@ -8,6 +8,7 @@ import type {
   Money,
 } from "@hqoverlord/core";
 import { ids } from "@hqoverlord/core";
+import type { Artifact, Source, KnowledgeFact, RecordProvenance } from "./knowledge.ts";
 import type { HQEventPayloadMap, HQEventType } from "@hqoverlord/events";
 import { ExecutionEngine } from "./execution-engine.ts";
 import type { AgentDriver, ExecutionResult, ToolCall } from "./execution-contracts.ts";
@@ -90,6 +91,126 @@ export class DurableRuntime {
   #state: DurableState;
   #transactionTail: Promise<void> = Promise.resolve();
   readonly #active = new Map<JobId, AbortController>();
+  readonly #listeners = new Set<() => void>();
+
+  subscribe(listener: () => void): () => void {
+    this.#listeners.add(listener);
+    return () => { this.#listeners.delete(listener); };
+  }
+
+  isJobActive(context: CommandContext, jobId: JobId): boolean {
+    this.#job(context, jobId);
+    return this.#active.has(jobId);
+  }
+
+  #provenance(context: CommandContext, jobId?: JobId): RecordProvenance {
+    new AuthorityStore(this.#state.authority).requireBusiness(context);
+    const job = jobId ? this.#job(context, jobId) : undefined;
+    return { businessId: context.businessId, createdAt: this.#clock.now(), correlationId: context.correlationId,
+      actor: { ...context.principal }, producer: "hq.runtime", ...(job ? { jobId: job.id, ...(job.agentId ? { agentId: job.agentId } : {}) } : {}) };
+  }
+
+  readArtifact(context: CommandContext, artifactId: string): Artifact {
+    new AuthorityStore(this.#state.authority).requireBusiness(context);
+    const artifact = this.#state.artifacts?.find(a => a.id === artifactId);
+    if (!artifact || artifact.businessId !== context.businessId) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Artifact unavailable in this business");
+    return structuredClone(artifact);
+  }
+
+  readKnowledge(context: CommandContext): readonly KnowledgeFact[] {
+    new AuthorityStore(this.#state.authority).requireBusiness(context);
+    return structuredClone((this.#state.knowledge ?? []).filter(k => k.businessId === context.businessId));
+  }
+
+  readSource(context: CommandContext, sourceId: string): Source {
+    new AuthorityStore(this.#state.authority).requireBusiness(context);
+    const source = this.#state.sources?.find(s => s.id === sourceId);
+    if (!source || source.businessId !== context.businessId) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Source unavailable in this business");
+    return structuredClone(source);
+  }
+
+  async recordSource(context: CommandContext, input: { id: string; uri: string; content: string; contentType: string; retrievedAt: string; jobId?: JobId }): Promise<Source> {
+    return this.#serialize(async () => {
+      const provenance = this.#provenance(context, input.jobId);
+      const existing = this.#state.sources?.find(s => s.id === input.id);
+      if (existing) {
+        this.readSource(context, input.id);
+        for (const key of ["uri", "content", "contentType", "retrievedAt", "jobId"] as const) if (existing[key] !== input[key]) throw new RuntimeError("COMMAND_CONFLICT", "Source is immutable");
+        return structuredClone(existing);
+      }
+      const source: Source = { ...input, ...provenance };
+      await this.#save({ ...this.#state, sources: [...(this.#state.sources ?? []), source], facts: [...this.#state.facts,
+        this.#fact(context, "source.recorded.v1", { sourceId: source.id, ...(source.jobId ? { jobId: source.jobId } : {}) })] });
+      return structuredClone(source);
+    });
+  }
+
+  async createArtifact(context: CommandContext, input: { id: string; jobId?: JobId; category: Artifact["category"]; contentType: string; content: unknown; sourceIds?: readonly string[]; references?: Artifact["references"] }): Promise<Artifact> {
+    return this.#serialize(async () => {
+      if (input.id.startsWith("job-output:")) throw new RuntimeError("INVALID_STATE", "Job outputs are created only by runtime completion");
+      const provenance = this.#provenance(context, input.jobId);
+      for (const id of input.sourceIds ?? []) this.readSource(context, id);
+      for (const ref of input.references ?? []) {
+        if (ref.businessId !== context.businessId) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Foreign artifact reference");
+        this.readArtifact(context, ref.artifactId);
+      }
+      const record = { ...input, sourceIds: [...(input.sourceIds ?? [])], references: [...(input.references ?? [])] };
+      const existing = this.#state.artifacts?.find(a => a.id === input.id);
+      if (existing) {
+        this.readArtifact(context, input.id);
+        const { businessId: _b, createdAt: _d, correlationId: _c, actor: _a, producer: _p, agentId: _g, ...saved } = existing;
+        if (commandFingerprint(saved) !== commandFingerprint(record)) throw new RuntimeError("COMMAND_CONFLICT", "Artifact is immutable");
+        return structuredClone(existing);
+      }
+      const artifact: Artifact = { ...record, ...provenance };
+      await this.#save({ ...this.#state, artifacts: [...(this.#state.artifacts ?? []), artifact], facts: [...this.#state.facts,
+        this.#fact(context, "artifact.created.v1", { artifactId: artifact.id, category: artifact.category, ...(artifact.jobId ? { jobId: artifact.jobId } : {}) })] });
+      return structuredClone(artifact);
+    });
+  }
+
+  async recordKnowledge(context: CommandContext, input: { id: string; statement: string; jobId?: JobId; references: KnowledgeFact["references"] }): Promise<KnowledgeFact> {
+    return this.#serialize(async () => {
+      const provenance = this.#provenance(context, input.jobId);
+      for (const ref of input.references) {
+        if (ref.businessId !== context.businessId) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Foreign knowledge reference");
+        this.readArtifact(context, ref.artifactId);
+      }
+      const existing = this.#state.knowledge?.find(k => k.id === input.id);
+      if (existing) {
+        if (existing.businessId !== context.businessId || existing.statement !== input.statement || existing.jobId !== input.jobId || commandFingerprint(existing.references) !== commandFingerprint(input.references)) throw new RuntimeError("COMMAND_CONFLICT", "Knowledge is immutable");
+        return structuredClone(existing);
+      }
+      const fact: KnowledgeFact = { ...input, ...provenance, verification: "unverified" };
+      await this.#save({ ...this.#state, knowledge: [...(this.#state.knowledge ?? []), fact], facts: [...this.#state.facts, this.#fact(context, "knowledge.recorded.v1", { knowledgeId: fact.id })] });
+      return structuredClone(fact);
+    });
+  }
+
+  async configureAgentTools(context: CommandContext, agentId: Agent["id"], toolIds: Agent["toolIds"]): Promise<Agent> {
+    return this.#serialize(async () => {
+      if (context.principal.kind !== "human") throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Only a human may configure permissions");
+      const agent = new AuthorityStore(this.#state.authority).requireAgent(context, agentId);
+      if (commandFingerprint(agent.toolIds) === commandFingerprint(toolIds)) return structuredClone(agent);
+      if (this.#state.authority.jobs.some(j => j.agentId === agentId && j.status === "running")) throw new RuntimeError("INVALID_STATE", "Cannot change permissions while agent runs");
+      const updated = { ...agent, toolIds: [...toolIds] };
+      await this.#save({ ...this.#state, authority: { ...this.#state.authority, agents: this.#state.authority.agents.map(a => a.id === agentId ? updated : a) },
+        facts: [...this.#state.facts, this.#fact(context, "agent.tools_configured.v1", { agentId, toolIds })] });
+      return structuredClone(updated);
+    });
+  }
+
+  jobInputs(context: CommandContext, jobId: JobId): readonly Artifact[] {
+    const job = this.#job(context, jobId);
+    const inputs = (job.inputArtifactIds ?? []).map(id => this.readArtifact(context, id));
+    for (const upstreamId of job.dependsOn ?? []) {
+      const upstream = this.#job(context, upstreamId);
+      const outputs = this.#state.artifacts?.filter(a => a.businessId === context.businessId && a.jobId === upstreamId && a.id === `job-output:${upstreamId}`) ?? [];
+      if (upstream.status !== "completed" || !outputs.length) throw new RuntimeError("INVALID_STATE", "Required upstream job/output is not completed");
+      inputs.push(...structuredClone(outputs));
+    }
+    return inputs;
+  }
 
   private constructor(
     durableStore: DurableStore,
@@ -190,9 +311,7 @@ export class DurableRuntime {
         ],
       };
 
-      await this.#durableStore.save(nextState);
-
-      this.#state = nextState;
+      await this.#save(nextState);
 
       return result;
     });
@@ -203,6 +322,8 @@ export class DurableRuntime {
     command: CreateJobCommand,
   ): Promise<JobResult> {
     return this.#serialize(async () => {
+      for (const upstream of command.dependsOn ?? []) this.#job(context, upstream);
+      for (const artifact of command.inputArtifactIds ?? []) this.readArtifact(context, artifact);
       const fingerprint = commandFingerprint({
         type: "createJob",
         command,
@@ -264,9 +385,7 @@ export class DurableRuntime {
         ],
       };
 
-      await this.#durableStore.save(nextState);
-
-      this.#state = nextState;
+      await this.#save(nextState);
 
       return result;
     });
@@ -436,6 +555,7 @@ export class DurableRuntime {
         if (!job.agentId) throw new RuntimeError("INVALID_STATE", "Job needs an assigned agent");
         store.requireAgent(context, job.agentId);
         if (job.status === "queued") {
+          this.jobInputs(context, jobId);
           const execution: DurableExecution = {
             jobId, businessId: context.businessId, agentId: job.agentId,
             turns: 0, observations: [], status: "running",
@@ -465,7 +585,8 @@ export class DurableRuntime {
       const job = structuredClone(this.#job(context, jobId));
       const agent = structuredClone(new AuthorityStore(this.#state.authority).requireAgent(context, checkpoint.agentId));
       const engine = new ExecutionEngine(tools, { maxTurns: checkpoint.maxTurns });
-      const result = await engine.execute(job, agent, driver, {
+      const inputs = this.jobInputs(context, jobId);
+      const result = await engine.execute(job, agent, { next: turn => driver.next({ ...turn, inputs: structuredClone(inputs) }) }, {
         signal: controller.signal,
         observations: structuredClone(checkpoint.observations),
         turns: checkpoint.turns,
@@ -503,7 +624,8 @@ export class DurableRuntime {
               return false;
             }
           }
-          await this.#save({ ...this.#state, executions: this.#replaceExecution({ ...current, turns, status: "running", operation: { ...operation, dispatched: true } }) });
+          await this.#save({ ...this.#state, executions: this.#replaceExecution({ ...current, turns, status: "running", operation: { ...operation, dispatched: true } }),
+            facts: [...this.#state.facts, this.#fact(context, "tool.dispatched.v1", { jobId, agentId: checkpoint.agentId, operationId: operation.id, toolId: call.toolId })] });
           return true;
         }),
         afterTool: (call, toolResult) => this.#serialize(async () => {
@@ -511,7 +633,7 @@ export class DurableRuntime {
           const { operation: _operation, ...settled } = current;
           await this.#save({ ...this.#state, executions: this.#replaceExecution({
             ...settled, observations: [...current.observations, { toolId: call.toolId, result: structuredClone(toolResult) }],
-          }) });
+          }), facts: [...this.#state.facts, this.#fact(context, "tool.completed.v1", { jobId, operationId: current.operation!.id, toolId: call.toolId })] });
         }),
       });
       return await this.#serialize(async () => {
@@ -525,11 +647,17 @@ export class DurableRuntime {
           : status === "cancelled"
             ? this.#fact(context, "job.cancelled", { jobId })
             : this.#fact(context, "job.failed", { jobId, error: result.error ?? { code: "EXECUTION_FAILED", message: "Execution failed" } });
+        const artifact: Artifact | undefined = status === "completed" ? {
+          ...this.#provenance(context, jobId), id: `job-output:${jobId}`, category: typeof result.output === "string" ? "text" : "structured",
+          contentType: typeof result.output === "string" ? "text/plain" : "application/json", content: structuredClone(result.output ?? null),
+          sourceIds: [], references: [...this.jobInputs(context, jobId), ...(this.#state.artifacts ?? []).filter(a => a.jobId === jobId && a.businessId === context.businessId)].map(a => ({ businessId: context.businessId, artifactId: a.id })),
+        } : undefined;
         await this.#save({
           ...this.#state,
+          ...(artifact ? { artifacts: [...(this.#state.artifacts ?? []), artifact] } : {}),
           authority: { ...this.#state.authority, jobs: this.#state.authority.jobs.map(j => j.id === jobId ? { ...j, status } : j) },
           executions: this.#replaceExecution({ ...current, status, outcome: structuredClone(result) }),
-          facts: [...this.#state.facts, event],
+          facts: [...this.#state.facts, event, ...(artifact ? [this.#fact(context, "artifact.created.v1", { artifactId: artifact.id, jobId, category: artifact.category }, event.id)] : [])],
         });
         return result;
       });
@@ -548,6 +676,7 @@ export class DurableRuntime {
 
   async #decideApproval(context: CommandContext, approvalId: ApprovalId, status: "approved" | "rejected", reason: string): Promise<Approval> {
     return this.#serialize(async () => {
+      if (context.principal.kind !== "human") throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Approval requires a trusted human principal");
       const approval = this.#approval(context, approvalId);
       const fingerprint = commandFingerprint({ type: status, approvalId, reason });
       const existing = this.#findProcessedCommand(context, fingerprint);
@@ -623,6 +752,7 @@ export class DurableRuntime {
     validateDurableState(detached);
     await this.#durableStore.save(detached);
     this.#state = detached;
+    for (const listener of this.#listeners) { try { listener(); } catch { /* Observer failure cannot undo committed authority. */ } }
   }
 
   async #commitExecution(context: CommandContext, fingerprint: string, existing: ProcessedCommand | undefined, job: Job, execution: DurableExecution | undefined, facts: readonly HQEvent[], approvals = this.#state.approvals ?? []): Promise<void> {
