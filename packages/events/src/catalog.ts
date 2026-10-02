@@ -28,25 +28,19 @@ export interface BusinessCreatedPayload {
 }
 
 export interface AgentCreatedPayload {
-  readonly agent: {
-    readonly id: AgentId;
-    readonly businessId: BusinessId;
-    readonly name: string;
-    readonly status: "idle" | "running" | "paused" | "retired";
-    readonly capabilities: readonly string[];
-    readonly toolIds: readonly ToolId[];
-  };
+  readonly agentId: AgentId;
+  readonly name: string;
+  readonly status: "idle" | "running" | "paused" | "retired";
+  readonly capabilities: readonly string[];
+  readonly toolIds: readonly ToolId[];
 }
 
 export interface JobCreatedPayload {
-  readonly job: {
-    readonly id: JobId;
-    readonly businessId: BusinessId;
-    readonly agentId?: AgentId;
-    readonly workflowId?: WorkflowId;
-    readonly objective: string;
-    readonly status: "queued";
-  };
+  readonly jobId: JobId;
+  readonly agentId?: AgentId;
+  readonly workflowId?: WorkflowId;
+  readonly objective: string;
+  readonly status: "queued";
 }
 
 export interface JobStartedPayload {

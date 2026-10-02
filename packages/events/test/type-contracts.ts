@@ -12,6 +12,7 @@ export function checkEventContracts(event: HQEvent): void {
   const envelope = {
     id: eventId("event-1"), occurredAt: "2026-10-02T12:00:00.000Z", businessId: ids.business("business-1"),
     correlationId: correlationId("chain-1"), causationId: null,
+    actor: { kind: "system" as const, id: "test-system" }, producer: "hq.runtime",
   };
   // @ts-expect-error Event type and payload cannot be independently selected.
   const mismatched: HQEvent = { ...envelope, type: "job.completed", payload: { agent: {} } };
@@ -24,6 +25,6 @@ export function checkEventContracts(event: HQEvent): void {
   // @ts-expect-error Correlation IDs are distinct from event IDs.
   const wrongCorrelation: HQEvent = { ...envelope, correlationId: eventId("event-2"), type: "job.completed", payload: { jobId: ids.job("job-1") } };
   // @ts-expect-error An already completed job cannot be announced as a queued job creation.
-  const wrongInitialState: HQEvent<"job.created"> = { ...envelope, type: "job.created", payload: { job: { id: ids.job("j"), businessId: envelope.businessId, objective: "Work", status: "completed" } } };
+  const wrongInitialState: HQEvent<"job.created"> = { ...envelope, type: "job.created", payload: { jobId: ids.job("j"), objective: "Work", status: "completed" } };
   void [mismatched, omittedCorrelation, missingCorrelation, omittedCausation, missingCausation, wrongCorrelation, wrongInitialState];
 }
