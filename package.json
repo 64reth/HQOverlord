@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "live:acceptance": "node scripts/live-acceptance.ts",
+    "live:openai": "node scripts/real-ai-ignition.ts",
     "test": "node --test packages/core/test/*.test.ts packages/events/test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

@@ -1,5 +1,6 @@
 import type { ToolId } from "@hqoverlord/core";
 import type { AgentAction } from "./execution-contracts.ts";
+import type { AgentObservation } from "./execution-contracts.ts";
 
 export interface ModelUsage {
   readonly provider: string;
@@ -18,6 +19,11 @@ export interface ModelToolDefinition {
 }
 
 export interface ModelRequest {
+  /** Host-scoped conversation identity and completed observations; no provider identifiers. */
+  readonly context?: {
+    readonly conversationId: string;
+    readonly observations: readonly AgentObservation[];
+  };
   readonly model: string;
   readonly instructions: string;
   readonly input: string;
