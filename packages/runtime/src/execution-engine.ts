@@ -17,6 +17,7 @@ import type {
 
 import {
   RuntimeError,
+  PersistenceBoundaryError,
 } from "./runtime-error.ts";
 
 import {
@@ -157,7 +158,7 @@ export class ExecutionEngine {
         },
       };
     } catch (error) {
-      if (boundaryFailed) throw error;
+      if (boundaryFailed || error instanceof PersistenceBoundaryError) throw error;
       if (controls.signal?.aborted) return { status: "cancelled" };
       return {
         status: "failed",

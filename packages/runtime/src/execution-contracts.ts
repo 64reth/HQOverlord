@@ -18,6 +18,7 @@ export interface ToolResult {
 }
 
 export interface ExecutableTool {
+  readonly inputSchema?: Readonly<Record<string, unknown>>;
   readonly definition: Tool;
 
   execute(

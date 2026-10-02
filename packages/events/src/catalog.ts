@@ -115,6 +115,16 @@ export interface HQEventPayloadMap {
   readonly "approval.granted": ApprovalGrantedPayload;
   readonly "approval.rejected": ApprovalRejectedPayload;
   readonly "ledger.entry_recorded": LedgerEntryRecordedPayload;
+  readonly "model.usage_recorded": {
+    readonly jobId: JobId;
+    readonly invocationId: string;
+    readonly provider: string;
+    readonly model: string;
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly cachedInputTokens?: number;
+    readonly requestId?: string;
+  };
 }
 
 export type HQEventType = keyof HQEventPayloadMap;

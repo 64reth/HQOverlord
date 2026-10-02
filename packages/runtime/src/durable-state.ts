@@ -1,6 +1,8 @@
 import type { HQEvent } from "@hqoverlord/events";
 import type { Approval, AgentId, BusinessId, JobId, OperationId } from "@hqoverlord/core";
 import type { AgentObservation, ExecutionResult, ToolCall } from "./execution-contracts.ts";
+import type { LedgerEntry } from "@hqoverlord/core";
+import type { JobModelAccount } from "./model-state.ts";
 
 export interface DurableExecution {
   readonly jobId: JobId;
@@ -61,6 +63,8 @@ export interface DurableState {
   readonly processedCommands: readonly ProcessedCommand[];
   readonly approvals?: readonly DurableApproval[];
   readonly executions?: readonly DurableExecution[];
+  readonly modelAccounts?: readonly JobModelAccount[];
+  readonly ledger?: readonly LedgerEntry[];
 }
 
 export function emptyDurableState(): DurableState {

@@ -4,6 +4,8 @@ import type {
   JobId,
   Approval,
   ApprovalId,
+  LedgerEntry,
+  Money,
 } from "@hqoverlord/core";
 import { ids } from "@hqoverlord/core";
 import type { HQEventPayloadMap, HQEventType } from "@hqoverlord/events";
@@ -11,6 +13,10 @@ import { ExecutionEngine } from "./execution-engine.ts";
 import type { AgentDriver, ExecutionResult, ToolCall } from "./execution-contracts.ts";
 import type { DurableExecution, DurableApproval } from "./durable-state.ts";
 import { ToolRegistry } from "./tool-registry.ts";
+import { ModelDrivenAgentDriver, type ModelDriverOptions } from "./model-driven-agent-driver.ts";
+import { normalizeModelUsage, type ModelProvider, type ModelRequest, type ModelResult } from "./model-provider.ts";
+import { maximumModelCost, priceModelUsage, validateModelPricing, type ModelPricing } from "./model-pricing.ts";
+import { modelAccountTotals, type JobModelAccount, type ModelInvocation, type ModelPolicy } from "./model-state.ts";
 
 import type {
   HQEvent,
@@ -51,6 +57,7 @@ import type {
 
 import {
   RuntimeError,
+  PersistenceBoundaryError,
 } from "./runtime-error.ts";
 
 import {
@@ -66,6 +73,12 @@ type JobResult = CommandResult<
   Job,
   HQEvent<"job.created">
 >;
+
+export interface ModelExecutionOptions extends ModelDriverOptions {
+  readonly maxTurns?: number;
+  readonly pricing?: ModelPricing;
+  readonly budget?: Money;
+}
 
 export class DurableRuntime {
   readonly #durableStore: DurableStore;
@@ -268,6 +281,102 @@ export class DurableRuntime {
 
   inspectApproval(context: CommandContext, approvalId: ApprovalId): DurableApproval {
     return structuredClone(this.#approval(context, approvalId));
+  }
+
+  inspectModelAccount(context: CommandContext, jobId: JobId): JobModelAccount | undefined {
+    this.#job(context, jobId);
+    return structuredClone(this.#state.modelAccounts?.find(a => a.jobId === jobId));
+  }
+
+  inspectLedger(context: CommandContext, jobId: JobId): readonly LedgerEntry[] {
+    this.#job(context, jobId);
+    return structuredClone((this.#state.ledger ?? []).filter(e => e.jobId === jobId));
+  }
+
+  async executeModelJob(context: CommandContext, jobId: JobId, provider: ModelProvider, tools: ToolRegistry,
+    options: ModelExecutionOptions): Promise<ExecutionResult> {
+    this.#job(context, jobId);
+    const policy: ModelPolicy = structuredClone({ provider: provider.name, model: options.model,
+      maxInputTokens: options.maxInputTokens, maxOutputTokens: options.maxOutputTokens,
+      ...(options.pricing ? { pricing: options.pricing } : {}), ...(options.budget ? { budget: options.budget } : {}) });
+    const existing = this.#state.modelAccounts?.find(a => a.jobId === jobId);
+    if (existing && commandFingerprint(existing.policy) !== commandFingerprint(policy)) {
+      throw new RuntimeError("COMMAND_CONFLICT", "Job model policy cannot change after admission");
+    }
+    const driver = new ModelDrivenAgentDriver(provider, tools, options,
+      (request, signal) => this.#invokeModel(context, jobId, provider, policy, request, signal));
+    return this.executeJob(context, jobId, driver, tools, options.maxTurns === undefined ? {} : { maxTurns: options.maxTurns });
+  }
+
+  async #invokeModel(context: CommandContext, jobId: JobId, provider: ModelProvider, policy: ModelPolicy,
+    request: ModelRequest, signal?: AbortSignal): Promise<ModelResult> {
+    const invocation = await this.#serialize(async () => {
+      const job = this.#job(context, jobId);
+      if (job.status !== "running" || signal?.aborted) throw new RuntimeError("INVALID_STATE", "Job is no longer running");
+      if (policy.pricing) {
+        try { validateModelPricing(policy.pricing); }
+        catch { throw new RuntimeError("MODEL_CONFIGURATION_INVALID", "Model pricing configuration is invalid"); }
+      }
+      const reservation = policy.pricing && maximumModelCost(provider.name, request.model, request.maxInputTokens, request.maxOutputTokens, policy.pricing);
+      if (policy.budget && (typeof policy.budget.minorUnits !== "bigint" || policy.budget.minorUnits < 0n
+        || !reservation || reservation.currency !== policy.budget.currency)) {
+        throw new RuntimeError("MODEL_CONFIGURATION_INVALID", "Hard budget requires matching exact pricing and currency");
+      }
+      const account = this.#state.modelAccounts?.find(a => a.jobId === jobId)
+        ?? { jobId, businessId: context.businessId, policy, invocations: [] };
+      if (commandFingerprint(account.policy) !== commandFingerprint(policy)) throw new RuntimeError("COMMAND_CONFLICT", "Job model policy cannot change");
+      if (account.invocations.some(c => c.status !== "settled")) throw new RuntimeError("MODEL_USAGE_UNKNOWN", "Unsettled model invocation requires inspection");
+      const totals = modelAccountTotals(account);
+      if (policy.budget && totals.spent + totals.reserved + reservation!.minorUnits > policy.budget.minorUnits) {
+        throw new RuntimeError("MODEL_BUDGET_DENIED", "Model request reservation exceeds the job budget");
+      }
+      const call: ModelInvocation = { id: this.#ids.event(), status: "reserved", ...(reservation ? { reservation } : {}) };
+      await this.#saveModel({ ...account, invocations: [...account.invocations, call] });
+      return call;
+    });
+    if (signal?.aborted) {
+      // A saved reservation is conservative even when cancellation prevents dispatch.
+      throw new RuntimeError("INVALID_STATE", "Job was cancelled before model dispatch");
+    }
+    let result: ModelResult;
+    try { result = await provider.invoke(structuredClone(request), signal); }
+    catch { result = { decision: { kind: "failure", code: "PROVIDER_FAILED" } }; }
+    const normalized = normalizeModelUsage(result?.usage);
+    const usage = normalized?.provider === provider.name ? normalized : undefined;
+    const cost = usage && policy.pricing ? priceModelUsage(usage, policy.pricing) : undefined;
+    await this.#serialize(async () => {
+      this.#job(context, jobId);
+      const account = this.#state.modelAccounts!.find(a => a.jobId === jobId)!;
+      const entry: LedgerEntry | undefined = cost ? {
+        id: ids.ledgerEntry(this.#ids.event()), businessId: context.businessId, jobId, kind: "expense",
+        amount: cost, description: "Model/API usage", occurredAt: this.#clock.now(),
+      } : undefined;
+      const settled: ModelInvocation = { ...invocation,
+        status: usage && (!policy.pricing || cost) ? "settled" : "unknown",
+        ...(usage ? { usage } : {}), ...(cost ? { cost } : {}), ...(entry ? { ledgerEntryId: entry.id } : {}),
+      };
+      const facts: HQEvent[] = usage ? [this.#fact(context, "model.usage_recorded", { jobId, invocationId: invocation.id, ...usage })] : [];
+      if (entry) facts.push(this.#fact(context, "ledger.entry_recorded", { entry }, facts[0]!.id));
+      await this.#saveModel({ ...account, invocations: account.invocations.map(c => c.id === invocation.id ? settled : c) }, entry, facts);
+    });
+    if (policy.budget && (!usage || !cost)) {
+      if (result?.decision?.kind === "failure") return result;
+      throw new RuntimeError("MODEL_USAGE_UNKNOWN", "Model usage or price is unknown; reservation retained");
+    }
+    if (policy.budget && (usage!.inputTokens > policy.maxInputTokens || usage!.outputTokens > policy.maxOutputTokens
+      || modelAccountTotals(this.#state.modelAccounts!.find(a => a.jobId === jobId)!).spent > policy.budget.minorUnits)) {
+      throw new RuntimeError("MODEL_BUDGET_DENIED", "Provider exceeded the admitted request limits; actual cost recorded");
+    }
+    return result;
+  }
+
+  async #saveModel(account: JobModelAccount, entry?: LedgerEntry, facts: readonly HQEvent[] = []): Promise<void> {
+    try {
+      await this.#save({ ...this.#state,
+        modelAccounts: [...(this.#state.modelAccounts ?? []).filter(a => a.jobId !== account.jobId), account],
+        ledger: [...(this.#state.ledger ?? []), ...(entry ? [entry] : [])], facts: [...this.#state.facts, ...facts],
+      });
+    } catch { throw new PersistenceBoundaryError(); }
   }
 
   async executeJob(

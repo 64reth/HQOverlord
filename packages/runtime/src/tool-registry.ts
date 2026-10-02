@@ -28,6 +28,10 @@ export class ToolRegistry {
     );
   }
 
+  find(toolId: ToolId): ExecutableTool | undefined {
+    return this.#tools.get(toolId);
+  }
+
   require(toolId: ToolId): ExecutableTool {
     const tool = this.#tools.get(toolId);
 

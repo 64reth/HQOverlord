@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 function canonicalize(value: unknown): unknown {
+  if (typeof value === "bigint") return { "$hq.bigint": value.toString(10) };
   if (Array.isArray(value)) {
     return value.map(canonicalize);
   }
