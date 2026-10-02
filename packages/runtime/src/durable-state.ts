@@ -1,4 +1,28 @@
 import type { HQEvent } from "@hqoverlord/events";
+import type { Approval, AgentId, BusinessId, JobId, OperationId } from "@hqoverlord/core";
+import type { AgentObservation, ExecutionResult, ToolCall } from "./execution-contracts.ts";
+
+export interface DurableExecution {
+  readonly jobId: JobId;
+  readonly businessId: BusinessId;
+  readonly agentId: AgentId;
+  readonly turns: number;
+  readonly maxTurns: number;
+  readonly observations: readonly AgentObservation[];
+  readonly status: "running" | "waiting_for_approval" | "completed" | "failed" | "cancelled";
+  readonly outcome?: ExecutionResult;
+  readonly operation?: {
+    readonly id: OperationId;
+    readonly call: ToolCall;
+    readonly dispatched: boolean;
+    readonly approvalId?: Approval["id"];
+  };
+}
+
+export interface DurableApproval extends Approval {
+  /** Immutable input captured before consent; retained after the operation settles. */
+  readonly toolCall: ToolCall;
+}
 
 import type {
   AuthoritySnapshot,
@@ -35,6 +59,8 @@ export interface DurableState {
   readonly authority: AuthoritySnapshot;
   readonly facts: readonly HQEvent[];
   readonly processedCommands: readonly ProcessedCommand[];
+  readonly approvals?: readonly DurableApproval[];
+  readonly executions?: readonly DurableExecution[];
 }
 
 export function emptyDurableState(): DurableState {

@@ -1,7 +1,16 @@
 import type {
   Agent,
   Job,
+  JobId,
+  Approval,
+  ApprovalId,
 } from "@hqoverlord/core";
+import { ids } from "@hqoverlord/core";
+import type { HQEventPayloadMap, HQEventType } from "@hqoverlord/events";
+import { ExecutionEngine } from "./execution-engine.ts";
+import type { AgentDriver, ExecutionResult, ToolCall } from "./execution-contracts.ts";
+import type { DurableExecution, DurableApproval } from "./durable-state.ts";
+import { ToolRegistry } from "./tool-registry.ts";
 
 import type {
   HQEvent,
@@ -65,6 +74,7 @@ export class DurableRuntime {
 
   #state: DurableState;
   #transactionTail: Promise<void> = Promise.resolve();
+  readonly #active = new Map<JobId, AbortController>();
 
   private constructor(
     durableStore: DurableStore,
@@ -91,12 +101,12 @@ export class DurableRuntime {
       durableStore,
       clock,
       ids,
-      state,
+      structuredClone(state),
     );
   }
 
   snapshot(): DurableState {
-    return this.#state;
+    return structuredClone(this.#state);
   }
 
   async createAgent(
@@ -152,6 +162,7 @@ export class DurableRuntime {
       };
 
       const nextState: DurableState = {
+        ...this.#state,
         version: this.#state.version,
         authority: workingStore.snapshot(),
         facts: [
@@ -225,6 +236,7 @@ export class DurableRuntime {
       };
 
       const nextState: DurableState = {
+        ...this.#state,
         version: this.#state.version,
         authority: workingStore.snapshot(),
         facts: [
@@ -242,6 +254,247 @@ export class DurableRuntime {
       this.#state = nextState;
 
       return result;
+    });
+  }
+
+  inspectJob(context: CommandContext, jobId: JobId): Job {
+    return structuredClone(this.#job(context, jobId));
+  }
+
+  inspectExecution(context: CommandContext, jobId: JobId): DurableExecution | undefined {
+    this.#job(context, jobId);
+    return structuredClone(this.#execution(jobId));
+  }
+
+  inspectApproval(context: CommandContext, approvalId: ApprovalId): DurableApproval {
+    return structuredClone(this.#approval(context, approvalId));
+  }
+
+  async executeJob(
+    context: CommandContext,
+    jobId: JobId,
+    driver: AgentDriver,
+    tools: ToolRegistry,
+    options: { readonly maxTurns?: number } = {},
+  ): Promise<ExecutionResult> {
+    // Reserve in-process ownership before the first awaited durable transition.
+    this.#job(context, jobId);
+    if (this.#active.has(jobId)) throw new RuntimeError("INVALID_STATE", "Job execution is already active");
+    const controller = new AbortController();
+    this.#active.set(jobId, controller);
+    try {
+      // Validate the requested limit before publishing job.started.
+      new ExecutionEngine(tools, options);
+      const checkpoint = await this.#serialize(async () => {
+        const job = this.#job(context, jobId);
+        const fingerprint = commandFingerprint({ type: "executeJob", jobId, options });
+        const existing = this.#findProcessedCommand(context, fingerprint);
+        const current = this.#execution(jobId);
+        if (current?.outcome && job.status !== "running") return current;
+        if (job.status === "cancelled") return current;
+        const store = new AuthorityStore(this.#state.authority);
+        if (!job.agentId) throw new RuntimeError("INVALID_STATE", "Job needs an assigned agent");
+        store.requireAgent(context, job.agentId);
+        if (job.status === "queued") {
+          const execution: DurableExecution = {
+            jobId, businessId: context.businessId, agentId: job.agentId,
+            turns: 0, observations: [], status: "running",
+            maxTurns: options.maxTurns ?? 20,
+          };
+          const event = this.#fact(context, "job.started", { jobId, agentId: job.agentId });
+          await this.#commitExecution(context, fingerprint, existing, { ...job, status: "running" }, execution, [event]);
+          return execution;
+        }
+        if (!current || current.status !== "waiting_for_approval" || !current.operation || current.operation.dispatched) {
+          throw new RuntimeError("INVALID_STATE", "Execution cannot be replayed safely; inspect the interrupted job");
+        }
+        const approval = current.operation.approvalId && this.#approval(context, current.operation.approvalId);
+        if (!approval || approval.status !== "approved") return current;
+        // The approved call is replayed from its durable input, never from the driver.
+        await this.#commitExecution(context, fingerprint, existing, job, current, []);
+        return current;
+      });
+      if (!checkpoint) return { status: "cancelled" };
+      if (checkpoint.outcome) return structuredClone(checkpoint.outcome);
+      if (checkpoint.status === "waiting_for_approval") {
+        const approvalId = checkpoint.operation?.approvalId;
+        if (!approvalId || this.#approval(context, approvalId).status !== "approved") {
+          return { status: "waiting_for_approval" };
+        }
+      }
+      const job = structuredClone(this.#job(context, jobId));
+      const agent = structuredClone(new AuthorityStore(this.#state.authority).requireAgent(context, checkpoint.agentId));
+      const engine = new ExecutionEngine(tools, { maxTurns: checkpoint.maxTurns });
+      const result = await engine.execute(job, agent, driver, {
+        signal: controller.signal,
+        observations: structuredClone(checkpoint.observations),
+        turns: checkpoint.turns,
+        ...(checkpoint.operation ? { pendingTool: structuredClone(checkpoint.operation.call) } : {}),
+        beforeTool: (call, turns) => this.#serialize(async () => {
+          const liveJob = this.#job(context, jobId);
+          if (liveJob.status === "cancelled") { controller.abort(); return false; }
+          const liveAgent = new AuthorityStore(this.#state.authority).requireAgent(context, checkpoint.agentId);
+          if (!liveAgent.toolIds.includes(call.toolId)) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Tool permission was revoked");
+          const current = this.#execution(jobId)!;
+          const tool = tools.require(call.toolId);
+          const savedOperation = current.operation;
+          if (savedOperation?.dispatched) throw new RuntimeError("INVALID_STATE", "Operation was already dispatched");
+          const operation = savedOperation ?? {
+            id: ids.operation(this.#ids.event()), call: structuredClone(call), dispatched: false,
+          };
+          if (tool.definition.effect === "consequential") {
+            const approval = operation.approvalId && this.#approval(context, operation.approvalId);
+            if (!approval || approval.status !== "approved") {
+              if (approval) return false;
+              const requested: DurableApproval & { readonly status: "pending" } = {
+                id: ids.approval(this.#ids.event()), businessId: context.businessId,
+                operationId: operation.id, jobId, reason: `Execute consequential tool ${call.toolId}`, status: "pending",
+                toolCall: structuredClone(operation.call),
+              };
+              await this.#save({
+                ...this.#state,
+                approvals: [...(this.#state.approvals ?? []), requested],
+                executions: this.#replaceExecution({ ...current, turns, status: "waiting_for_approval", operation: { ...operation, approvalId: requested.id } }),
+                facts: [...this.#state.facts, this.#fact(context, "approval.requested", { approval: {
+                  id: requested.id, businessId: requested.businessId, operationId: requested.operationId,
+                  jobId, reason: requested.reason, status: "pending",
+                } })],
+              });
+              return false;
+            }
+          }
+          await this.#save({ ...this.#state, executions: this.#replaceExecution({ ...current, turns, status: "running", operation: { ...operation, dispatched: true } }) });
+          return true;
+        }),
+        afterTool: (call, toolResult) => this.#serialize(async () => {
+          const current = this.#execution(jobId)!;
+          const { operation: _operation, ...settled } = current;
+          await this.#save({ ...this.#state, executions: this.#replaceExecution({
+            ...settled, observations: [...current.observations, { toolId: call.toolId, result: structuredClone(toolResult) }],
+          }) });
+        }),
+      });
+      return await this.#serialize(async () => {
+        const liveJob = this.#job(context, jobId);
+        if (liveJob.status === "cancelled") return { status: "cancelled" };
+        if (result.status === "waiting_for_approval") return result;
+        const current = this.#execution(jobId)!;
+        const status = result.status;
+        const event = status === "completed"
+          ? this.#fact(context, "job.completed", { jobId })
+          : status === "cancelled"
+            ? this.#fact(context, "job.cancelled", { jobId })
+            : this.#fact(context, "job.failed", { jobId, error: result.error ?? { code: "EXECUTION_FAILED", message: "Execution failed" } });
+        await this.#save({
+          ...this.#state,
+          authority: { ...this.#state.authority, jobs: this.#state.authority.jobs.map(j => j.id === jobId ? { ...j, status } : j) },
+          executions: this.#replaceExecution({ ...current, status, outcome: structuredClone(result) }),
+          facts: [...this.#state.facts, event],
+        });
+        return result;
+      });
+    } finally {
+      this.#active.delete(jobId);
+    }
+  }
+
+  async approveOperation(context: CommandContext, approvalId: ApprovalId): Promise<Approval> {
+    return this.#decideApproval(context, approvalId, "approved", "");
+  }
+
+  async rejectOperation(context: CommandContext, approvalId: ApprovalId, reason: string): Promise<Approval> {
+    return this.#decideApproval(context, approvalId, "rejected", reason);
+  }
+
+  async #decideApproval(context: CommandContext, approvalId: ApprovalId, status: "approved" | "rejected", reason: string): Promise<Approval> {
+    return this.#serialize(async () => {
+      const approval = this.#approval(context, approvalId);
+      const fingerprint = commandFingerprint({ type: status, approvalId, reason });
+      const existing = this.#findProcessedCommand(context, fingerprint);
+      if (existing) return structuredClone(approval);
+      if (approval.status !== "pending" || !approval.jobId) throw new RuntimeError("INVALID_STATE", "Approval is no longer pending");
+      const job = this.#job(context, approval.jobId);
+      const execution = this.#execution(job.id);
+      if (job.status !== "running" || execution?.operation?.id !== approval.operationId || execution.operation.dispatched) {
+        throw new RuntimeError("INVALID_STATE", "Approval is not bound to an awaiting operation");
+      }
+      const next = { ...approval, status };
+      const decision = status === "approved"
+        ? this.#fact(context, "approval.granted", { approvalId, operationId: approval.operationId })
+        : this.#fact(context, "approval.rejected", { approvalId, operationId: approval.operationId, reason });
+      const facts: HQEvent[] = [decision];
+      const outcome: ExecutionResult = { status: "failed", error: { code: "APPROVAL_REJECTED", message: reason || "Operation rejected" } };
+      if (status === "rejected") facts.push(this.#fact(context, "job.failed", { jobId: job.id, error: outcome.error! }, decision.id));
+      await this.#commitExecution(context, fingerprint, existing,
+        status === "rejected" ? { ...job, status: "failed" } : job,
+        status === "rejected" ? { ...execution, status: "failed", outcome } : execution,
+        facts, (this.#state.approvals ?? []).map(a => a.id === approvalId ? next : a));
+      return structuredClone(next);
+    });
+  }
+
+  async cancelJob(context: CommandContext, jobId: JobId): Promise<Job> {
+    return this.#serialize(async () => {
+      const job = this.#job(context, jobId);
+      const fingerprint = commandFingerprint({ type: "cancelJob", jobId });
+      const existing = this.#findProcessedCommand(context, fingerprint);
+      if (existing || job.status === "cancelled") return structuredClone(job);
+      if (job.status !== "queued" && job.status !== "running") throw new RuntimeError("INVALID_STATE", "Terminal job cannot be cancelled");
+      const execution = this.#execution(jobId);
+      const cancelled: Job = { ...job, status: "cancelled" };
+      await this.#commitExecution(context, fingerprint, existing, cancelled,
+        execution ? { ...execution, status: "cancelled", outcome: { status: "cancelled" } } : undefined,
+        [this.#fact(context, "job.cancelled", { jobId })],
+        (this.#state.approvals ?? []).map(a => a.jobId === jobId && a.status === "pending" ? { ...a, status: "cancelled" } : a));
+      this.#active.get(jobId)?.abort();
+      return structuredClone(cancelled);
+    });
+  }
+
+  #job(context: CommandContext, jobId: JobId): Job {
+    return new AuthorityStore(this.#state.authority).requireJob(context, jobId);
+  }
+
+  #approval(context: CommandContext, approvalId: ApprovalId): DurableApproval {
+    const approval = this.#state.approvals?.find(a => a.id === approvalId);
+    if (!approval) throw new RuntimeError("INVALID_STATE", "Approval does not exist");
+    if (approval.businessId !== context.businessId) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Approval belongs to another business");
+    if (!approval.jobId) throw new RuntimeError("INVALID_STATE", "Approval has no job");
+    this.#job(context, approval.jobId);
+    return approval;
+  }
+
+  #execution(jobId: JobId): DurableExecution | undefined {
+    return this.#state.executions?.find(e => e.jobId === jobId);
+  }
+
+  #replaceExecution(execution: DurableExecution): readonly DurableExecution[] {
+    return [...(this.#state.executions ?? []).filter(e => e.jobId !== execution.jobId), execution];
+  }
+
+  #fact<Type extends HQEventType>(context: CommandContext, type: Type, payload: HQEventPayloadMap[Type], causationId = this.#state.facts.findLast(f => f.businessId === context.businessId)?.id ?? null): HQEvent<Type> {
+    return { id: this.#ids.event(), type, occurredAt: this.#clock.now(), businessId: context.businessId,
+      correlationId: context.correlationId, causationId,
+      actor: { ...context.principal }, producer: "hq.runtime", payload: structuredClone(payload) } as HQEvent<Type>;
+  }
+
+  async #save(nextState: DurableState): Promise<void> {
+    const detached = structuredClone(nextState);
+    validateDurableState(detached);
+    await this.#durableStore.save(detached);
+    this.#state = detached;
+  }
+
+  async #commitExecution(context: CommandContext, fingerprint: string, existing: ProcessedCommand | undefined, job: Job, execution: DurableExecution | undefined, facts: readonly HQEvent[], approvals = this.#state.approvals ?? []): Promise<void> {
+    await this.#save({ ...this.#state,
+      authority: { ...this.#state.authority, jobs: this.#state.authority.jobs.map(j => j.id === job.id ? job : j) },
+      approvals,
+      ...(execution ? { executions: this.#replaceExecution(execution) } : {}),
+      facts: [...this.#state.facts, ...facts],
+      processedCommands: existing ? this.#state.processedCommands : [...this.#state.processedCommands, {
+        commandId: context.commandId, businessId: context.businessId, inputFingerprint: fingerprint,
+        eventIds: facts.map(f => f.id), result: { kind: "job", recordId: job.id },
+      }],
     });
   }
 

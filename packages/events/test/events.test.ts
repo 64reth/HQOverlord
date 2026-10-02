@@ -36,6 +36,7 @@ function describeFact(event: HQEvent): string {
     case "agent.created": return event.payload.name;
     case "job.created": return event.payload.objective;
     case "job.started":
+    case "job.cancelled":
     case "job.completed": return event.payload.jobId;
     case "job.failed": return event.payload.error.message;
     case "approval.requested": return event.payload.approval.reason;

@@ -11,3 +11,8 @@ export * from "./command-fingerprint.ts";
 export * from "./durable-runtime.ts";
 export * from "./durable-store.ts";
 export * from "./validate-durable-state.ts";
+
+export * from "./execution-contracts.ts";
+export * from "./tool-registry.ts";
+export * from "./capability-gate.ts";
+export * from "./execution-engine.ts";

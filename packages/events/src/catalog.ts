@@ -110,6 +110,7 @@ export interface HQEventPayloadMap {
   readonly "job.started": JobStartedPayload;
   readonly "job.completed": JobCompletedPayload;
   readonly "job.failed": JobFailedPayload;
+  readonly "job.cancelled": { readonly jobId: JobId };
   readonly "approval.requested": ApprovalRequestedPayload;
   readonly "approval.granted": ApprovalGrantedPayload;
   readonly "approval.rejected": ApprovalRejectedPayload;
