@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "node --test",
+    "test": "node --test packages/core/test/*.test.ts packages/events/test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

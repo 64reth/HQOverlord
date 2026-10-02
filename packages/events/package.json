@@ -1,0 +1,14 @@
+{
+  "name": "@hqoverlord/events",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@hqoverlord/core": "0.1.0"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.ts"
+  }
+}
