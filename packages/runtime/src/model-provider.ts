@@ -99,3 +99,8 @@ export function normalizeModelUsage(value: unknown): ModelUsage | undefined {
   };
 }
 
+
+/** OpenAI's documented alias resolves to this snapshot; other model mismatches remain unpriced. */
+export function modelUsageMatchesPricing(usage:ModelUsage,pricing:{provider:string;model:string}):boolean{
+  return usage.provider===pricing.provider&&(usage.model===pricing.model||usage.provider==='openai'&&pricing.model==='gpt-5.4-mini'&&usage.model==='gpt-5.4-mini-2026-03-17');
+}

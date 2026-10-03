@@ -1,5 +1,5 @@
 import { currencyCode, money, type BusinessId, type JobId, type Money } from "@hqoverlord/core";
-import { validModelUsage, type ModelUsage } from "./model-provider.ts";
+import { modelUsageMatchesPricing, validModelUsage, type ModelUsage } from "./model-provider.ts";
 
 /** Provider accounting only. Legacy Money.minorUnits and ledger facts are never rescaled. */
 export interface NanoUsd {
@@ -52,7 +52,7 @@ export function validateMeteredPricing(p: MeteredPricing): void {
 export function priceMeteredUsage(u: ModelUsage, p: MeteredPricing): NanoUsd | undefined {
   validateMeteredPricing(p);
   if (!validModelUsage(u)) throw new TypeError("Invalid model usage");
-  if (u.provider !== p.provider || u.model !== p.model) return undefined;
+  if (!modelUsageMatchesPricing(u,p)) return undefined;
   const cached = BigInt(u.cachedInputTokens ?? 0);
   const created = BigInt(u.cacheCreationInputTokens ?? 0);
   if(created>0n&&p.cacheCreationInputNanodollars===undefined)return undefined;

@@ -25,7 +25,9 @@ export function validateMeteredState(state: DurableState): void {
       if (call.cost || call.reservation || call.ledgerEntryId) invalid();
       const maximum = maximumMeteredCost(p.provider, p.model, p.maxInputTokens, p.maxOutputTokens, p.meteredPricing);
       if (!equal(call.meteredReservation, maximum)) invalid();
-      const cost = call.usage ? priceMeteredUsage(call.usage, p.meteredPricing) : undefined;
+      // Older alias responses were retained as unknown. Keep their reservation and do not invent a settlement on reload.
+      const legacyUnpricedAlias=call.status==='unknown'&&call.usage?.provider==='openai'&&p.meteredPricing.provider==='openai'&&p.meteredPricing.model==='gpt-5.4-mini'&&call.usage.model==='gpt-5.4-mini-2026-03-17'&&!call.meteredCost&&!call.meteredExpenseId;
+      const cost = call.usage&&!legacyUnpricedAlias ? priceMeteredUsage(call.usage, p.meteredPricing) : undefined;
       if (!equal(cost, call.meteredCost)) invalid();
       if (call.status === "settled" && !cost) invalid();
       if (call.status !== "settled" && (cost || call.meteredExpenseId)) invalid();
