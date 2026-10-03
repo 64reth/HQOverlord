@@ -53,7 +53,7 @@ export class ModelDrivenAgentDriver implements AgentDriver {
       input: JSON.stringify({ objective: context.job.objective,
         ...(this.#options.referenceMemory?.length ? { notebook: this.#options.referenceMemory } : {}),
         inputArtifacts: context.inputs ?? [],
-        agent: { name: context.agent.name, capabilities: context.agent.capabilities }, observations },
+        agent: { id:context.agent.id,businessId:context.businessId,name: context.agent.name, capabilities: context.agent.capabilities,toolIds:context.agent.toolIds }, observations },
         (_key, value: unknown) => typeof value === "bigint" ? value.toString() : value),
       tools,
     };
