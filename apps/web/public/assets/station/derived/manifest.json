@@ -1,0 +1,527 @@
+﻿{
+    "version":  1,
+    "tileWidth":  64,
+    "tileHeight":  32,
+    "sprites":  {
+                    "floor-0":  {
+                                    "url":  "/assets/station/derived/floor-0.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-1":  {
+                                    "url":  "/assets/station/derived/floor-1.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-2":  {
+                                    "url":  "/assets/station/derived/floor-2.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-3":  {
+                                    "url":  "/assets/station/derived/floor-3.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-4":  {
+                                    "url":  "/assets/station/derived/floor-4.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-5":  {
+                                    "url":  "/assets/station/derived/floor-5.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-6":  {
+                                    "url":  "/assets/station/derived/floor-6.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "floor-7":  {
+                                    "url":  "/assets/station/derived/floor-7.png",
+                                    "width":  64,
+                                    "height":  32
+                                },
+                    "wall":  {
+                                 "url":  "/assets/station/derived/wall.png",
+                                 "width":  64,
+                                 "height":  76
+                             },
+                    "column":  {
+                                   "url":  "/assets/station/derived/column.png",
+                                   "width":  24,
+                                   "height":  48
+                               },
+                    "bay-0":  {
+                                  "url":  "/assets/station/derived/bay-0.png",
+                                  "width":  112,
+                                  "height":  120
+                              },
+                    "bay-1":  {
+                                  "url":  "/assets/station/derived/bay-1.png",
+                                  "width":  112,
+                                  "height":  120
+                              },
+                    "bay-2":  {
+                                  "url":  "/assets/station/derived/bay-2.png",
+                                  "width":  112,
+                                  "height":  120
+                              },
+                    "bay-3":  {
+                                  "url":  "/assets/station/derived/bay-3.png",
+                                  "width":  112,
+                                  "height":  120
+                              },
+                    "bay-4":  {
+                                  "url":  "/assets/station/derived/bay-4.png",
+                                  "width":  112,
+                                  "height":  120
+                              },
+                    "bay-5":  {
+                                  "url":  "/assets/station/derived/bay-5.png",
+                                  "width":  112,
+                                  "height":  120
+                              },
+                    "crew-0-0":  {
+                                     "url":  "/assets/station/derived/crew-0-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-0-1":  {
+                                     "url":  "/assets/station/derived/crew-0-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-0-2":  {
+                                     "url":  "/assets/station/derived/crew-0-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-0-3":  {
+                                     "url":  "/assets/station/derived/crew-0-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-0-4":  {
+                                     "url":  "/assets/station/derived/crew-0-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-0-5":  {
+                                     "url":  "/assets/station/derived/crew-0-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-0-6":  {
+                                     "url":  "/assets/station/derived/crew-0-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-0":  {
+                                     "url":  "/assets/station/derived/crew-1-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-1":  {
+                                     "url":  "/assets/station/derived/crew-1-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-2":  {
+                                     "url":  "/assets/station/derived/crew-1-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-3":  {
+                                     "url":  "/assets/station/derived/crew-1-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-4":  {
+                                     "url":  "/assets/station/derived/crew-1-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-5":  {
+                                     "url":  "/assets/station/derived/crew-1-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-1-6":  {
+                                     "url":  "/assets/station/derived/crew-1-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-0":  {
+                                     "url":  "/assets/station/derived/crew-2-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-1":  {
+                                     "url":  "/assets/station/derived/crew-2-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-2":  {
+                                     "url":  "/assets/station/derived/crew-2-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-3":  {
+                                     "url":  "/assets/station/derived/crew-2-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-4":  {
+                                     "url":  "/assets/station/derived/crew-2-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-5":  {
+                                     "url":  "/assets/station/derived/crew-2-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-2-6":  {
+                                     "url":  "/assets/station/derived/crew-2-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-0":  {
+                                     "url":  "/assets/station/derived/crew-3-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-1":  {
+                                     "url":  "/assets/station/derived/crew-3-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-2":  {
+                                     "url":  "/assets/station/derived/crew-3-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-3":  {
+                                     "url":  "/assets/station/derived/crew-3-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-4":  {
+                                     "url":  "/assets/station/derived/crew-3-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-5":  {
+                                     "url":  "/assets/station/derived/crew-3-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-3-6":  {
+                                     "url":  "/assets/station/derived/crew-3-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-0":  {
+                                     "url":  "/assets/station/derived/crew-4-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-1":  {
+                                     "url":  "/assets/station/derived/crew-4-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-2":  {
+                                     "url":  "/assets/station/derived/crew-4-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-3":  {
+                                     "url":  "/assets/station/derived/crew-4-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-4":  {
+                                     "url":  "/assets/station/derived/crew-4-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-5":  {
+                                     "url":  "/assets/station/derived/crew-4-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-4-6":  {
+                                     "url":  "/assets/station/derived/crew-4-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-0":  {
+                                     "url":  "/assets/station/derived/crew-5-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-1":  {
+                                     "url":  "/assets/station/derived/crew-5-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-2":  {
+                                     "url":  "/assets/station/derived/crew-5-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-3":  {
+                                     "url":  "/assets/station/derived/crew-5-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-4":  {
+                                     "url":  "/assets/station/derived/crew-5-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-5":  {
+                                     "url":  "/assets/station/derived/crew-5-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-5-6":  {
+                                     "url":  "/assets/station/derived/crew-5-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-0":  {
+                                     "url":  "/assets/station/derived/crew-6-0.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-1":  {
+                                     "url":  "/assets/station/derived/crew-6-1.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-2":  {
+                                     "url":  "/assets/station/derived/crew-6-2.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-3":  {
+                                     "url":  "/assets/station/derived/crew-6-3.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-4":  {
+                                     "url":  "/assets/station/derived/crew-6-4.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-5":  {
+                                     "url":  "/assets/station/derived/crew-6-5.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "crew-6-6":  {
+                                     "url":  "/assets/station/derived/crew-6-6.png",
+                                     "width":  32,
+                                     "height":  48
+                                 },
+                    "overlord-0":  {
+                                       "url":  "/assets/station/derived/overlord-0.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-1":  {
+                                       "url":  "/assets/station/derived/overlord-1.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-2":  {
+                                       "url":  "/assets/station/derived/overlord-2.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-3":  {
+                                       "url":  "/assets/station/derived/overlord-3.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-4":  {
+                                       "url":  "/assets/station/derived/overlord-4.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-5":  {
+                                       "url":  "/assets/station/derived/overlord-5.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-6":  {
+                                       "url":  "/assets/station/derived/overlord-6.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "overlord-7":  {
+                                       "url":  "/assets/station/derived/overlord-7.png",
+                                       "width":  64,
+                                       "height":  88
+                                   },
+                    "gear-0":  {
+                                   "url":  "/assets/station/derived/gear-0.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-1":  {
+                                   "url":  "/assets/station/derived/gear-1.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-2":  {
+                                   "url":  "/assets/station/derived/gear-2.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-3":  {
+                                   "url":  "/assets/station/derived/gear-3.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-4":  {
+                                   "url":  "/assets/station/derived/gear-4.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-5":  {
+                                   "url":  "/assets/station/derived/gear-5.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-6":  {
+                                   "url":  "/assets/station/derived/gear-6.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-7":  {
+                                   "url":  "/assets/station/derived/gear-7.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-8":  {
+                                   "url":  "/assets/station/derived/gear-8.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-9":  {
+                                   "url":  "/assets/station/derived/gear-9.png",
+                                   "width":  64,
+                                   "height":  80
+                               },
+                    "gear-10":  {
+                                    "url":  "/assets/station/derived/gear-10.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-11":  {
+                                    "url":  "/assets/station/derived/gear-11.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-12":  {
+                                    "url":  "/assets/station/derived/gear-12.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-13":  {
+                                    "url":  "/assets/station/derived/gear-13.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-14":  {
+                                    "url":  "/assets/station/derived/gear-14.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-15":  {
+                                    "url":  "/assets/station/derived/gear-15.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-16":  {
+                                    "url":  "/assets/station/derived/gear-16.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "gear-17":  {
+                                    "url":  "/assets/station/derived/gear-17.png",
+                                    "width":  64,
+                                    "height":  80
+                                },
+                    "machine-0":  {
+                                      "url":  "/assets/station/derived/machine-0.png",
+                                      "width":  64,
+                                      "height":  64
+                                  },
+                    "machine-1":  {
+                                      "url":  "/assets/station/derived/machine-1.png",
+                                      "width":  64,
+                                      "height":  64
+                                  },
+                    "machine-2":  {
+                                      "url":  "/assets/station/derived/machine-2.png",
+                                      "width":  64,
+                                      "height":  64
+                                  },
+                    "machine-3":  {
+                                      "url":  "/assets/station/derived/machine-3.png",
+                                      "width":  64,
+                                      "height":  64
+                                  },
+                    "machine-4":  {
+                                      "url":  "/assets/station/derived/machine-4.png",
+                                      "width":  64,
+                                      "height":  64
+                                  },
+                    "machine-5":  {
+                                      "url":  "/assets/station/derived/machine-5.png",
+                                      "width":  64,
+                                      "height":  64
+                                  },
+                    "belt":  {
+                                 "url":  "/assets/station/derived/belt.png",
+                                 "width":  64,
+                                 "height":  48
+                             },
+                    "crate":  {
+                                  "url":  "/assets/station/derived/crate.png",
+                                  "width":  24,
+                                  "height":  26
+                              },
+                    "comms":  {
+                                  "url":  "/assets/station/derived/comms.png",
+                                  "width":  96,
+                                  "height":  104
+                              },
+                    "models":  {
+                                   "url":  "/assets/station/derived/models.png",
+                                   "width":  80,
+                                   "height":  104
+                               },
+                    "channels":  {
+                                     "url":  "/assets/station/derived/channels.png",
+                                     "width":  80,
+                                     "height":  104
+                                 },
+                    "logo":  {
+                                 "url":  "/assets/station/derived/logo.png",
+                                 "width":  420,
+                                 "height":  104
+                             },
+                    "lamp":  {
+                                 "url":  "/assets/station/derived/lamp.png",
+                                 "width":  24,
+                                 "height":  40
+                             }
+                }
+}
