@@ -6,6 +6,8 @@ import type { JobModelAccount } from "./model-state.ts";
 import type { MeteredExpense } from "./metered-cost.ts";
 
 export interface DurableExecution {
+  readonly startedAt?: string;
+  readonly finishedAt?: string;
   readonly jobId: JobId;
   readonly businessId: BusinessId;
   readonly agentId: AgentId;
@@ -58,6 +60,7 @@ export interface ProcessedCommand {
 }
 
 export interface DurableState {
+  readonly stations?: readonly import("./station-state.ts").StationState[];
   readonly sources?: readonly import("./knowledge.ts").Source[];
   readonly artifacts?: readonly import("./knowledge.ts").Artifact[];
   readonly knowledge?: readonly import("./knowledge.ts").KnowledgeFact[];

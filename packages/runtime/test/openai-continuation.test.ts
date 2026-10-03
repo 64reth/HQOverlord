@@ -125,3 +125,31 @@ test("HTML HTTP errors retain status and diagnostic callback failures cannot alt
   assert.equal(result.decision.kind, "failure");
   assert.equal(diagnostics[0]?.httpStatus, 503);
 });
+
+
+test('durable Responses continuation preserves native linkage across a new adapter and allows revealed schemas without renaming old calls',async()=>{
+ const firstWire=mocked([{input_tokens:10},response([reasoning,call('durable-call')])]);const first=await new OpenAIModelProvider({apiKey:credential,transport:firstWire.transport}).invoke(request);
+ const newTool={id:ids.tool('newly.revealed'),name:'Revealed',description:'Newly available schema',inputSchema:{type:'object'}};
+ const nextWire=mocked([{input_tokens:20},completed]),next=new OpenAIModelProvider({apiKey:credential,transport:nextWire.transport});
+ const result=await next.invoke({...request,tools:[newTool,...request.tools],context:{conversationId:'business/job',observations:[observation],continuation:JSON.parse(JSON.stringify(first.continuation))}});
+ assert.equal(result.decision.kind,'complete');assert.deepEqual((nextWire.requests[1]!.tools as {name:string}[]).map(t=>t.name),['hq_tool_1','hq_tool_0']);assert.ok((nextWire.requests[1]!.input as {call_id?:string}[]).some(i=>i.call_id==='durable-call'));assert.ok(result.continuation);
+ const wrong=await next.invoke({...request,context:{conversationId:'other-business/job',observations:[observation],continuation:first.continuation}});assert.equal(wrong.decision.kind,'failure');assert.equal(nextWire.requests.length,2);
+});
+
+
+test('actual captured browser pixels are mapped after their exact tool result on both Responses preflight and generation',async()=>{
+ const m=mocked([{input_tokens:10},response([call('pixel-call')]),{input_tokens:20},completed]),provider=new OpenAIModelProvider({apiKey:credential,transport:m.transport});const first=await provider.invoke(request),url='data:image/png;base64,aGVsbG8=';
+ const result=await provider.invoke({...request,inputContent:[{type:'image_url',image_url:{url}}],context:{conversationId:'business/job',observations:[observation],continuation:first.continuation,observationImageCount:1}});
+ assert.equal(result.decision.kind,'complete');for(const body of m.requests.slice(2)){const input=body.input as {type?:string;call_id?:string;role?:string;content?:unknown}[];assert.equal(input.at(-2)!.call_id,'pixel-call');assert.deepEqual((input.at(-1)!.content as unknown[]).at(-1),{type:'input_image',image_url:url});}
+});
+
+test('Responses drains an already paid batch across restart with exact native outputs and zero extra usage',async()=>{
+ const m=mocked([{input_tokens:10},response([reasoning,call('first-paid'),call('second-paid')]),{input_tokens:15},completed]),first=new OpenAIModelProvider({apiKey:credential,transport:m.transport});
+ const result=await first.invoke(request);assert.equal(result.decision.kind,'tool');assert.ok(result.usage);assert.equal(m.requests.length,2);
+ const reopened=new OpenAIModelProvider({apiKey:credential,transport:m.transport}),second=reopened.nextFromContinuation({...request,context:{conversationId:'business/job',continuation:JSON.parse(JSON.stringify(result.continuation)),observations:[observation]}})!;
+ assert.equal(second.decision.kind,'tool');assert.equal(second.usage,undefined);assert.equal(m.requests.length,2);
+ const final=await reopened.invoke({...request,context:{conversationId:'business/job',continuation:JSON.parse(JSON.stringify(second.continuation)),observations:[observation,observation]}});assert.equal(final.decision.kind,'complete');assert.equal(m.requests.length,4);
+ assert.deepEqual((m.requests[3]!.input as any[]).filter(i=>i.type==='function_call_output').map(i=>i.call_id),['first-paid','second-paid']);
+ const revoked=reopened.nextFromContinuation({...request,tools:[],context:{conversationId:'business/job',continuation:result.continuation,observations:[observation]}})!;assert.equal(revoked.decision.kind,'failure');assert.equal(m.requests.length,4);
+ const foreign=reopened.nextFromContinuation({...request,context:{conversationId:'foreign',continuation:result.continuation,observations:[observation]}})!;assert.equal(foreign.decision.kind,'failure');
+});

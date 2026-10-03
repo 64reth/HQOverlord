@@ -15,9 +15,13 @@ export interface ToolExecutionContext {
 
 export interface ToolResult {
   readonly output: unknown;
+  /** Kernel-issued after an actual completed exact-consented connector operation. */
+  readonly connectorReceipt?:{readonly purpose?:'postcondition';readonly connector:string;readonly tool:string;readonly role:'act'|'observe';readonly operationId:string;readonly argumentsFingerprint:string};
 }
 
 export interface ExecutableTool {
+  /** Host profile classification, never an MCP result or readOnlyHint permission grant. */
+  readonly connectorVerification?:{readonly connector:string;readonly tool:string;readonly role:'act'|'observe'};
   readonly inputSchema?: Readonly<Record<string, unknown>>;
   readonly definition: Tool;
 

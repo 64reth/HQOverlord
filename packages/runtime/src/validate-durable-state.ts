@@ -8,6 +8,7 @@ import {
 import { commandFingerprint } from "./command-fingerprint.ts";
 import { validateModelState } from "./validate-model-state.ts";
 import { validateKnowledge } from "./validate-knowledge.ts";
+import { validateStations } from "./station-state.ts";
 
 export function validateDurableState(
   state: DurableState,
@@ -149,6 +150,10 @@ export function validateDurableState(
   if (state.executions !== undefined && !Array.isArray(state.executions)) invalid("Invalid executions section");
   const approvals = state.approvals ?? [];
   const executions = state.executions ?? [];
+  for (const execution of executions) {
+    for (const timestamp of [execution.startedAt,execution.finishedAt]) if(timestamp!==undefined&&(typeof timestamp!=="string"||!Number.isFinite(Date.parse(timestamp)))) invalid("Invalid execution timestamp");
+    if(execution.startedAt&&execution.finishedAt&&Date.parse(execution.finishedAt)<Date.parse(execution.startedAt)) invalid("Execution finishes before its start");
+  }
   const approvalIds = new Set<string>();
   const operationIds = new Set<string>();
   const executionJobs = new Set<string>();
@@ -173,6 +178,12 @@ export function validateDurableState(
       invalid("Execution references missing or cross-business records");
     }
     if (!Number.isInteger(execution.turns) || execution.turns < 0 || !Number.isInteger(execution.maxTurns) || execution.maxTurns < 1 || execution.turns > execution.maxTurns || !Array.isArray(execution.observations)) invalid("Invalid execution checkpoint");
+    const connectorOperations=new Set<string>();
+    for(const [index,observation] of execution.observations.entries()){const receipt=observation.result?.connectorReceipt;if(!receipt)continue;if(connectorOperations.has(receipt.operationId))invalid('Connector operation receipt was duplicated');connectorOperations.add(receipt.operationId);
+      const approval=approvals.find(a=>a.operationId===receipt.operationId&&a.jobId===execution.jobId&&a.businessId===execution.businessId&&a.status==='approved');
+      if(!receipt||typeof receipt.connector!=='string'||typeof receipt.tool!=='string'||!['act','observe'].includes(receipt.role)||!approval||approval.toolCall.toolId!==observation.toolId||receipt.argumentsFingerprint!==commandFingerprint(approval.toolCall.input)||!state.facts.some(f=>f.businessId===execution.businessId&&f.type==='tool.completed.v1'&&f.payload.jobId===execution.jobId&&f.payload.operationId===receipt.operationId&&f.payload.toolId===observation.toolId))invalid('Connector receipt lacks its completed exact approved operation');
+      if(receipt.purpose!==undefined&&(receipt.purpose!=='postcondition'||receipt.role!=='observe'||!state.artifacts?.some(a=>a.businessId===execution.businessId&&a.jobId===execution.jobId&&a.id.startsWith('postcondition-readback:')&&a.actor.kind!=='agent'&&(a.content as {observationsAt?:number}).observationsAt===index&&commandFingerprint((a.content as {call?:unknown}).call)===commandFingerprint(approval!.toolCall))))invalid('Connector check lacks its captured host readback intent');
+    }
     if (!["running", "waiting_for_approval", "completed", "failed", "cancelled"].includes(execution.status)) invalid("Invalid execution status");
     const jobStatus = execution.status === "waiting_for_approval" ? "running" : execution.status;
     if (job!.status !== jobStatus) invalid("Job and execution status disagree");
@@ -192,4 +203,5 @@ export function validateDurableState(
   }
   validateModelState(state);
   validateKnowledge(state);
+  validateStations(state);
 }

@@ -16,8 +16,8 @@ export function validateMeteredState(state: DurableState): void {
     ids.add(entry.id);
   }
   for (const account of state.modelAccounts ?? []) {
-    const p = account.policy;
     for (const call of account.invocations) {
+      const p=call.target??account.policy;
       if (!p.meteredPricing) {
         if (call.meteredCost || call.meteredReservation || call.meteredExpenseId) invalid();
         continue;

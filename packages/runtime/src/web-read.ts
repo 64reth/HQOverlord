@@ -11,13 +11,16 @@ export class WebReadError extends Error {
 }
 export interface WebAddress { readonly address: string; readonly family: number }
 export interface WebResponse { readonly status: number; readonly contentType: string; readonly location?: string; readonly body: Uint8Array }
+export interface WebRequestOptions {readonly method?:string;readonly headers?:Readonly<Record<string,string>>;readonly body?:string|Uint8Array}
 export interface WebReadDependencies {
   readonly resolve?: (host: string) => Promise<readonly WebAddress[]>;
   /** Must connect to this verified address, retaining original Host/TLS SNI. */
-  readonly request?: (url: URL, address: WebAddress, signal: AbortSignal, maxBytes: number) => Promise<WebResponse>;
+  readonly request?: (url: URL, address: WebAddress, signal: AbortSignal, maxBytes: number,options?:WebRequestOptions) => Promise<WebResponse>;
   readonly now?: () => string;
   readonly timeoutMs?: number;
   readonly maxBytes?: number;
+  /** Host-only seam for bounded search parsing. Never a model-supplied option. */
+  readonly retainHtml?: boolean;
 }
 
 export function isPublicAddress(address: string): boolean {
@@ -47,11 +50,11 @@ export function publicWebUrl(raw: string): URL {
   return url;
 }
 
-async function pinnedRequest(url: URL, address: WebAddress, signal: AbortSignal, maxBytes: number): Promise<WebResponse> {
+export async function pinnedRequest(url: URL, address: WebAddress, signal: AbortSignal, maxBytes: number,options:{readonly method?:string;readonly headers?:Readonly<Record<string,string>>;readonly body?:string|Uint8Array}={}): Promise<WebResponse> {
   return new Promise((resolve, reject) => {
     const request = (url.protocol === "https:" ? httpsRequest : httpRequest)(url, {
       hostname: address.address, servername: url.hostname, agent: false, signal,
-      headers: { Host: url.host, "User-Agent": "HQOverlord-web.read/1.0", Accept: "text/html,text/plain,application/json,application/xhtml+xml", "Accept-Encoding": "identity" },
+      method:options.method??'GET',headers: { "User-Agent": "HQOverlord-web.read/1.0", Accept: "text/html,text/plain,application/json,application/xhtml+xml",...options.headers,Host: url.host,"Accept-Encoding": "identity" },
     }, response => {
       const status = response.statusCode ?? 0;
       const location = response.headers.location;
@@ -67,7 +70,7 @@ async function pinnedRequest(url: URL, address: WebAddress, signal: AbortSignal,
       response.on("error", reject);
       response.on("end", () => resolve({ status, contentType: response.headers["content-type"] ?? "", body: Buffer.concat(chunks) }));
     });
-    request.on("error", reject); request.end();
+    request.on("error", reject); request.end(options.body);
   });
 }
 
@@ -126,6 +129,7 @@ export function createWebReadTool(deps: WebReadDependencies = {}): ExecutableToo
             const content = Buffer.from(response.body).toString("utf8");
             const readable = /html/.test(contentType) ? readableHtml(content) : { text: content };
             return { output: { requestedUrl, finalUrl: url.href, status: response.status, contentType, ...readable,
+              ...(deps.retainHtml ? {html:content} : {}),
               retrievedAt: (deps.now ?? (() => new Date().toISOString()))(), javascriptRendered: false } };
           }
           throw new WebReadError("TOO_MANY_REDIRECTS");

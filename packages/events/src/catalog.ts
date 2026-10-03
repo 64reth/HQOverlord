@@ -104,6 +104,11 @@ export interface LedgerEntryRecordedPayload {
  * add new facts rather than silently redefining historical ones.
  */
 export interface HQEventPayloadMap {
+  readonly 'model.fallback.v1':{readonly jobId:JobId;readonly fromProvider:string;readonly fromModel:string;readonly toProvider:string;readonly toModel:string;readonly reason:string};
+  readonly 'model.retry_scheduled.v1':{readonly jobId:JobId;readonly invocationId:string;readonly attempt:number;readonly provider:string;readonly model:string;readonly reason:string;readonly delayMs:number};
+  readonly 'floor.workitem_changed.v1':{readonly workitemId:string;readonly workflowId:string;readonly jobId:JobId;readonly dockId:string;readonly state:'placed'|'working'|'delivered'|'stopped'|'interrupted'};
+  readonly 'memory.recalled.v1':{readonly jobId:JobId;readonly agentId:AgentId;readonly noteIds:readonly string[]};
+  readonly "station.changed.v1": { readonly kind: "profile" | "desk" | "equipment" | "notebook" | "retirement" | "initialization" | "workflow" | "routine" | "autonomy" | "channel"; readonly recordId: string };
   readonly "artifact.created.v1": { readonly artifactId: string; readonly jobId?: JobId; readonly category: string };
   readonly "source.recorded.v1": { readonly sourceId: string; readonly jobId?: JobId };
   readonly "knowledge.recorded.v1": { readonly knowledgeId: string };
@@ -138,6 +143,7 @@ export interface HQEventPayloadMap {
     readonly inputTokens: number;
     readonly outputTokens: number;
     readonly cachedInputTokens?: number;
+    readonly cacheCreationInputTokens?: number;
     readonly requestId?: string;
   };
 }

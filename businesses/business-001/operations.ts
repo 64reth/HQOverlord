@@ -67,8 +67,8 @@ export function serviceTools(runtime: DurableRuntime, webDependencies: WebReadDe
 
 /** Mandatory host-side Delivery gate, independent of whether a model asks for consent. */
 export async function runServiceJob(runtime: DurableRuntime, jobId: ReturnType<typeof ids.job>, provider: ModelProvider, tools: ToolRegistry,
-  options: ModelExecutionOptions = jobModelOptions()) {
-  const context = ownerContext(`run-${jobId}`), job = runtime.inspectJob(context, jobId);
+  options: ModelExecutionOptions = jobModelOptions(), trustedContext?:CommandContext) {
+  const context = trustedContext ?? ownerContext(`run-${jobId}`), job = runtime.inspectJob(context, jobId);
   const agent = runtime.snapshot().authority.agents.find(a => a.id === job.agentId)!;
   // Use runtime metering for each provider call through executeModelJob. A gating driver is used only for the initial local release.
   if (agent.toolIds.includes(releaseToolId)) {

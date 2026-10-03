@@ -24,6 +24,8 @@ export function priceModelUsage(usage: ModelUsage, pricing: ModelPricing): Money
   if (!validModelUsage(usage)) throw new TypeError("Invalid model usage");
   if (usage.provider !== pricing.provider || usage.model !== pricing.model) return undefined;
   const cached = BigInt(usage.cachedInputTokens ?? 0);
+  // Legacy cent pricing has no cache-creation bucket; retain unknown rather than underprice it.
+  if((usage.cacheCreationInputTokens??0)>0)return undefined;
   const numerator = (BigInt(usage.inputTokens) - cached) * pricing.inputMinorUnits
     + cached * (pricing.cachedInputMinorUnits ?? pricing.inputMinorUnits)
     + BigInt(usage.outputTokens) * pricing.outputMinorUnits;

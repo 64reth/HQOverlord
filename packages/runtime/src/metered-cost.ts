@@ -41,11 +41,12 @@ export interface MeteredPricing {
   readonly inputNanodollars: bigint;
   readonly outputNanodollars: bigint;
   readonly cachedInputNanodollars?: bigint;
+  readonly cacheCreationInputNanodollars?: bigint;
 }
 export function validateMeteredPricing(p: MeteredPricing): void {
   if (!p || p.version !== 1 || p.currency !== "USD" || p.unit !== "nanodollar" || typeof p.provider !== "string" || !p.provider
     || typeof p.model !== "string" || !p.model || typeof p.tokensPerBlock !== "bigint" || p.tokensPerBlock <= 0n
-    || [p.inputNanodollars, p.outputNanodollars, ...(p.cachedInputNanodollars === undefined ? [] : [p.cachedInputNanodollars])]
+    || [p.inputNanodollars, p.outputNanodollars, ...(p.cachedInputNanodollars === undefined ? [] : [p.cachedInputNanodollars]), ...(p.cacheCreationInputNanodollars === undefined ? [] : [p.cacheCreationInputNanodollars])]
       .some(n => typeof n !== "bigint" || n < 0n)) throw new TypeError("Invalid nanodollar pricing");
 }
 export function priceMeteredUsage(u: ModelUsage, p: MeteredPricing): NanoUsd | undefined {
@@ -53,14 +54,16 @@ export function priceMeteredUsage(u: ModelUsage, p: MeteredPricing): NanoUsd | u
   if (!validModelUsage(u)) throw new TypeError("Invalid model usage");
   if (u.provider !== p.provider || u.model !== p.model) return undefined;
   const cached = BigInt(u.cachedInputTokens ?? 0);
-  const numerator = (BigInt(u.inputTokens) - cached) * p.inputNanodollars
-    + cached * (p.cachedInputNanodollars ?? p.inputNanodollars) + BigInt(u.outputTokens) * p.outputNanodollars;
+  const created = BigInt(u.cacheCreationInputTokens ?? 0);
+  if(created>0n&&p.cacheCreationInputNanodollars===undefined)return undefined;
+  const numerator = (BigInt(u.inputTokens) - cached - created) * p.inputNanodollars
+    + created * (p.cacheCreationInputNanodollars ?? p.inputNanodollars) + cached * (p.cachedInputNanodollars ?? p.inputNanodollars) + BigInt(u.outputTokens) * p.outputNanodollars;
   // At most one nanodollar of conservative rounding per call; never a whole cent.
   return nanoUsd((numerator + p.tokensPerBlock - 1n) / p.tokensPerBlock);
 }
 export function maximumMeteredCost(provider: string, model: string, input: number, output: number, p: MeteredPricing): NanoUsd | undefined {
-  return priceMeteredUsage({ provider, model, inputTokens: input, outputTokens: output }, { ...p,
-    inputNanodollars: p.cachedInputNanodollars !== undefined && p.cachedInputNanodollars > p.inputNanodollars ? p.cachedInputNanodollars : p.inputNanodollars });
+  const maximum=[p.inputNanodollars,p.cachedInputNanodollars??0n,p.cacheCreationInputNanodollars??0n].reduce((a,b)=>a>b?a:b);
+  return priceMeteredUsage({ provider, model, inputTokens: input, outputTokens: output }, { ...p,inputNanodollars:maximum });
 }
 export interface MeteredExpense {
   readonly id: string;

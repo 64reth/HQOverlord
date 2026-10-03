@@ -32,6 +32,8 @@ test("events retain business scope, correlation and immediate causation", () => 
 
 function describeFact(event: HQEvent): string {
   switch (event.type) {
+    case 'floor.workitem_changed.v1':return event.payload.workitemId;
+    case "station.changed.v1": return event.payload.recordId;
     case "artifact.created.v1": return event.payload.artifactId;
     case "source.recorded.v1": return event.payload.sourceId;
     case "knowledge.recorded.v1": return event.payload.knowledgeId;
@@ -49,6 +51,9 @@ function describeFact(event: HQEvent): string {
     case "approval.granted": return event.payload.operationId;
     case "approval.rejected": return event.payload.reason;
     case "ledger.entry_recorded": return event.payload.entry.amount.minorUnits.toString();
+    case 'memory.recalled.v1': return event.payload.noteIds.join(',');
+    case 'model.fallback.v1': return event.payload.toModel;
+    case 'model.retry_scheduled.v1': return event.payload.invocationId;
     case "model.usage_recorded": return event.payload.model;
     case "model.expense_recorded.v1": return event.payload.cost.nanodollars.toString();
     default: {

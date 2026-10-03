@@ -1,6 +1,6 @@
 import type { ToolId } from "./ids.ts";
 
-export type ToolEffect = "read_only" | "consequential";
+export type ToolEffect = "read_only" | "internal_write" | "consequential";
 
 /** A host-available executable capability; availability is not permission to execute. */
 export interface Tool {

@@ -1,3 +1,5 @@
+/** Source conveyor speed (1.7 tiles/s); this is a view of the admitted crate, never runtime authority. */
+export function cratePosition(item,now,reduced=false){const path=item.beltPath??[];if(!path.length)return null;const t=reduced?path.length-1:Math.min(path.length-1,Math.max(0,(now-Date.parse(item.updatedAt))/1000*1.7)),index=Math.floor(t),from=path[index],to=path[Math.min(index+1,path.length-1)],progress=t-index;return {x:from.x+(to.x-from.x)*progress,y:from.y+(to.y-from.y)*progress};}
 /** Original HQ station artwork. Static room bake + live entities + camera/selection overlays,
  * following StarNet's world/stationbake separation without copying restricted station art. */
 export function stationPositions(count) { return Array.from({ length: count }, (_, i) => ({ x: 190 + (i % 3) * 285, y: 205 + Math.floor(i / 3) * 220 })); }
@@ -5,20 +7,28 @@ export function hitStation(positions, x, y) { return positions.findIndex(p => Ma
 export function createWorld(canvas, onSelect) {
   const context = canvas.getContext('2d'), bake = document.createElement('canvas'); bake.width = 960; bake.height = 650;
   const c = bake.getContext('2d'); let model = { agents: [], selected: null }, positions = [], zoom = 1, pan = { x: 0, y: 0 }, drag = null, frame = 0;
+  let bakeKey = '';
   const agentImage = new Image(); agentImage.src = '/assets/agent.svg'; agentImage.onload = draw;
   function rect(x,y,w,h,color) { c.fillStyle=color; c.fillRect(x,y,w,h); }
+  function floorMaps(){let y=Math.max(620,...positions.map(p=>p.y+210));return (model.workflows??[]).map(w=>{const height=Math.max(8,...w.geometry.props.map(p=>p.y+3),...w.geometry.belts.map(p=>p.y+2))*18+45;const map={workflow:w,x:70,y,height};y+=height;return map;});}
   function bakeRoom() {
-    rect(0,0,960,650,'#090b07');
-    c.save();c.beginPath();c.moveTo(78,55);c.lineTo(882,55);c.lineTo(916,89);c.lineTo(916,566);c.lineTo(882,612);c.lineTo(78,612);c.lineTo(44,566);c.lineTo(44,89);c.closePath();c.clip();
-    rect(44,55,872,545,'#20231b');
-    for(let y=100;y<600;y+=40) for(let x=45;x<915;x+=40){rect(x,y,39,39,(x/40+y/40)%2<1?'#25271d':'#23251b');}
-    rect(44,55,872,42,'#383b2c');rect(44,95,872,5,'#777454');rect(44,55,18,545,'#454735');rect(898,55,18,545,'#34372a');rect(44,598,872,14,'#4c4c35');
-    for(let x=85;x<880;x+=140){rect(x,68,90,12,'#171d15');rect(x+5,71,80,3,'#92915b');}
+    const w=bake.width,h=bake.height,right=w-44,bottom=h-38;
+    rect(0,0,w,h,'#090b07');
+    c.save();c.beginPath();c.moveTo(78,55);c.lineTo(right-34,55);c.lineTo(right,89);c.lineTo(right,bottom-46);c.lineTo(right-34,bottom);c.lineTo(78,bottom);c.lineTo(44,bottom-46);c.lineTo(44,89);c.closePath();c.clip();
+    rect(44,55,w-88,h-105,'#20231b');
+    for(let y=100;y<bottom;y+=40) for(let x=45;x<right;x+=40){rect(x,y,39,39,(x/40+y/40)%2<1?'#25271d':'#23251b');}
+    rect(44,55,w-88,42,'#383b2c');rect(44,95,w-88,5,'#777454');rect(44,55,18,h-105,'#454735');rect(right-18,55,18,h-105,'#34372a');rect(44,bottom-14,w-88,14,'#4c4c35');
+    for(let x=85;x<right-36;x+=140){rect(x,68,90,12,'#171d15');rect(x+5,71,80,3,'#92915b');}
     // Original consoles: angled desk lip, screen, keyboard, service cabinet and chair.
     for(const p of positions){rect(p.x-86,p.y-35,175,67,'#121710');rect(p.x-80,p.y-42,160,54,'#4e5141');rect(p.x-80,p.y+12,160,11,'#363b2c');rect(p.x-31,p.y-35,62,35,'#121811');rect(p.x-26,p.y-31,52,24,'#293f2d');rect(p.x-16,p.y+2,33,7,'#a1a27b');rect(p.x+52,p.y-28,17,25,'#222c20');rect(p.x-24,p.y+55,48,48,'#303b2c');rect(p.x-20,p.y+56,40,10,'#677053');}
-    rect(85,530,72,48,'#3b4431');rect(90,535,62,5,'#85865c');rect(820,535,45,40,'#2e3827');rect(827,510,32,35,'#59613c');c.restore();
+    for (const gear of model.equipment ?? []) {
+      rect(gear.x-28,gear.y-20,56,40,gear.enabled?'#58613c':'#38382e');
+      c.fillStyle=gear.enabled?'#d7dd96':'#877b64';c.font='16px VT323';c.textAlign='center';c.fillText(gear.kind.toUpperCase(),gear.x,gear.y+5);
+    }
+    c.restore();
+    for(const map of floorMaps()){c.fillStyle='#c9c293';c.textAlign='left';c.font='18px VT323';c.fillText(map.workflow.name,map.x,map.y);for(const belt of map.workflow.geometry.belts){rect(map.x+belt.x*18,map.y+18+belt.y*18,16,16,'#414938');c.fillStyle='#b2b68b';c.font='12px VT323';c.fillText(belt.dir,map.x+belt.x*18+3,map.y+18+belt.y*18+13);}for(const prop of map.workflow.geometry.props){rect(map.x+prop.x*18,map.y+18+prop.y*18,(prop.w??1)*18,(prop.h??1)*18,prop.t==='bay'?'#6d7150':'#4e603c');c.fillStyle='#ece6af';c.font='11px VT323';c.fillText(prop.id,map.x+prop.x*18,map.y+18+prop.y*18+11);}}
   }
-  function camera() { const r=canvas.getBoundingClientRect();const scale=Math.min(r.width/960,r.height/650)*zoom;return {width:r.width,height:r.height,scale,x:r.width/2-480*scale+pan.x,y:r.height/2-325*scale+pan.y}; }
+  function camera() { const r=canvas.getBoundingClientRect();const scale=Math.min(r.width/bake.width,r.height/bake.height)*zoom;return {width:r.width,height:r.height,scale,x:r.width/2-bake.width/2*scale+pan.x,y:r.height/2-bake.height/2*scale+pan.y}; }
   function draw() {
     const v=camera(),dpr=devicePixelRatio||1;if(canvas.width!==Math.round(v.width*dpr)||canvas.height!==Math.round(v.height*dpr)){canvas.width=Math.round(v.width*dpr);canvas.height=Math.round(v.height*dpr);}
     context.setTransform(dpr,0,0,dpr,0,0);context.fillStyle='#080a06';context.fillRect(0,0,v.width,v.height);context.translate(v.x,v.y);context.scale(v.scale,v.scale);context.imageSmoothingEnabled=false;context.drawImage(bake,0,0);
@@ -30,8 +40,9 @@ export function createWorld(canvas, onSelect) {
       if(agent.outcome){context.fillStyle='#92886a';context.font='14px VT323';context.fillText('LAST: '+agent.outcome.toUpperCase(),p.x,p.y+170);}
       if(active){context.fillStyle=matchMedia('(prefers-reduced-motion: reduce)').matches?'#d7dd96':Math.floor(performance.now()/600)%2?'#d7dd96':'#6c794f';context.fillRect(p.x+58,p.y-20,5,5);}
     });
+    for(const item of model.workItems??[]){if(!['placed','working'].includes(item.state))continue;const map=floorMaps().find(m=>m.workflow.id===item.workflowId),target=map?.workflow.geometry.props.find(p=>p.id===item.dockId);if(!map||!target)continue;const point=cratePosition(item,Date.now(),matchMedia('(prefers-reduced-motion: reduce)').matches)??target;const x=map.x+point.x*18,y=map.y+18+point.y*18;context.fillStyle='#e9ad62';context.fillRect(x+4,y+4,10,10);context.strokeStyle='#34291b';context.strokeRect(x+4,y+4,10,10);}
     context.setTransform(dpr,0,0,dpr,0,0);
-    if(model.agents.some(a=>['working','tool-use'].includes(a.state))&&!frame) frame=requestAnimationFrame(()=>{frame=0;draw();});
+    if((model.agents.some(a=>['working','tool-use'].includes(a.state))||model.workItems?.some(i=>i.state==='working'))&&!frame) frame=requestAnimationFrame(()=>{frame=0;draw();});
   }
   canvas.addEventListener('pointerdown',event=>{drag={x:event.clientX,y:event.clientY,px:pan.x,py:pan.y,moved:false};canvas.setPointerCapture(event.pointerId);});
   canvas.addEventListener('pointermove',event=>{if(!drag)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)drag.moved=true;if(drag.moved){pan={x:drag.px+dx,y:drag.py+dy};draw();}});
@@ -40,5 +51,5 @@ export function createWorld(canvas, onSelect) {
   function changeZoom(factor,x=canvas.clientWidth/2,y=canvas.clientHeight/2){const v=camera(),next=Math.max(.65,Math.min(3,zoom*factor)),ratio=next/zoom;pan={x:x-canvas.clientWidth/2-(x-canvas.clientWidth/2-pan.x)*ratio,y:y-canvas.clientHeight/2-(y-canvas.clientHeight/2-pan.y)*ratio};zoom=next;draw();}
   canvas.addEventListener('wheel',event=>{event.preventDefault();const r=canvas.getBoundingClientRect();changeZoom(event.deltaY<0?1.1:1/1.1,event.clientX-r.left,event.clientY-r.top);},{passive:false});
   new ResizeObserver(draw).observe(canvas);
-  return { update(next){model=next;if(positions.length!==model.agents.length){positions=stationPositions(model.agents.length);bakeRoom();}draw();}, zoom:changeZoom, reset(){zoom=1;pan={x:0,y:0};draw();}, focus(id){const i=model.agents.findIndex(a=>a.id===id);if(i<0)return;const v=camera(),p=positions[i];pan={x:(480-p.x)*v.scale,y:(325-p.y-50)*v.scale};draw();} };
+  return { update(next){model=next;positions=model.agents.map((a,i)=>a.desk ?? stationPositions(model.agents.length)[i]);const key=JSON.stringify([positions,model.equipment,model.workflows]);if(key!==bakeKey){bakeKey=key;bake.width=Math.min(4300,Math.max(960,...positions.map(p=>p.x+180),...(model.equipment??[]).map(e=>e.x+100)));bake.height=Math.min(4300,Math.max(650,...positions.map(p=>p.y+205),...(model.equipment??[]).map(e=>e.y+100),...floorMaps().map(m=>m.y+m.height)));bakeRoom();}draw();}, zoom:changeZoom, reset(){zoom=1;pan={x:0,y:0};draw();}, focus(id){const i=model.agents.findIndex(a=>a.id===id);if(i<0)return;const v=camera(),p=positions[i];pan={x:(bake.width/2-p.x)*v.scale,y:(bake.height/2-p.y-50)*v.scale};draw();} };
 }

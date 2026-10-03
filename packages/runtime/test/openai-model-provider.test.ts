@@ -85,7 +85,7 @@ test("OpenAI adapter network exceptions are sanitized and never automatically re
   let calls = 0;
   const transport: typeof fetch = async () => { calls++; throw new Error(`Authorization Bearer ${credential}`); };
   const result = await new OpenAIModelProvider({ apiKey: credential, transport }).invoke(request);
-  assert.deepEqual(result, { decision: { kind: "failure", code: "PROVIDER_FAILED" } });
+  assert.deepEqual(result, { decision: { kind: "failure", code: "PROVIDER_FAILED" },failureReason:"unknown" });
   assert.equal(calls, 1); assert.doesNotMatch(JSON.stringify(result), new RegExp(credential));
 });
 
@@ -169,4 +169,29 @@ test("OpenAI credential echoes in function arguments, keys and usage identity ar
   const result = await new OpenAIModelProvider({ apiKey: credential, transport: m.transport }).invoke(request);
   assert.doesNotMatch(JSON.stringify(result), new RegExp(credential));
   assert.equal(result.usage?.requestId, "[REDACTED]");
+});
+
+
+test('Responses maps actual host attachment blocks on both token-count and generation requests',async()=>{
+  const m=mock([{input_tokens:10},response([message('Saw actual attachment')])]),provider=new OpenAIModelProvider({apiKey:credential,transport:m.transport});
+  const result=await provider.invoke({...request,inputContent:[{type:'image_url',image_url:{url:'data:image/png;base64,YWN0dWFs'}}]});assert.equal(result.decision.kind,'complete');
+  for(const call of m.calls)assert.deepEqual(call.body.input,[{role:'user',content:[{type:'input_text',text:request.input},{type:'input_image',image_url:'data:image/png;base64,YWN0dWFs'}]}]);assert.equal(m.calls[1]!.body.max_output_tokens,request.maxOutputTokens);
+});
+
+
+test('Responses streams real output deltas before its terminal receipt, redacts split credentials and retains exact terminal usage',async()=>{
+ let controller!:ReadableStreamDefaultController<Uint8Array>,calls=0,seen!:()=>void;const ready=new Promise<void>(r=>{seen=r;}),updates:string[]=[],encoder=new TextEncoder();
+ const provider=new OpenAIModelProvider({apiKey:credential,transport:async(_url,init)=>{calls++;const body=JSON.parse(String(init?.body));if(calls===1){assert.equal(body.stream,undefined);return new Response(JSON.stringify({input_tokens:10}));}assert.equal(body.stream,true);assert.equal(body.max_output_tokens,20);return new Response(new ReadableStream<Uint8Array>({start(c){controller=c;c.enqueue(encoder.encode('data: '+JSON.stringify({type:'response.output_text.delta',delta:'Actual text '+credential.slice(0,12)})+'\n\n'));}}),{headers:{'content-type':'text/event-stream'}});}});
+ const pending=provider.invoke(request,undefined,delta=>{updates.push(delta);seen();});await ready;assert.equal(updates.join(''),'Actual text ');controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'response.output_text.delta',delta:credential.slice(12)+' finished'})+'\n\n'));controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'response.completed',response:response([message('Actual text '+credential+' finished')])})+'\n\n'));controller.close();
+ const result=await pending;assert.equal(result.decision.kind,'complete');assert.equal(updates.join(''),'Actual text [REDACTED] finished');assert.equal(JSON.stringify(result).includes(credential),false);assert.equal(result.usage!.inputTokens,12);assert.equal(result.usage!.cachedInputTokens,4);assert.equal(calls,2);
+});
+
+test('an ended Responses stream without its actual terminal receipt never invents usage or a completed answer',async()=>{
+ let calls=0;const provider=new OpenAIModelProvider({apiKey:credential,transport:async()=>++calls===1?new Response(JSON.stringify({input_tokens:10})):new Response('data: '+JSON.stringify({type:'response.output_text.delta',delta:'Partial only'})+'\n\n',{headers:{'content-type':'text/event-stream'}})});const partial:string[]=[];const result=await provider.invoke(request,undefined,t=>partial.push(t));assert.deepEqual(partial,['Partial only']);assert.equal(result.decision.kind,'failure');assert.equal(result.usage,undefined);assert.equal(calls,2);
+});
+
+test('Responses classifies the actual provider output ceiling without retaining its raw error or credentials',async()=>{
+ const m=mock([{input_tokens:10},{error:{message:'max_tokens is too large: 100. This model supports at most 25 completion tokens, '+credential}}]),provider=new OpenAIModelProvider({apiKey:credential,transport:m.transport});
+ const original=m.transport;let count=0;const transport:typeof fetch=async(...args)=>{const response=await original(...args);return ++count===2?new Response(await response.text(),{status:400}):response;};
+ const result=await new OpenAIModelProvider({apiKey:credential,transport}).invoke(request);assert.equal(result.failureReason,'output_cap');assert.equal(result.allowedMaxOutputTokens,25);assert.doesNotMatch(JSON.stringify(result),new RegExp(credential));assert.equal(result.usage,undefined);
 });

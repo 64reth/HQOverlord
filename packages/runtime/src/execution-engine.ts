@@ -29,12 +29,13 @@ export interface ExecutionEngineOptions {
 }
 
 export interface ExecutionControls {
+  resolveAgent?(): Agent;
   readonly signal?: AbortSignal;
   readonly observations?: readonly AgentObservation[];
   readonly turns?: number;
   readonly pendingTool?: ToolCall;
   beforeTool?(call: ToolCall, turns: number): Promise<boolean>;
-  afterTool?(call: ToolCall, result: ToolResult): Promise<void>;
+  afterTool?(call: ToolCall, result: ToolResult): Promise<ToolResult|void>;
 }
 
 export class ExecutionEngine {
@@ -93,11 +94,13 @@ export class ExecutionEngine {
         turn += 1
       ) {
         if (controls.signal?.aborted) return { status: "cancelled" };
+        const liveAgent = controls.resolveAgent?.() ?? agent;
+        if (liveAgent.businessId !== job.businessId || liveAgent.id !== agent.id) throw new RuntimeError("BUSINESS_SCOPE_VIOLATION", "Execution identity changed");
         const resuming = pending !== undefined;
         const action = structuredClone(pending ?? await driver.next({
           businessId: job.businessId,
           job,
-          agent,
+          agent: liveAgent,
           observations: [...observations],
           ...(controls.signal ? { signal: controls.signal } : {}),
         }));
@@ -113,14 +116,17 @@ export class ExecutionEngine {
         }
 
         requireToolPermission(
-          agent,
+          liveAgent,
           action.toolId,
         );
 
         const tool =
           this.#tools.require(action.toolId);
 
-        let allowed = tool.definition.effect === "read_only";
+        // Invalid calls must never acquire consent or a dispatched checkpoint.
+        this.#tools.validateArguments(action.toolId, action.input);
+
+        let allowed = tool.definition.effect !== "consequential";
         if (controls.beforeTool) {
           try { allowed = await controls.beforeTool(action, turn + 1); }
           catch (error) { boundaryFailed = true; throw error; }
@@ -128,18 +134,18 @@ export class ExecutionEngine {
         if (controls.signal?.aborted) return { status: "cancelled" };
         if (!allowed) return { status: "waiting_for_approval", pendingTool: action };
 
-        const result = await tool.execute(
+        let result = await tool.execute(
           structuredClone(action.input),
           {
             businessId: job.businessId,
             job,
-            agent,
+            agent: liveAgent,
             ...(controls.signal ? { signal: controls.signal } : {}),
           },
         );
 
         if (controls.afterTool) {
-          try { await controls.afterTool(action, result); }
+          try { const recorded=await controls.afterTool(action, result);if(recorded)result=recorded; }
           catch (error) { boundaryFailed = true; throw error; }
         }
 

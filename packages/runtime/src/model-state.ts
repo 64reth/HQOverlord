@@ -3,17 +3,30 @@ import type { ModelUsage } from "./model-provider.ts";
 import type { ModelPricing } from "./model-pricing.ts";
 import type { MeteredPricing, NanoUsd } from "./metered-cost.ts";
 
-export interface ModelPolicy {
+export interface ModelPolicy extends ModelTargetPolicy {
+  readonly maxRetries?:number;
+  readonly fallbackTargets?:readonly ModelTargetPolicy[];
+  readonly budget?:Money;
+}
+export interface ModelTargetPolicy {
+  readonly reasoningEffort?:string;
   readonly provider: string;
   readonly model: string;
   readonly maxInputTokens: number;
   readonly maxOutputTokens: number;
   readonly pricing?: ModelPricing;
   readonly meteredPricing?: MeteredPricing;
-  readonly budget?: Money;
 }
 
 export interface ModelInvocation {
+  readonly recoveryOf?:string;
+  readonly purpose?:'compaction';
+  readonly allowedMaxOutputTokens?:number;
+  readonly retryOf?:string;
+  readonly target?:ModelTargetPolicy;
+  readonly failureReason?:import('./model-recovery.ts').RecoveryReason;
+  /** Local transcript of the admitted turn. Credentials are not part of ModelRequest. */
+  readonly transcript?: {readonly instructions:string;readonly input:string;readonly inputContent?:import('./model-provider.ts').ModelRequest['inputContent'];readonly decision?:unknown};
   readonly id: string;
   /** Unknown calls retain their reservation across cancellation/restart. */
   readonly status: "reserved" | "unknown" | "settled";
@@ -27,6 +40,8 @@ export interface ModelInvocation {
 }
 
 export interface JobModelAccount {
+  readonly activeTarget?:number;
+  readonly continuation?: unknown;
   readonly businessId: BusinessId;
   readonly jobId: JobId;
   readonly policy: ModelPolicy;

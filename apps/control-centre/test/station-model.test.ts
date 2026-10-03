@@ -3,14 +3,22 @@ import test from "node:test";
 // @ts-expect-error Browser modules intentionally ship as plain JS.
 import { initialView, hydrate, disconnected, selectAgent, mutationsAllowed, expireTransport } from "../public/client-state.js";
 // @ts-expect-error Browser modules intentionally ship as plain JS.
-import { stationModel, exactMoney, revenueText } from "../public/station-model.js";
+import { stationModel, exactMoney, revenueText, elapsedTime } from "../public/station-model.js";
 // @ts-expect-error Browser modules intentionally ship as plain JS.
-import { stationPositions, hitStation } from "../public/world.js";
+import { stationPositions, hitStation, cratePosition } from "../public/world.js";
 
 function snapshot() {
   return { business: { id: "b" }, agents: [{ id: "a", businessId: "b", name: "Worker" }, { id: "second", businessId: "b", name: "Other" }, { id: "foreign", businessId: "outside" }],
     jobs: [] as { id: string; businessId: string; agentId: string; status: string; visualState: string }[], activity: [], knowledge: [], artifacts: [], sources: [], approvals: [], ledger: [], expenses: [] };
 }
+
+test("timer uses durable start/end, advances only with confirmed execution, and becomes unknown on disconnect",()=>{
+  const start="2026-10-02T12:00:00Z",end="2026-10-02T12:00:07Z",job={execution:{startedAt:start,finishedAt:null},visualState:"working"};
+  assert.equal(elapsedTime(job,"connected",Date.parse(end)),"7s");
+  assert.equal(elapsedTime({...job,execution:{startedAt:start,finishedAt:end},visualState:"completed"},"connected",Date.parse(end)+90000),"7s");
+  assert.equal(elapsedTime(job,"disconnected",Date.parse(end)),"unknown");
+  assert.equal(elapsedTime({...job,visualState:"interrupted"},"connected",Date.parse(end)),"interrupted");
+});
 
 test("station hydration and realtime selection stay in the current business and never impersonate a missing agent", () => {
   const s = snapshot(); let view = hydrate(initialView(), s, 1);
@@ -55,4 +63,14 @@ test("canvas station hit testing maps actual rendered positions to agents and em
   const positions = stationPositions(5); assert.equal(positions.length, 5);
   positions.forEach((p: { x: number; y: number }, i: number) => assert.equal(hitStation(positions, p.x, p.y + 30), i));
   assert.equal(hitStation(positions, 0, 0), -1);
+});
+
+
+test('floor crates require owned jobs, reflect simultaneous live runs and become unknown on transport loss',()=>{
+ const s=snapshot(),jobs=[{id:'left',businessId:'b',agentId:'a',status:'running',visualState:'working'},{id:'right',businessId:'b',agentId:'second',status:'running',visualState:'tool-use'}],station={workItems:[{id:'one',jobId:'left',agentId:'a',state:'placed'},{id:'two',jobId:'right',agentId:'second',state:'placed'},{id:'foreign-crate',jobId:'foreign-job',agentId:'foreign',state:'working'}]};const view=hydrate(initialView(),{...s,jobs,station},1);assert.deepEqual(stationModel(view).workItems.map((i:any)=>i.state),['working','working']);assert.deepEqual(stationModel(disconnected(view)).workItems.map((i:any)=>i.state),['unknown','unknown']);
+});
+
+
+test('crate movement stays on the recorded belt segments, obeys reduced motion and never creates a runtime delivery',()=>{
+ const item={updatedAt:'2026-10-03T12:00:00Z',beltPath:[{x:1,y:1},{x:2,y:1},{x:2,y:2}]},now=Date.parse(item.updatedAt);assert.deepEqual(cratePosition(item,now),{x:1,y:1});assert.deepEqual(cratePosition(item,now+1000),{x:2,y:1.7});assert.deepEqual(cratePosition(item,now+1000,true),{x:2,y:2});assert.deepEqual(cratePosition(item,now+10000),{x:2,y:2});assert.equal(cratePosition({updatedAt:item.updatedAt},now),null);assert.equal(item.beltPath.length,3);
 });

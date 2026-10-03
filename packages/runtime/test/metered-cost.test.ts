@@ -59,6 +59,14 @@ test("conversions are explicit, integer and currency safe", () => {
   assert.throws(() => usdCentsToNanoUsd(money(500n, currencyCode("GBP"))), /without FX/);
   assert.equal(maximumMeteredCost("fake", "worker", 10, 10, { ...pricing, cachedInputNanodollars: 600_000_000n })!.nanodollars, 11_000n);
 });
+
+test("cache creation is separately priced and conservatively reserved; an absent creation rate remains unknown",()=>{
+  const reported={...usage(10,2,3),cacheCreationInputTokens:4};
+  assert.equal(priceMeteredUsage(reported,pricing),undefined);
+  const priced={...pricing,cacheCreationInputNanodollars:200_000_000n,cachedInputNanodollars:50_000_000n};
+  assert.equal(priceMeteredUsage(reported,priced)!.nanodollars,2250n);
+  assert.equal(maximumMeteredCost('fake','worker',10,2,priced)!.nanodollars,3000n);
+});
 test("multiple tiny calls accumulate as separate truthful scaled expenses without legacy cent charges", async () => {
   const s = await setup(), provider = new FakeModelProvider([result(1, 1, true), result(1, 1)]);
   assert.equal((await s.runtime.executeModelJob(context("run"), s.job.id, provider, s.tools, options)).status, "completed");
@@ -71,6 +79,13 @@ test("multiple tiny calls accumulate as separate truthful scaled expenses withou
   const facts = s.runtime.snapshot().facts.filter(f => f.type === "model.expense_recorded.v1");
   assert.equal(facts.length, 2);
   assert.ok(facts.every(f => f.businessId === businessId && f.producer === "hq.runtime" && f.actor.id === "owner"));
+});
+
+test('an unavailable provider decision still records its actual reported expense instead of losing usage during transcript serialization',async()=>{
+  const s=await setup(),provider={name:'fake',async invoke(){return {usage:usage(12,3)} as ModelResult;}};
+  assert.equal((await s.runtime.executeModelJob(context('malformed-paid-result'),s.job.id,provider,s.tools,options)).status,'failed');
+  assert.equal(s.runtime.inspectMeteredExpenses(context('malformed-expense'),s.job.id)[0]!.cost.nanodollars,2700n);
+  assert.equal(s.runtime.inspectModelAccount(context('malformed-account'),s.job.id)!.invocations[0]!.status,'settled');
 });
 test("zero usage creates a genuine zero expense rather than charging the reservation", async () => {
   const s = await setup();
