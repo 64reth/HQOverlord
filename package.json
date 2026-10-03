@@ -8,15 +8,16 @@
     "packages/*"
   ],
   "scripts": {
-    "control-centre": "node apps/control-centre/src/main.ts",
-    "build:web": "npm run build --workspace @hqoverlord/control-centre",
+    "control-centre": "node apps/web/src/main.mjs",
+    "build:web": "npm run build --workspace @hqoverlord/web",
     "live:acceptance": "node scripts/live-acceptance.ts",
     "live:openai": "node scripts/real-ai-ignition.mts",
     "business:001:preview": "node businesses/business-001/preview.ts",
     "business:001:bootstrap": "node businesses/business-001/bootstrap.ts",
     "test:business-001": "node --test businesses/business-001/test/*.test.ts",
     "test": "node --test packages/core/test/*.test.ts packages/events/test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "business:001:control-centre": "node businesses/business-001/control-centre.ts"
   },
   "engines": {
     "node": ">=24"

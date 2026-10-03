@@ -1,26 +1,38 @@
-# HQOverlord Living Station (desktop)
+# HQOverlord Living Station
 
-Run from the repository root with the existing Node 24+ installation and dependencies:
+Desktop application using the existing authoritative runtime and supplied pixel artwork.
+
+## Launch
+
+From PowerShell with the repository's existing dependencies and Node 24+:
 
 ```powershell
 Set-Location C:\Projects\HQOverlord
-node apps/web/src/main.mjs
+npm.cmd run control-centre
 ```
 
-Open http://127.0.0.1:8788. The launcher starts the existing runtime host on port 8789 and serves this desktop UI on 8788. Stop both with Ctrl+C. Stop any older Control Centre instance using port 8788 first. HQ_PORT and HQ_RUNTIME_PORT can select distinct alternative ports.
+Open http://127.0.0.1:8788. Ctrl+C stops the Station and its business runtime hosts. HQ_PORT selects another local port.
 
-Paid execution remains explicitly controlled by HQ_ENABLE_MODEL_EXECUTION=1 and existing host provider configuration. Without it COMMS queues jobs and accurately reports that execution is disabled. Credentials never enter the frontend.
+A fresh installation opens Overlord selection. Selection creates only the real HQ lead; there is no recruited Crew, user business, bay or workflow. The lead has an internal HQ Station scope, separate from user-created businesses. Create a named business explicitly before recruiting its Crew. Each recruited agent receives a real bay.
 
-## Completed surface
+Business 001 is optional, never imported by normal HQ startup. Its existing data remains in its own package. Its explicit legacy launcher is npm.cmd run business:001:control-centre.
 
-Supplied logo and VT323 typography; extracted floor, wall, bay, Crew, Overlord, Gear, console and machinery artwork; 64x32 isometric view of real agents, desks, placed equipment and workflow facts; selection, camera pan/zoom and arrange-mode bay/Gear dragging with tile snapping. Gear placement calls existing runtime capability operations. Existing COMMS and operator windows expose dossiers, profiles/budgets, notebooks, tools, workflows, recipes, routines, Night Shift, channels, approvals, artifacts/downloads and accounting.
+## Operate
 
-Room identities, desks and Gear assignments are backend-owned. Room geometry and Crew appearances are per-business localStorage preferences in this browser, not host state. Overlord is an appearance assigned to an existing real agent, not an extra invented agent. Activity animation uses only actual working states and admitted work items.
+Select the Overlord or Crew to use COMMS and their dossier. The operator dock opens notebooks, models, channels, workflows, recipes, routines, Night Shift, approvals, files/Outbox and costs/budgets. Models accepts host credentials, exact model tariffs and per-job budgets. Multiple provider/model configurations are retained; Crew can select a configured model. Model configuration is not a claimed successful provider call. Without a configured model COMMS can queue work but cannot execute it.
 
-## Frozen unfinished work
+Use the mouse to pan the Station, the wheel or +/- controls to zoom, and FIT to view all rooms. ARRANGE enables dragging bays, Gear and decorations with tile snapping; occupied tiles are refused. Choose Gear or Decor then click a room tile. Gear enables only the runtime's implemented tools for Crew in the same assigned room; decorations grant nothing. Consequential tool operations retain the runtime's exact-operation approval requirements.
 
-Artwork extraction still needs visual refinement: some dark outlines/background remnants and console crops are imperfect. Modular room openings and environmental prop placement are unfinished. Workflow machinery uses a generic machine sprite; type-specific visuals remain unfinished. Desktop drag/drop, room creation, capability changes and restart restoration have not received a complete manual acceptance pass. Appearance/room geometry does not travel between browsers. Paid execution cannot be used until the operator supplies host provider credentials and explicitly enables it. No automated tests were added or run for this UI landing.
+ROOMS edits named rooms, tile dimensions and floor materials. Desk, Gear, Crew, workflows, jobs and permissions are existing runtime state. Visual room geometry, appearances and decorations save to the host's Station profile. The selected business is a browser navigation preference. Restart restores both domain records and Station preferences.
 
-## Assets
+## State and assets
 
-Original sheets are preserved under public/assets/station. Derived PNGs and manifest are in its derived directory. Reproduce extraction with powershell -ExecutionPolicy Bypass -File apps/web/scripts/prepare-station-assets.ps1. Build with npm.cmd --prefix apps/web run build.
+HQ data defaults to apps/web/.local, independently of Business 001. HQ_DATA_DIR selects a different application data directory. Credentials stay in the host's ignored data directory or provider environment variables; they are never included in public snapshots.
+
+Original production sheets are preserved under public/assets/station. Derived PNGs and manifest are in derived/. Reproduce extraction with powershell -ExecutionPolicy Bypass -File apps/web/scripts/prepare-station-assets.ps1. Build with npm.cmd run build:web.
+
+## Verification
+
+Manually operated Chrome on desktop: fresh Overlord selection and an empty Station, explicit business creation, recruitment, snapping a real bay, Gear placement and corresponding file capabilities, decoration placement, room creation, workflow saving/rendering, queue/cancel in COMMS, notebook persistence, operator windows and file browsing. Restart restored the selected business, Overlord, Crew, moved desk, Gear, room geometry, decoration, saved workflow and notebook. Build and root typecheck pass. No automated tests were added or run.
+
+Real paid provider execution was not exercised without operator credentials. External channels/connectors need their existing host transport configuration and enable flags.

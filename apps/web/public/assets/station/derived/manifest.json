@@ -45,8 +45,8 @@
                                 },
                     "wall":  {
                                  "url":  "/assets/station/derived/wall.png",
-                                 "width":  64,
-                                 "height":  76
+                                 "width":  128,
+                                 "height":  124
                              },
                     "column":  {
                                    "url":  "/assets/station/derived/column.png",
@@ -500,8 +500,8 @@
                               },
                     "comms":  {
                                   "url":  "/assets/station/derived/comms.png",
-                                  "width":  96,
-                                  "height":  104
+                                  "width":  112,
+                                  "height":  128
                               },
                     "models":  {
                                    "url":  "/assets/station/derived/models.png",
@@ -510,7 +510,7 @@
                                },
                     "channels":  {
                                      "url":  "/assets/station/derived/channels.png",
-                                     "width":  80,
+                                     "width":  64,
                                      "height":  104
                                  },
                     "logo":  {
@@ -522,6 +522,71 @@
                                  "url":  "/assets/station/derived/lamp.png",
                                  "width":  24,
                                  "height":  40
-                             }
+                             },
+                    "opening":  {
+                                    "url":  "/assets/station/derived/opening.png",
+                                    "width":  128,
+                                    "height":  124
+                                },
+                    "plant":  {
+                                  "url":  "/assets/station/derived/plant.png",
+                                  "width":  48,
+                                  "height":  64
+                              },
+                    "books":  {
+                                  "url":  "/assets/station/derived/books.png",
+                                  "width":  64,
+                                  "height":  80
+                              },
+                    "rug":  {
+                                "url":  "/assets/station/derived/rug.png",
+                                "width":  128,
+                                "height":  80
+                            },
+                    "sofa":  {
+                                 "url":  "/assets/station/derived/sofa.png",
+                                 "width":  64,
+                                 "height":  72
+                             },
+                    "table":  {
+                                  "url":  "/assets/station/derived/table.png",
+                                  "width":  64,
+                                  "height":  48
+                              },
+                    "banner":  {
+                                   "url":  "/assets/station/derived/banner.png",
+                                   "width":  40,
+                                   "height":  64
+                               },
+                    "machine-intake":  {
+                                           "url":  "/assets/station/derived/machine-intake.png",
+                                           "width":  64,
+                                           "height":  60
+                                       },
+                    "machine-outbox":  {
+                                           "url":  "/assets/station/derived/machine-outbox.png",
+                                           "width":  64,
+                                           "height":  60
+                                       },
+                    "machine-filter":  {
+                                           "url":  "/assets/station/derived/machine-filter.png",
+                                           "width":  64,
+                                           "height":  64
+                                       },
+                    "machine-joiner":  {
+                                           "url":  "/assets/station/derived/machine-joiner.png",
+                                           "width":  80,
+                                           "height":  80
+                                       },
+                    "machine-splitter":  {
+                                             "url":  "/assets/station/derived/machine-splitter.png",
+                                             "width":  80,
+                                             "height":  80
+                                         },
+                    "machine-loop":  {
+                                         "url":  "/assets/station/derived/machine-loop.png",
+                                         "width":  80,
+                                         "height":  80
+                                     }
                 }
 }

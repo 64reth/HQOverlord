@@ -1,52 +1,46 @@
 import {createServer,request} from 'node:http';
-import {spawn,execFileSync} from 'node:child_process';
-import {readFile,stat} from 'node:fs/promises';
+import {randomBytes,timingSafeEqual} from 'node:crypto';
+import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
+import {openSync,writeFileSync,readFileSync,unlinkSync,closeSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
-import {resolve,extname,sep} from 'node:path';
-
-const repo=fileURLToPath(new URL('../../../',import.meta.url));
+import {resolve,extname,sep,join} from 'node:path';
+import {stationHost} from './runtime-host.ts';
+import {wireJson} from '../../control-centre/src/projection.ts';
 const publicRoot=resolve(fileURLToPath(new URL('../public/',import.meta.url)));
-const port=Number(process.env.HQ_PORT??8788);
-const runtimePort=Number(process.env.HQ_RUNTIME_PORT??port+1);
-if(![port,runtimePort].every(p=>Number.isSafeInteger(p)&&p>0&&p<=65535)||port===runtimePort)throw new Error('Use distinct valid HQ_PORT and HQ_RUNTIME_PORT');
-// The existing authoritative application stays unchanged. This host serves its desktop view.
-try{await stat(resolve(repo,'apps/control-centre/dist/index.html'));}
-catch{execFileSync(process.execPath,['apps/control-centre/build.mjs'],{cwd:repo,stdio:'inherit'});}
-const backend=spawn(process.execPath,['apps/control-centre/src/main.ts'],{cwd:repo,env:{...process.env,HQ_PORT:String(runtimePort)},stdio:'inherit',windowsHide:true});
-let closing=false;
-backend.on('exit',code=>{if(!closing){console.error('Runtime host stopped.');process.exit(code??1);}});
+const dataRoot=resolve(process.env.HQ_DATA_DIR??fileURLToPath(new URL('../.local/',import.meta.url)));
+const port=Number(process.env.HQ_PORT??8788);if(!Number.isSafeInteger(port)||port<1||port>65535)throw new Error('Invalid HQ_PORT');
+await mkdir(dataRoot,{recursive:true});
+// Only one application process may own these runtime files.
+const lockPath=join(dataRoot,'hq.lock');
+let lock;
+try{lock=openSync(lockPath,'wx',0o600);}catch(error){if(error.code!=='EEXIST')throw error;const owner=Number(readFileSync(lockPath,'utf8'));let alive=true;try{process.kill(owner,0);}catch(e){if(e.code==='ESRCH')alive=false;else throw e;}if(alive)throw new Error('This HQ data directory is already open. Use the running Station.');unlinkSync(lockPath);lock=openSync(lockPath,'wx',0o600);}
+writeFileSync(lock,String(process.pid));closeSync(lock);
+process.on('exit',()=>{try{if(readFileSync(lockPath,'utf8')===String(process.pid))unlinkSync(lockPath);}catch{}});
+let profile;try{profile=JSON.parse(await readFile(join(dataRoot,'station.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+let keys={};try{const secrets=JSON.parse(await readFile(join(dataRoot,'credentials.json'),'utf8'));keys=secrets.providerKeys??(secrets.providerKey?{[profile?.brain?.provider??'openai']:secrets.providerKey}:{});}catch(e){if(e.code!=='ENOENT')throw e;}
+const token=randomBytes(32).toString('hex'),hosts=new Map();
+let writes=Promise.resolve();async function persist(){const raw=JSON.stringify(profile,null,2);const task=writes.then(async()=>{const file=join(dataRoot,'station.json'),temp=file+'.tmp';await writeFile(temp,raw,{mode:0o600});await rename(temp,file);});writes=task.catch(()=>{});await task;}
+async function hostFor(id='hq-station'){if(hosts.has(id))return hosts.get(id);const scope=id==='hq-station'?{id,name:'HQ Station'}:profile?.businesses.find(b=>b.id===id);if(!scope)throw new Error('Choose an owned business.');const pending=stationHost(dataRoot,scope,()=>profile,provider=>keys[provider]??process.env[({openai:'OPENAI_API_KEY',anthropic:'ANTHROPIC_API_KEY',gemini:'GEMINI_API_KEY',openrouter:'OPENROUTER_API_KEY'})[provider]??'']??'');hosts.set(id,pending);try{return await pending;}catch(e){hosts.delete(id);throw e;}}
+
+function publicProfile(){return {profile:profile??null,overlord:profile?undefined:null};}
+async function hqState(){const snapshot=profile?(await hostFor()).snapshot():null;return {...publicProfile(),overlord:snapshot?.agents.find(a=>a.id===profile.agentId)??null,hqJobs:snapshot?.jobs??[],layouts:profile?.layouts??{}};}
+async function body(req){const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>256000)throw new Error('Request too large');chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}');}
+function validBrain(b){if(!b||!['responses','chat','anthropic','gemini','openrouter'].includes(b.format)||typeof b.provider!=='string'||!b.provider.trim()||typeof b.model!=='string'||!b.model.trim()||typeof b.endpoint!=='string')throw new Error('Complete the provider and model settings.');const u=new URL(b.endpoint);if(u.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(u.hostname))throw new Error('Provider endpoints require HTTPS or a local model host.');if(b.format==='responses'&&(b.provider!=='openai'||b.endpoint!=='https://api.openai.com/v1'))throw new Error('OpenAI Responses uses its official API endpoint.');if(!b.pricing||!['tokensPerBlock','inputNanodollars','outputNanodollars','cachedInputNanodollars'].every(k=>/^\d{1,20}$/.test(b.pricing[k]))||BigInt(b.pricing.tokensPerBlock)<1n||!/^\d{1,8}$/.test(b.budgetCents)||BigInt(b.budgetCents)<1n)throw new Error('Enter exact nonnegative prices and a positive job budget.');return {provider:b.provider.trim(),model:b.model.trim(),format:b.format,endpoint:b.endpoint,pricing:b.pricing,budgetCents:b.budgetCents};}
+function upstream(req,res,host){const headers={...req.headers,host:'127.0.0.1:'+host.port,cookie:host.cookie};if(headers.origin)headers.origin='http://127.0.0.1:'+host.port;delete headers.connection;const out=request({hostname:'127.0.0.1',port:host.port,path:req.url,method:req.method,headers},incoming=>{const forwarded={...incoming.headers};delete forwarded['set-cookie'];res.writeHead(incoming.statusCode??502,forwarded);incoming.pipe(res);res.on('close',()=>incoming.destroy());});out.on('error',()=>{if(!res.headersSent)res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'Runtime unavailable. Reconnect to the Station.'}));});req.on('aborted',()=>out.destroy());req.pipe(out);}
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};
-function upstream(req,res,path,root=false,bytes){
- const headers={...req.headers,host:'127.0.0.1:'+runtimePort};
- if(headers.origin)headers.origin='http://127.0.0.1:'+runtimePort;
- delete headers.connection;
- const out=request({hostname:'127.0.0.1',port:runtimePort,path,method:root?'GET':req.method,headers},incoming=>{
-  if(root){const cookie=incoming.headers['set-cookie'];if(cookie)res.setHeader('Set-Cookie',cookie);incoming.resume();res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(bytes);}
-  else{res.writeHead(incoming.statusCode??502,incoming.headers);incoming.pipe(res);res.on('close',()=>incoming.destroy());}
- });
- out.on('error',()=>{if(!res.headersSent)res.writeHead(503,{'Content-Type':'text/plain'});res.end('Runtime starting or unavailable. Refresh the Station in a moment.');});
- req.on('aborted',()=>out.destroy());
- if(root)out.end();else req.pipe(out);
-}
-const server=createServer(async(req,res)=>{
- res.setHeader('Cache-Control','no-store');
- res.setHeader('X-Content-Type-Options','nosniff');
- res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
- const host='127.0.0.1:'+port;
- if(req.headers.host!==host||req.headers.origin&&req.headers.origin!=='http://'+host||req.headers['sec-fetch-site']==='cross-site'){res.writeHead(403).end('Invalid local origin');return;}
- const url=new URL(req.url,'http://'+host);
- if(url.pathname.startsWith('/api/')){upstream(req,res,req.url);return;}
- if(req.method!=='GET'){res.writeHead(405).end();return;}
- try{
-  const name=decodeURIComponent(url.pathname)==='/'?'index.html':decodeURIComponent(url.pathname).slice(1);
-  const path=resolve(publicRoot,name);
-  if(!path.startsWith(publicRoot+sep)||!mime[extname(path)]||name.split(/[\\/]/).some(p=>p.startsWith('.'))){res.writeHead(404).end();return;}
-  const bytes=await readFile(path);
-  if(name==='index.html'){upstream(req,res,'/',true,bytes);return;}
-  res.writeHead(200,{'Content-Type':mime[extname(path)]});res.end(bytes);
- }catch{res.writeHead(404).end();}
+const server=createServer(async(req,res)=>{res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");const host='127.0.0.1:'+port;if(req.headers.host!==host||req.headers.origin&&req.headers.origin!=='http://'+host||req.headers['sec-fetch-site']==='cross-site'){res.writeHead(403).end('Invalid local origin');return;}const url=new URL(req.url,'http://'+host);
+ try{if(url.pathname.startsWith('/api/')){const supplied=/(?:^|;\s*)hq_session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie??'')?.[1]??'';if(supplied.length!==token.length||!timingSafeEqual(Buffer.from(supplied),Buffer.from(token))){res.writeHead(401).end();return;}res.setHeader('Content-Type','application/json');
+ if(req.method==='GET'&&url.pathname==='/api/hq'){res.end(wireJson(await hqState()));return;}
+ if(req.method==='POST'&&url.pathname==='/api/onboard'){if(profile)throw new Error('This HQ Station already has an Overlord.');const input=await body(req);if(typeof input.name!=='string'||!input.name.trim()||input.name.length>80||!Number.isInteger(input.skin)||input.skin<0||input.skin>7)throw new Error('Choose an Overlord and enter its name.');profile={name:input.name.trim(),skin:input.skin,businesses:[],layouts:{}};const hq=await hostFor();const created=await hq.runtime.createAgent({...hq.context(),commandId:'hq-overlord-onboard-v1'},{name:profile.name});profile.agentId=created.record.id;await hq.runtime.configureAgent(hq.context(),{agentId:created.record.id,instructions:'You are the HQOverlord lead. Help your operator plan and run their Station. Never invent recruited Crew, business state, completed work or permissions. Businesses are isolated and only the operator creates them.',personality:'Clear, thoughtful, practical.'});await hq.runtime.assignDesk(hq.context(),created.record.id,512,384);await persist();res.end(wireJson(await hqState()));return;}
+ if(!profile)throw new Error('Select your Overlord first.');
+ if(req.method==='POST'&&url.pathname==='/api/business-create'){const input=await body(req);if(typeof input.name!=='string'||!input.name.trim()||input.name.length>100)throw new Error('Enter a business name.');const scope={id:'business-'+randomBytes(8).toString('hex'),name:input.name.trim()};profile.businesses.push(scope);try{await hostFor(scope.id);await persist();}catch(e){profile.businesses=profile.businesses.filter(b=>b.id!==scope.id);throw e;}res.end(wireJson(scope));return;}
+ if(req.method==='POST'&&url.pathname==='/api/layout'){const input=await body(req),id=url.searchParams.get('business')??'hq-station';await hostFor(id);if(!input||typeof input!=='object'||Array.isArray(input)||JSON.stringify(input).length>100000)throw new Error('Invalid Station layout.');profile.layouts[id]=input;await persist();res.end('{"saved":true}');return;}
+ if(req.method==='POST'&&url.pathname==='/api/provider'){const input=await body(req);const brain=validBrain(input);for(const pending of hosts.values()){const h=await pending;if(h.runtime.snapshot().authority.jobs.some(j=>h.runtime.isJobActive(h.context(),j.id)))throw new Error('Wait for live work before changing the provider.');}if(typeof input.apiKey==='string'&&input.apiKey.trim()){keys[brain.provider]=input.apiKey.trim();const file=join(dataRoot,'credentials.json'),temp=file+'.tmp';await writeFile(temp,JSON.stringify({providerKeys:keys}),{mode:0o600});await rename(temp,file);}if(!keys[brain.provider]&&!process.env[({openai:'OPENAI_API_KEY',anthropic:'ANTHROPIC_API_KEY',gemini:'GEMINI_API_KEY',openrouter:'OPENROUTER_API_KEY'})[brain.provider]??'']&&!['127.0.0.1','localhost','[::1]'].includes(new URL(brain.endpoint).hostname))throw new Error('Supply your provider API key on this host.');profile.brains=[...(profile.brains??(profile.brain?[profile.brain]:[])).filter(b=>b.provider!==brain.provider||b.model!==brain.model),brain];profile.brain=brain;await persist();for(const pending of hosts.values())(await pending).refresh();res.end(wireJson({saved:true,model:brain.model,provider:brain.provider}));return;}
+ if(req.method==='GET'&&url.pathname==='/api/workspace-files'){const h=await hostFor(url.searchParams.get('business')??'hq-station');res.end(wireJson({files:await h.listFiles(url.searchParams.get('agent')??'')}));return;}
+ const id=url.searchParams.get('business')??'hq-station';if(id==='hq-station'&&url.pathname==='/api/recruit')throw new Error('Create or select a business before recruiting its Crew.');upstream(req,res,await hostFor(id));return;}
+ if(req.method!=='GET'){res.writeHead(405).end();return;}const name=decodeURIComponent(url.pathname)==='/'?'index.html':decodeURIComponent(url.pathname).slice(1),path=resolve(publicRoot,name);if(!path.startsWith(publicRoot+sep)||!mime[extname(path)]||name.split(/[\\/]/).some(p=>p.startsWith('.'))){res.writeHead(404).end();return;}const bytes=await readFile(path);if(name==='index.html')res.setHeader('Set-Cookie','hq_session='+token+'; HttpOnly; SameSite=Strict; Path=/');res.writeHead(200,{'Content-Type':mime[extname(path)]});res.end(bytes);
+ }catch(error){if(res.headersSent)res.destroy();else res.writeHead(error.code==='ENOENT'?404:409,{'Content-Type':'application/json'}).end(JSON.stringify({error:error.message??'Operation refused'}));}
 });
-server.listen(port,'127.0.0.1',()=>console.log('HQOverlord Living Station: http://127.0.0.1:'+port));
-function close(){if(closing)return;closing=true;backend.kill();server.close();setTimeout(()=>process.exit(0),500).unref();}
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,close);
-process.on('exit',()=>backend.kill());
+server.listen(port,'127.0.0.1',async()=>{try{if(profile){await hostFor();for(const b of profile.businesses)await hostFor(b.id);}console.log('HQOverlord Living Station http://127.0.0.1:'+port);}catch(error){console.error(error.message);process.exit(1);}});
+server.on('error',error=>{console.error(error.message);process.exit(1);});
+let closing=false;async function close(){if(closing)return;closing=true;for(const pending of hosts.values())await(await pending).close();server.close(()=>process.exit(0));}for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>void close());
