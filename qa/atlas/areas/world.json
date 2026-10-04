@@ -1,0 +1,3607 @@
+{
+  "area": "world",
+  "updatedAt": "2026-07-18T04:07:06.267Z",
+  "entries": [
+    {
+      "id": "state/ingame",
+      "kind": "state",
+      "area": "world",
+      "name": "shoot state: ingame",
+      "purpose": "The base shoot state — the resting live station with all windows closed; the canonical view the Atlas sweep walks first.",
+      "promise": "buildStates() yields {name:\"ingame\", drive:closeOnly}: from any state, closing all windows returns to the interactive station canvas; every ingame-tagged UI entry is enumerated in this state.",
+      "wiring": {
+        "files": [
+          "scripts/lib/states.mjs",
+          "scripts/lib/shootRun.mjs",
+          "scripts/qa/cartographer.mjs"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "cc424925ea925e80428b9d6062fc6ac2ac6a0873",
+        "date": "2026-07-18T02:46:06.532Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live @ HEAD: the seeded app reaches the base in-game state on every boot/reload (READY_EXPR true: #screen-game active + #bottombar visible; window.__STARNET_DEV__ set) — verified repeatedly this wave via the cartographer liveSweep boot on :8967. Covered by the 'ingame' shoot state."
+    },
+    {
+      "id": "ui/world/aria-add-a-widget-to-this-rail",
+      "kind": "ui",
+      "area": "world",
+      "name": "Add a widget to this rail",
+      "purpose": "The ＋ \"add a widget\" button on a widget rail — opens the picker to pin a telemetry instrument to that rail.",
+      "promise": "Clicking opens a .wg-pop menu of .wg-pop-item feeds; picking one pins that instrument to the rail (persisted to the rail-layout localStorage key).",
+      "wiring": {
+        "files": [
+          "frontend/app/widgets.js",
+          "frontend/css/app.css",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "66a80e548642ba35c82d37a3d6730f21749020af",
+        "date": "2026-07-18T02:34:24.029Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button[aria-label=\"Add a widget to this rail\"]",
+      "state": "ingame",
+      "notes": "Live @ HEAD: click opened .wg-pop role=menu with 4 widget options (RUNS·24H shown, QUEUE/ROUTINES/TOKENS +add). Seam widgets.js togglePop."
+    },
+    {
+      "id": "ui/world/aria-remove-widget",
+      "kind": "ui",
+      "area": "world",
+      "name": "Remove widget",
+      "purpose": "The ✕ on a pinned widget — unpins that instrument from its rail.",
+      "promise": "Clicking removes the widget from the rail and its id from the persisted rail layout; the rail re-renders without it.",
+      "wiring": {
+        "files": [
+          "frontend/app/widgets.js",
+          "frontend/css/app.css",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "66a80e548642ba35c82d37a3d6730f21749020af",
+        "date": "2026-07-18T02:34:24.029Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button[aria-label=\"Remove widget\"]",
+      "state": "ingame",
+      "notes": "Live @ HEAD: clicking the widget's 'Remove widget' (.wg-x) button dropped the widget count 1 -> 0 (widgets.js removeWidget). Seam proven."
+    },
+    {
+      "id": "ui/world/aria-session-actions",
+      "kind": "ui",
+      "area": "world",
+      "name": "session actions",
+      "purpose": "The ⋯ kebab on a workstream row — opens that session's per-row action menu (rename/archive/etc).",
+      "promise": "Clicking the .ws-kebab (aria-label/title 'session actions') opens the session's action menu.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/css/app.css",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "66a80e548642ba35c82d37a3d6730f21749020af",
+        "date": "2026-07-18T02:34:24.029Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button[aria-label=\"session actions\"]",
+      "state": "ingame",
+      "notes": "Live @ HEAD: .ws-kebab present with correct aria-label/title 'session actions', wired at app.js:2674. AUDITED not perfected: it is a hover-revealed row control (tabindex -1) and its action menu did not open under a synthetic click, so the menu-open was not cleanly live-driven; the ingame shoot walks the rail but not the kebab menu."
+    },
+    {
+      "id": "ui/world/bb-build",
+      "kind": "ui",
+      "area": "world",
+      "name": "⌂REFIT STATIONplace rooms, corridors & gear",
+      "purpose": "Opens REFIT MODE — the floor editor to place rooms, run corridors, and paint decks (station refit).",
+      "promise": "Clicking it enters Refit mode (.refit-canvas + 'REFIT MODE — DRAG TO PLACE ROOMS' overlay); pulses a refit-nudge until first opened.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/dockglow.js",
+          "frontend/app/tutorial.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "build-station"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "66a80e548642ba35c82d37a3d6730f21749020af",
+        "date": "2026-07-18T02:34:24.029Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#bb-build",
+      "state": "ingame",
+      "notes": "Live @ HEAD: click #bb-build set document.body.class 'refit-on' and rendered the REFIT dock (.refit-canvas/.refit-top/.refit-title) = REFIT STATION build mode open (Build.toggle, build.js)."
+    },
+    {
+      "id": "ui/world/bb-missions",
+      "kind": "ui",
+      "area": "world",
+      "name": "❒RECIPESready-made jobs to launch — they land on TASKS",
+      "purpose": "Opens the recipe (ready-made mission) library straight to the RECIPES tab so you can launch a pre-built mission.",
+      "promise": "Clicking it opens the deploy bay on the recipes tab (a 'SAVE A RECIPE' / recipe library surface).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "work-recipes"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "66a80e548642ba35c82d37a3d6730f21749020af",
+        "date": "2026-07-18T02:34:24.029Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#bb-missions",
+      "state": "ingame",
+      "notes": "Live @ HEAD: click #bb-missions opened the Marketplace bay on the '❒ RECIPES' tab (active) via openDeployBay('recipes')."
+    },
+    {
+      "id": "ui/world/bb-recruit",
+      "kind": "ui",
+      "area": "world",
+      "name": "＋RECRUITgrow the crew — summon a class, or re-spec your agen",
+      "purpose": "The ONE recruit door — opens the RECRUITMENT BAY to summon a new agent (class dossier) or re-spec the current one.",
+      "promise": "Clicking it opens the Recruitment Bay overlay (.mkt-scrim + CLASS DOSSIER) offering both verbs: summon new / deploy to current.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "crew-recruit"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "66a80e548642ba35c82d37a3d6730f21749020af",
+        "date": "2026-07-18T02:34:24.029Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#bb-recruit",
+      "state": "ingame",
+      "notes": "Live @ HEAD: click #bb-recruit opened the Marketplace bay (.mkt, title '▮ RECRUITMENT BAY') via openSummonBay -> Marketplace.open."
+    },
+    {
+      "id": "ui/world/btn-back",
+      "kind": "ui",
+      "area": "world",
+      "name": "‹ BACK",
+      "purpose": "The BACK action on the connect screen returning to the prior flow (re-entry / roster).",
+      "promise": "Clicking it runs onConnectBack() to leave the connect screen without creating an agent.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "journey",
+          "ref": "beginner-run:connect"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-back",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-back ('‹ BACK') present+visible. Connect-flow navigation covered by beginner-run:connect journey."
+    },
+    {
+      "id": "ui/world/btn-codex-logout",
+      "kind": "ui",
+      "area": "world",
+      "name": "✕ DISCONNECT",
+      "purpose": "Disconnects the stored ChatGPT credentials (forgets the Codex tokens).",
+      "promise": "Shown only when connected; clicking POSTs /api/auth/codex/logout, drops the tokens, and returns the block to the \"sign in\" state.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "sidecar/index.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "provider.codex-auth.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-codex-logout",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-codex-logout ('✕ DISCONNECT') present+wired (codexLogout). Covered by provider.codex-auth.test.js."
+    },
+    {
+      "id": "ui/world/btn-codex-open",
+      "kind": "ui",
+      "area": "world",
+      "name": "↗ OPEN PAGE",
+      "purpose": "Re-opens the ChatGPT device-verification page during an in-flight Codex sign-in.",
+      "promise": "Hidden until a sign-in code is issued; once shown, clicking opens the verification_uri (Tauri external-open or window.open).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "provider.codex-auth.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-codex-open",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-codex-open ('↗ OPEN PAGE') present+wired. Covered by provider.codex-auth.test.js."
+    },
+    {
+      "id": "ui/world/btn-codex-signin",
+      "kind": "ui",
+      "area": "world",
+      "name": "⏼ SIGN IN WITH CHATGPT ▸",
+      "purpose": "Starts the ChatGPT (Codex OAuth) device-code sign-in so a user can run agents on their ChatGPT subscription with no API key.",
+      "promise": "Clicking POSTs /api/auth/codex/start and, on success, displays the real device user_code + opens the verification page; on failure it shows a clean error and stays.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "sidecar/index.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "provider.codex-auth.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "provider.codex.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-codex-signin",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-codex-signin ('⏼ SIGN IN WITH CHATGPT ▸') present with correct label + wiring (startCodexSignIn). OAuth flow covered by provider.codex-auth.test.js + provider.codex.test.js; the real ChatGPT OAuth cannot be driven headlessly."
+    },
+    {
+      "id": "ui/world/btn-export",
+      "kind": "ui",
+      "area": "world",
+      "name": "⭳ EXPORT AGENT",
+      "purpose": "Exports every starnet.* key + a memory snapshot as one backup file (the only in-app export entry point).",
+      "promise": "Shown only when there is a saved agent to back up; clicking bundles the config+memories and reports the saved file + key/memory counts.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/backup.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "configexport.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-export",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-export ('⭳ EXPORT AGENT') present. Export round-trip covered by configexport.test.js; not clicked live (download-gated)."
+    },
+    {
+      "id": "ui/world/btn-future-update",
+      "kind": "ui",
+      "area": "world",
+      "name": "⭯ UPDATE STARNET ▸",
+      "purpose": "The single action on the FORWARD-VERSION gate — the blocking screen shown when the save was written by a NEWER StarNet than this build can read.",
+      "promise": "On the gate screen, clicking re-checks/opens the desktop Update Center when a Tauri updater is present, else shows plain \"update StarNet then reopen\" guidance; while the gate is up nothing persists (the newer save stays untouched).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/save.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "saveversion.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-future-update",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-future-update ('⭯ UPDATE STARNET ▸') present. Update/version behavior covered by saveversion.test.js."
+    },
+    {
+      "id": "ui/world/btn-import",
+      "kind": "ui",
+      "area": "world",
+      "name": "⭱ RESTORE BACKUP",
+      "purpose": "Restores a previously-exported StarNet backup file to bring an agent back on any browser/machine (renamed from IMPORT AGENT to avoid collision with the Recruitment Bay harness importer).",
+      "promise": "Clicking opens the hidden file picker (accept=.json); choosing a valid export restores the agent + memories and resumes into it.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/backup.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "configexport.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-import",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-import ('⭱ RESTORE BACKUP', renamed 2026-07-22 from '⭱ IMPORT AGENT') present+visible. Import behavior covered by configexport.test.js."
+    },
+    {
+      "id": "ui/world/btn-recovery-continue",
+      "kind": "ui",
+      "area": "world",
+      "name": "▶ CONTINUE WITH A FRESH STATION",
+      "purpose": "The recovery-screen 'CONTINUE WITH A FRESH STATION' control — proceeds past a failed/expired restore into a fresh station.",
+      "promise": "On #screen-recovery, #btn-recovery-continue ('▶ CONTINUE WITH A FRESH STATION') abandons the unrecoverable save and boots a fresh station.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [
+        "199dbfcc"
+      ],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#btn-recovery-continue",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-recovery-continue present with correct label on #screen-recovery. AUDITED: the recovery screen is not reached by a healthy seed so the fresh-start action was not driven live; no machine assertion. KNOWN coverage-gap."
+    },
+    {
+      "id": "ui/world/btn-wake",
+      "kind": "ui",
+      "area": "world",
+      "name": "⏼ WAKE OVERSEER ▸",
+      "purpose": "The primary WAKE OVERSEER action that validates the connect form and creates/resumes the agent into the game.",
+      "promise": "On a valid config it leaves the connect screen for the in-game floor; on a missing model/key it shows inline guidance (never a dead-end) and stays.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "journey",
+          "ref": "beginner-run:create-agent"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#btn-wake",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #btn-wake ('⏼ WAKE OVERSEER ▸') present+visible on connect. Wake->create-agent flow driven by beginner-run:create-agent journey."
+    },
+    {
+      "id": "ui/world/byok-toggle",
+      "kind": "ui",
+      "area": "world",
+      "name": "▸ where does my key go?",
+      "purpose": "The 'where does my key go?' disclosure on the connect screen — expands the BYOK key-safety note (progressive disclosure).",
+      "promise": "Clicking #byok-toggle expands/collapses #byok-note and flips its ▸/▾ marker + aria-expanded.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [
+        "199dbfcc"
+      ],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#byok-toggle",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #byok-toggle present with text '▸ where does my key go?', wired at app.js:1834. AUDITED: the expand did not flip aria-expanded under a synthetic screen-activation (onclick is wired during real connect-screen entry); no machine assertion. KNOWN coverage-gap."
+    },
+    {
+      "id": "ui/world/chat-attach",
+      "kind": "ui",
+      "area": "world",
+      "name": "Attach a photo or file",
+      "purpose": "Attach control on the COMMS composer — opens the native file picker so an image or file rides the next message.",
+      "promise": "Clicking (title 'Attach a photo or file') opens the hidden #chat-attach-input file dialog; a chosen file becomes an attachment on the composer and is sent with the next directive.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "attachments.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "e2e.attachments.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#chat-attach",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: #chat-attach button visible (38x34, title correct), enabled; hidden #chat-attach-input type=file present. AUDITED not perfected: the native file-picker open cannot be driven headlessly, so the full attach->send flow was not live-driven here (guarded by attachments.test.js / e2e.attachments.test.js)."
+    },
+    {
+      "id": "ui/world/chat-attach-input",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "The hidden <input type=file> backing the COMMS attach button — the actual OS file-dialog surface.",
+      "promise": "Never visible on its own (offscreen); #chat-attach.click() triggers it; a selected file is read into an attachment for the next send.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "attachments.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "e2e.attachments.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#chat-attach-input",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: present, type=file, correctly non-visible (0x0, offsetParent null). File-selection path guarded by attachments tests; not headlessly driveable."
+    },
+    {
+      "id": "ui/world/chat-input",
+      "kind": "ui",
+      "area": "world",
+      "name": "Message your agent",
+      "purpose": "The COMMS message composer — the auto-growing textarea you type a directive into and press Enter to send to the agent on the line.",
+      "promise": "Typing text and pressing Enter (no Shift) clears the box and posts a .cmsg.user row into #chat-log, then fires a run (or queues it as a type-ahead pill if the stream is busy); Shift+Enter inserts a newline; a leading \"/\" opens the slash palette instead.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/chat.js"
+        ],
+        "events": [
+          "agent.run.start"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "journey",
+          "ref": "J1"
+        },
+        {
+          "kind": "journey",
+          "ref": "J3"
+        },
+        {
+          "kind": "test",
+          "ref": "agent-model-select.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#chat-input",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: #chat-input textarea visible on floor (241x35, title 'Message your agent'); typed text + #chat-send click cleared the box and posted a .cmsg.user row into #chat-log. Seam frontend/app/chat.js intact."
+    },
+    {
+      "id": "ui/world/chat-mic",
+      "kind": "ui",
+      "area": "world",
+      "name": "Push to talk",
+      "purpose": "Push-to-talk mic — dictate a message by voice instead of typing (browser STT), with barge-in that interrupts a speaking agent.",
+      "promise": "At rest it reads aria-pressed=false / title \"push to talk\"; a click starts listening (adds .rec, aria-pressed=true), a second click or Escape stops; a failed/denied/hung mic recovers to a non-stuck button with a visible cue rather than wedging.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/voice.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "voice.button.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#chat-mic",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: #chat-mic button visible on floor (38x34, title 'push to talk'), type=submit, enabled. Seam frontend/app/chat.js + voice.button.test.js intact."
+    },
+    {
+      "id": "ui/world/chat-send",
+      "kind": "ui",
+      "area": "world",
+      "name": "Send message",
+      "purpose": "The COMMS send button — commits the composer's text as a directive to the agent on the line (the click-equivalent of Enter).",
+      "promise": "Clicking (title 'Enter sends · Shift+Enter = newline') posts the composer text as a .cmsg.user row in #chat-log, clears #chat-input, and fires a run (or queues a type-ahead pill while a stream is busy).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/chat.js"
+        ],
+        "events": [
+          "agent.run.start"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "journey",
+          "ref": "J1"
+        },
+        {
+          "kind": "test",
+          "ref": "agent-model-select.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#chat-send",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: clicking #chat-send after typing cleared #chat-input and appended one .cmsg.user row ('atlas world probe — please ignore') to #chat-log."
+    },
+    {
+      "id": "ui/world/chat-stop",
+      "kind": "ui",
+      "area": "world",
+      "name": "Stop the running turn",
+      "purpose": "The per-stream interrupt — cancel just the DISPLAYED stream's in-flight run (also bound to Esc while COMMS is focused), distinct from safety.js's global Alt+H halt.",
+      "promise": "Hidden while the active stream is idle; shown while it is busy; a click (stopActive) aborts that stream's AbortController + server runId, drops its type-ahead queue, pauses any active goal loop, and keeps the partial reply as an honest stopped card (no forever-RUNNING chip).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [
+        "bd391f68"
+      ],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#chat-stop",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: #chat-stop present and correctly HIDDEN while idle (0x0, offsetParent null; title 'Stop the running turn (Esc)') — truthful state. Active-turn visibility not driven here (seed uses a placeholder key so runs do not sustain a stream). Seam frontend/app/chat.js intact."
+    },
+    {
+      "id": "ui/world/comms-agent-select",
+      "kind": "ui",
+      "area": "world",
+      "name": "Select agent on the line",
+      "purpose": "The agent selector at the top of COMMS — pick which roster agent you are talking to; the readout beside it shows that agent's live model, honestly.",
+      "promise": "Its <option> set is built from the LIVE roster (App.agents), never hardcoded; changing it hands off to App.selectAgent (switch/mint a stream bound to that agent) and the #comms-agent-model readout reflects the selected agent's real model; the whole bar hides when there is no roster yet.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/chat.js",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "agent-model-select.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#comms-agent-select",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: #comms-agent-select visible (title 'Select agent on the line'), 1 option value='agent' — truthful for the single-agent seed roster. Seam frontend/app/chat.js intact."
+    },
+    {
+      "id": "ui/world/crew-hide",
+      "kind": "ui",
+      "area": "world",
+      "name": "Hide the crew rail",
+      "purpose": "Collapses the crew rail to reclaim floor space; its counterpart #crew-show restores it.",
+      "promise": "Clicking (title 'Hide the crew rail') hides the crew rail and reveals #crew-show in its place.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/leftrail.js"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [
+        "3faa57ff"
+      ],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#crew-hide",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: clicking #crew-hide hid it (offsetParent null) and made #crew-show visible; the reverse click restored it. AUDITED (no dedicated machine assertion for the rail-collapse toggle — coverage gap filed KNOWN)."
+    },
+    {
+      "id": "ui/world/crew-show",
+      "kind": "ui",
+      "area": "world",
+      "name": "Show the crew rail",
+      "purpose": "Restores the crew rail after it was collapsed by #crew-hide.",
+      "promise": "Hidden while the rail is open; when the rail is collapsed it becomes visible, and clicking it (title 'Show the crew rail') restores the rail and re-hides itself.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/leftrail.js"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [
+        "3faa57ff"
+      ],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#crew-show",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: after #crew-hide, #crew-show visible; clicking it restored the rail and re-hid itself. AUDITED (no dedicated machine assertion — coverage gap filed KNOWN)."
+    },
+    {
+      "id": "ui/world/data-term-agents",
+      "kind": "ui",
+      "area": "world",
+      "name": "◉AGENTSeach crew member's dossier — config, memory, record",
+      "purpose": "Opens the AGENT DOSSIER window — the per-agent config/memory/record surface for every crew member.",
+      "promise": "Clicking it opens a window titled 'AGENT DOSSIER' rendering the live roster's dossiers (config, memory, run record).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "crew-agents"
+        },
+        {
+          "kind": "journey",
+          "ref": "J1"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/terminal-resize-journey.mjs"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"agents\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click .bb[data-term=agents] opened .term titled 'AGENT DOSSIER' (toggleTerm seam, stationui.js). Re-stamped."
+    },
+    {
+      "id": "ui/world/data-term-commander",
+      "kind": "ui",
+      "area": "world",
+      "name": "◈COMMANDERwhat the station has learned about you",
+      "purpose": "Opens the COMMANDER DOSSIER — what the station has learned about the human operator (your own file).",
+      "promise": "Clicking it opens a window titled 'COMMANDER DOSSIER' rendering the learned-facts/preferences profile.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "crew-commander"
+        },
+        {
+          "kind": "journey",
+          "ref": "J1"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"commander\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'COMMANDER DOSSIER'."
+    },
+    {
+      "id": "ui/world/data-term-connectors",
+      "kind": "ui",
+      "area": "world",
+      "name": "⇄TOOLSETSthe agent’s tools — switch families on/off, plug in",
+      "purpose": "Opens TOOLSETS & CONNECTORS — wire external tools (MCP connectors) into agents.",
+      "promise": "Clicking it opens a console window titled 'TOOLSETS & CONNECTORS' listing available/wired connectors.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "build-connectors"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"connectors\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'TOOLSETS & CONNECTORS'."
+    },
+    {
+      "id": "ui/world/data-term-deliverables",
+      "kind": "ui",
+      "area": "world",
+      "name": "▣DELIVERABLESoutputs, Workshop builds & cleanup",
+      "purpose": "Dock menu button opening the DELIVERABLES console — produced outputs, Workshop builds & cleanup.",
+      "promise": "Clicking .bb[data-term=deliverables] toggles open a .term window titled 'DELIVERABLES' (fetches GET /api/deliverables on open); re-click closes it.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "work-deliverables"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.715Z",
+      "lastSeen": "2026-07-18T00:54:02.715Z",
+      "missing": false,
+      "selector": "[data-term=\"deliverables\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'DELIVERABLES'. Open walked by the cartographer's work-deliverables shoot state (added finding 206d3ceb / commit 583fbfbd)."
+    },
+    {
+      "id": "ui/world/data-term-logbook",
+      "kind": "ui",
+      "area": "world",
+      "name": "▦LOGBOOKthis agent's run history",
+      "purpose": "Opens the LOGBOOK — the station's event record.",
+      "promise": "Clicking it opens a console window titled 'LOGBOOK' showing the station's event log.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "sys-logbook"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"logbook\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'LOGBOOK'."
+    },
+    {
+      "id": "ui/world/data-term-manual",
+      "kind": "ui",
+      "area": "world",
+      "name": "§FIELD MANUALevery prop & mechanic, explained",
+      "purpose": "Opens the FIELD MANUAL — the in-app codex explaining every prop & mechanic.",
+      "promise": "Clicking it opens a window titled 'FIELD MANUAL' filled by Tutorial.fillFieldManual.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js",
+          "frontend/app/tutorial.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "build-manual"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"manual\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'FIELD MANUAL' (builder = Tutorial.fillFieldManual)."
+    },
+    {
+      "id": "ui/world/data-term-messaging",
+      "kind": "ui",
+      "area": "world",
+      "name": "✉CHANNELSyour way in — talk to agents from Telegram, Slack, ",
+      "purpose": "Opens CHANNELS — wire external messaging channels (Telegram) to reach your agents.",
+      "promise": "Clicking it opens a window titled 'CHANNELS' for connecting Telegram/external channels.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "sys-messaging"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"messaging\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'CHANNELS'."
+    },
+    {
+      "id": "ui/world/data-term-notifs",
+      "kind": "ui",
+      "area": "world",
+      "name": "▲NOTIFICATIONSalerts & unread events",
+      "purpose": "Opens NOTIFICATIONS — alerts & unread station events (also badged with an unread count).",
+      "promise": "Clicking it opens a window titled 'NOTIFICATIONS'; the #nf-badge count reflects unread events.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "sys-notifs"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/terminal-resize-journey.mjs"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"notifs\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'NOTIFICATIONS'."
+    },
+    {
+      "id": "ui/world/data-term-quests",
+      "kind": "ui",
+      "area": "world",
+      "name": "⚑QUESTSprogress & suggestions — not a second to-do list",
+      "purpose": "Opens the QUEST LOG — your progress & next moves (the growth/goal-arc surface).",
+      "promise": "Clicking it opens a window titled 'QUEST LOG' showing quest progress and next moves.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/queststore.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/queststatestore.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/dock-terms-open.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:07:06.267Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"quests\"]",
+      "state": "ingame",
+      "notes": "Dock-button OPEN seam locked in test/dock-terms-open.test.js (index.html .bb[data-term] → stationui init → BUILDERS[key] → builder). Atlas finding 5c8f6921 remediated."
+    },
+    {
+      "id": "ui/world/data-term-rewind",
+      "kind": "ui",
+      "area": "world",
+      "name": "↶RESTORErestore an agent's workspace files",
+      "purpose": "Opens RESTORE POINTS — rewind the station to an earlier save/checkpoint.",
+      "promise": "Clicking it opens a window titled 'RESTORE POINTS' listing available restore points.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "sys-rewind"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"rewind\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'RESTORE POINTS'."
+    },
+    {
+      "id": "ui/world/data-term-routines",
+      "kind": "ui",
+      "area": "world",
+      "name": "⏱ROUTINESany job, put on a schedule",
+      "purpose": "Opens ROUTINES — work that runs on a schedule (cron routines).",
+      "promise": "Clicking it opens a console window titled 'ROUTINES' listing scheduled work.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "work-routines"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"routines\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'ROUTINES'."
+    },
+    {
+      "id": "ui/world/data-term-sessiontools",
+      "kind": "ui",
+      "area": "world",
+      "name": "▤SESSION TOOLSsearch, export & archive conversations",
+      "purpose": "Dock menu button opening the SESSION TOOLS window — search, export & archive conversations.",
+      "promise": "Clicking .bb[data-term=sessiontools] toggles open the floating SESSION TOOLS window (adopts #ws-tools body on open).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "sys-sessiontools"
+        },
+        {
+          "kind": "test",
+          "ref": "session-power-tools.test.js"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/session-power-tools-journey.mjs"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.715Z",
+      "lastSeen": "2026-07-18T00:54:02.715Z",
+      "missing": false,
+      "selector": "[data-term=\"sessiontools\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'SESSION TOOLS'. Guarded by sys-sessiontools shoot + session-power-tools test/journey."
+    },
+    {
+      "id": "ui/world/data-term-settings",
+      "kind": "ui",
+      "area": "world",
+      "name": "⚙SETTINGSkeys, models, voice, data",
+      "purpose": "Opens SETTINGS — the console for keys, models, voice, autonomy, budget, and data.",
+      "promise": "Clicking it opens a console window titled 'SETTINGS' with the PROVIDERS/AUTONOMY/BUDGET/MODELS rails.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js",
+          "frontend/app/keycta.js",
+          "frontend/app/modeldock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "sys-settings"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/terminal-resize-journey.mjs"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"settings\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'SETTINGS'."
+    },
+    {
+      "id": "ui/world/data-term-skills",
+      "kind": "ui",
+      "area": "world",
+      "name": "✦SKILLSwhat agents can do right now (switches: TOOLSETS)",
+      "purpose": "Opens SKILLS & CAPABILITIES — the capability-gated recipe/skill library showing what agents are equipped to do.",
+      "promise": "Clicking it opens a console window titled 'SKILLS & CAPABILITIES' listing the station's skills/capabilities.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "build-skills"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/terminal-resize-journey.mjs"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"skills\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'SKILLS & CAPABILITIES'."
+    },
+    {
+      "id": "ui/world/data-term-tasks",
+      "kind": "ui",
+      "area": "world",
+      "name": "☑TASKSwhere all work lives — queued, running & done",
+      "purpose": "Opens the TASK BOARD — queued, running, and done work across the station.",
+      "promise": "Clicking it opens a window titled 'TASK BOARD' whose rows equal the live task store (event-reduced truth).",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "work-tasks"
+        },
+        {
+          "kind": "journey",
+          "ref": "J1"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "47c365a7e3866c4e3cc2852fbc13cfa88e7189af",
+        "date": "2026-07-18T02:18:21.743Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"tasks\"]",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: click opened .term titled 'TASK BOARD'."
+    },
+    {
+      "id": "ui/world/data-term-updates",
+      "kind": "ui",
+      "area": "world",
+      "name": "↑UPDATESversion & release notes",
+      "purpose": "Opens the UPDATE CENTER — the app version + release-notes surface.",
+      "promise": "Clicking it opens a window titled 'UPDATE CENTER' showing the current version and release notes.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/stationui.js",
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/dock-terms-open.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:07:06.267Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "[data-term=\"updates\"]",
+      "state": "ingame",
+      "notes": "Dock-button OPEN seam locked in test/dock-terms-open.test.js (index.html .bb[data-term] → stationui init → BUILDERS[key] → builder). Atlas finding 5c8f6921 remediated."
+    },
+    {
+      "id": "ui/world/estop-btn",
+      "kind": "ui",
+      "area": "world",
+      "name": "Emergency stop — halt all runs (Alt+H)",
+      "purpose": "The always-on emergency stop — halts every live run everywhere (browser + messaging-hub) in one click; also bound to Alt+H.",
+      "promise": "Visible in the topbar status cluster (title 'E-STOP — kill every live run, everywhere, now (Alt+H)'); clicking (or Alt+H) calls /api/halt via Harness.haltAll, aborts local streams, and toasts the real stopped-run count.",
+      "wiring": {
+        "files": [
+          "frontend/app/safety.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "halt.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "583fbfbd608a2184dbe3f39655b06e8c7108abe1",
+        "date": "2026-07-18T02:11:33.943Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#estop-btn",
+      "state": "ingame",
+      "notes": "Live @ 583fbfbd: #estop-btn present+visible (59x18) with the exact E-STOP title; created dynamically by safety.js into #topbar .tb-status. Halt action (/api/halt) not fired live (no runs to kill) but is guarded by test/halt.test.js and the server-counts-before-local-teardown honesty is documented in safety.js."
+    },
+    {
+      "id": "ui/world/file-import",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "The hidden <input type=file> that btn-import triggers to receive the backup JSON.",
+      "promise": "Stays hidden; its change handler runs Backup.importFile() on the chosen file and reports restored agent/keys/memories or a clean failure.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/backup.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "configexport.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#file-import",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #file-import is a type=file input backing IMPORT AGENT. Import round-trip covered by configexport.test.js; native file-dialog not headlessly driveable."
+    },
+    {
+      "id": "ui/world/in-base-url",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "The /v1 base-URL field revealed for Custom / self-hosted OpenAI-compatible providers.",
+      "promise": "Hidden by default; selecting the CUSTOM provider reveals it, and a Custom provider WAKE requires a non-empty base URL before it proceeds.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "provider.openai-compatible.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#in-base-url",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #in-base-url accepts a URL ('https://example.test/v1') for OpenAI-compatible providers. Covered by provider.openai-compatible.test.js."
+    },
+    {
+      "id": "ui/world/in-key",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "The BYOK API-key field for the chosen provider on the connect screen.",
+      "promise": "A pasted key is stored locally and sent only to the 127.0.0.1 sidecar; leaving it blank when a key is already stored keeps the stored key (placeholder says so); an overwrite of a stored key asks once before replacing.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/harness.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "journey",
+          "ref": "beginner-run:connect"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#in-key",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #in-key is type=password (secret masking correct) and accepts typed value. BYOK key entry; flow covered by beginner-run:connect journey."
+    },
+    {
+      "id": "ui/world/in-model",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "The model-slug field (datalist-backed) selecting which model powers the overseer's mind.",
+      "promise": "Typing/picking a slug prices it via the live catalog hint; a blank slug on WAKE pre-fills a sensible provider default rather than stranding the user.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "modelpicker.test.js"
+        },
+        {
+          "kind": "journey",
+          "ref": "beginner-run:connect"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#in-model",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #in-model text input accepts a model slug ('anthropic/claude-sonnet-4.6'). Covered by modelpicker.test.js + beginner-run:connect journey."
+    },
+    {
+      "id": "ui/world/in-name",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "The overseer's name field on the CREATE YOUR OVERSEER connect screen — the first identity choice a new user makes.",
+      "promise": "Typing a name (≤18 chars) updates the live nameplate and is carried into agent.name on WAKE; a blank/sentinel name mints a station codename instead of the bland \"AGENT\".",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "journey",
+          "ref": "beginner-run:connect"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#in-name",
+      "state": "ingame",
+      "notes": "Live @ HEAD (screen-connect): #in-name text input renders and accepts typed value ('Atlas Probe'). Full connect->create flow driven by the beginner-run:connect journey (coverage)."
+    },
+    {
+      "id": "ui/world/model-dock-refresh",
+      "kind": "ui",
+      "area": "world",
+      "name": "REFRESH",
+      "purpose": "The REFRESH button in the model dock — re-fetches the live model catalog from every configured provider.",
+      "promise": "Clicking calls fetchModels(true) (force), re-hitting /api/models/* and rebuilding the row list.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "bdcf5063d7182b466191408a50d21db2025775af",
+        "date": "2026-07-18T02:21:54.693Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#model-dock-refresh",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #model-dock-refresh visible (label 'REFRESH'), click threw no error. AUDITED: the provider refetch effect is not cleanly observable under the placeholder-key seed; guarded by modelpicker.test.js."
+    },
+    {
+      "id": "ui/world/model-dock-search",
+      "kind": "ui",
+      "area": "world",
+      "name": "Search models",
+      "purpose": "The search box inside the model dock — filters the model list by id/name/provider.",
+      "promise": "Typing filters .model-dock-row live (id+label+group substring match); clears to full list when emptied.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "bdcf5063d7182b466191408a50d21db2025775af",
+        "date": "2026-07-18T02:21:54.693Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#model-dock-search",
+      "state": "ingame",
+      "notes": "Live @ HEAD: typing 'claude' into #model-dock-search filtered the dock list 382 -> 31 buttons; clearing restored. Seam modeldock.js, covered by modelpicker.test.js."
+    },
+    {
+      "id": "ui/world/model-dock-settings",
+      "kind": "ui",
+      "area": "world",
+      "name": "SETTINGS",
+      "purpose": "The SETTINGS shortcut in the model dock — jumps to the Settings window (keys/models/voice/data).",
+      "promise": "Clicking closes the dock and clicks the .bb[data-term=\"settings\"] item (opens Settings).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "bdcf5063d7182b466191408a50d21db2025775af",
+        "date": "2026-07-18T02:21:54.693Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#model-dock-settings",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #model-dock-settings visible (label 'SETTINGS'), wired to open the SETTINGS term. AUDITED: open-effect not isolated live (SETTINGS term already open from an earlier batch during this session); guarded by modelpicker.test.js."
+    },
+    {
+      "id": "ui/world/model-dock-toggle",
+      "kind": "ui",
+      "area": "world",
+      "name": "Model selector",
+      "purpose": "The model/reasoning selector for the current agent — opens a dock to pick the model and reasoning effort the next turn runs on; its chip shows the current effort at a glance.",
+      "promise": "The MED-style chip reflects the active reasoning effort; clicking sets aria-expanded=true and reveals #model-dock showing the real current model + provider, the reasoning-effort list (OFF..MAX) with the active one selected, and the live model catalog; picking persists model+provider+effort onto the agent.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/modeldock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "agent-model-select.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "bdcf5063d7182b466191408a50d21db2025775af",
+        "date": "2026-07-18T02:21:54.693Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#model-dock-toggle",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #model-dock-toggle (title 'Model selector') click opened #model-dock (visible); 382 model buttons rendered. Seam modeldock.js."
+    },
+    {
+      "id": "ui/world/model-list-row",
+      "kind": "ui",
+      "area": "world",
+      "name": "a model row in the model dock (data-driven from the provider catalog)",
+      "purpose": "The single representative of the COMMS model-dock list (#model-dock-list) — one selectable model row. The dock renders N rows data-driven from the warmed provider catalog; clicking any row picks that model (and switches provider to match). Collapsed to ONE Atlas entry because the rows are unbounded, unjudgeable individually, and churn missing/staleness with every catalog refresh (finding e9d24ac6).",
+      "promise": "Clicking it calls Harness.setModel(id)+setProv(provider)+setReasoningEffort(clamped) and closes the dock; the resting chip reflects the new model. Fallback rows carry title \"<id> — fallback (catalog offline, unverified)\".",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "2b0577d6f2bc98c42de7f59d64de1bc3ee63101c",
+        "date": "2026-07-18T02:45:18.222Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#model-dock-list button",
+      "state": "ingame",
+      "notes": "Collapsed representative for the model-dock list. Harvester collapse: scripts/qa/cartographer.mjs DATA_DRIVEN_LISTS '#model-dock-list' -> 'model-list-row' (ENUM_PROBE + computeProbeKeys, test-locked). Supersedes the 369 per-model txt-button-model-dock-list-* artifacts removed 2026-07-18. Audit judgment migrated from the prior canonical row ui/world/txt-button-model-dock-list-accounts-fireworks-models-deepsee. Resolves finding e9d24ac6 (model-picker over-harvest)."
+    },
+    {
+      "id": "ui/world/nav-coach-x",
+      "kind": "ui",
+      "area": "world",
+      "name": "dismiss hint",
+      "purpose": "The ✕ on the nav coach-mark hint — dismisses the first-run \"where things live\" hint.",
+      "promise": "Clicking hides the #nav-coach hint (and persists dismissal so it does not re-nag); aria-label \"dismiss hint\".",
+      "wiring": {
+        "files": [
+          "frontend/app/navdock.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#nav-coach-x",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #nav-coach-x ('GOT IT ✕') present — the coach-hint dismiss. Conditional (only when a coach hint shows); ingame shoot walks the surface. AUDITED: dismiss-effect not driven (no hint active in seed)."
+    },
+    {
+      "id": "ui/world/prov-more",
+      "kind": "ui",
+      "area": "world",
+      "name": "＋ MORE",
+      "purpose": "The '＋ MORE' chip that unfolds the long-tail providers on the connect screen (first-run sees 6 chips, not 15).",
+      "promise": "Clicking #prov-more toggles the .provider-row expanded/collapsed, revealing the folded long-tail provider chips; the label counts the live tail (never hardcoded).",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [
+        "199dbfcc"
+      ],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#prov-more",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #prov-more present+visible with text '＋ MORE' on the connect provider row, wired at app.js:1826-1829. AUDITED: fold-toggle not observed flipping under synthetic screen-activation; no machine assertion. KNOWN coverage-gap."
+    },
+    {
+      "id": "ui/world/sp-press",
+      "kind": "ui",
+      "area": "world",
+      "name": "▮ PRESS ANY KEY TO START",
+      "purpose": "The splash 'PRESS ANY KEY TO START' control — the first-boot entry that advances past the splash screen.",
+      "promise": "On the splash screen, #sp-press ('▮ PRESS ANY KEY TO START') advances to the connect/boot flow.",
+      "wiring": {
+        "files": [
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "493c0af3b7018385f784c7cc34451349e9013a0e",
+        "date": "2026-07-18T02:43:15.177Z"
+      },
+      "findings": [
+        "199dbfcc"
+      ],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#sp-press",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #sp-press present with label '▮ PRESS ANY KEY TO START' (splash). AUDITED: seed auto-resumes past the splash so the advance was not driven live; no machine assertion. KNOWN coverage-gap."
+    },
+    {
+      "id": "ui/world/txt-button-bottombar-build-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Shape the station — refit the floor, skills, toolsets, channels",
+      "purpose": "duplicate harvest of ui/world/txt-button-crew-401 (a .bb-grp dock-group tile; this one = BUILD).",
+      "promise": "Same contract as ui/world/txt-button-crew-401: click toggles aria-expanded and reveals its group flyout of .bb items.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-crew-401 — same .bb-grp flyout seam (index.html), differs only in group (BUILD — Shape the station: refit, skills, toolsets, channels). 4 tiles live-proven 2026-07-07T22:16:20.560Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-bottombar-crew-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Your agents — dossiers, recruitment, and your own Commander file",
+      "purpose": "The CREW dock-group button — opens the flyout of crew windows (Agents, Commander).",
+      "promise": "Clicking toggles aria-expanded and reveals its .bb-grp-menu of .bb item buttons; title reads \"Your agents — dossiers, recruitment, and your own Commander file\".",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "2b0577d6f2bc98c42de7f59d64de1bc3ee63101c",
+        "date": "2026-07-18T02:45:18.222Z"
+      },
+      "findings": [
+        "e9d24ac6"
+      ],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "Live @ HEAD: the '☻CREW' dock section-group button present in #bottombar. AUDITED not perfected: selector is the non-unique 'button' (text-harvest) so re-find/staleness can't be trusted — see over-harvest finding e9d24ac6."
+    },
+    {
+      "id": "ui/world/txt-button-bottombar-system-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Station systems — manual, settings, updates, restore, logs, notifications",
+      "purpose": "duplicate harvest of ui/world/txt-button-crew-401 (a .bb-grp dock-group tile; this one = SYSTEM).",
+      "promise": "Same contract as ui/world/txt-button-crew-401: click toggles aria-expanded and reveals its group flyout of .bb items.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-crew-401 — same .bb-grp flyout seam (index.html), differs only in group (SYSTEM — Station systems: manual, settings, updates, restore, logs, notifications). 4 tiles live-proven 2026-07-07T22:16:20.560Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-bottombar-work-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "The station's work — tasks, recipes, routines, quests",
+      "purpose": "duplicate harvest of ui/world/txt-button-crew-401 (a .bb-grp dock-group tile; this one = WORK).",
+      "promise": "Same contract as ui/world/txt-button-crew-401: click toggles aria-expanded and reveals its group flyout of .bb items.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-crew-401 — same .bb-grp flyout seam (index.html), differs only in group (WORK — The station's work: tasks, recipes, routines, quests). 4 tiles live-proven 2026-07-07T22:16:20.560Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-chat-log-brief-me-on-this-station-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "brief me on this station",
+      "purpose": "",
+      "promise": "",
+      "wiring": {
+        "files": [],
+        "events": []
+      },
+      "coverage": [],
+      "status": "unmapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame"
+    },
+    {
+      "id": "ui/world/txt-button-chat-log-morning-brief-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Morning Brief",
+      "purpose": "",
+      "promise": "",
+      "wiring": {
+        "files": [],
+        "events": []
+      },
+      "coverage": [],
+      "status": "unmapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame"
+    },
+    {
+      "id": "ui/world/txt-button-chat-log-what-can-you-do-here-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "what can you do here",
+      "purpose": "",
+      "promise": "",
+      "wiring": {
+        "files": [],
+        "events": []
+      },
+      "coverage": [],
+      "status": "unmapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame"
+    },
+    {
+      "id": "ui/world/txt-button-key-cta-add-in-settings-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "⚙ ADD IN SETTINGS",
+      "purpose": "The \"⚙ ADD IN SETTINGS\" row shown in the model dock when the active provider has no stored key.",
+      "promise": "Appears only when Harness.hasStoredCredential(provider) is false (truthful pre-RUN key warning); clicking opens Settings. Vanishes the instant a key is stored.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "State-conditional model-dock chrome (renderKeyWarning modeldock.js:551-571). Not shown in the seeded key-present state, so not live-audited here; seam understood. Mapped."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-high-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "High reasoning",
+      "purpose": "One reasoning-effort tier button in the model dock — sets how hard the model thinks (OFF…MAX).",
+      "promise": "Clicking it calls Harness.setReasoningEffort(tier); the picked tier gets class \"sel\". Tiers/titles: OFF/Reasoning off · MIN/Minimal · LOW/Low · MED/Medium · HIGH/High · XHIGH/Extra-high · MAX/Maximum, clamped to what the model supports.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "2b0577d6f2bc98c42de7f59d64de1bc3ee63101c",
+        "date": "2026-07-18T02:45:18.222Z"
+      },
+      "findings": [
+        "e9d24ac6"
+      ],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "Live @ HEAD: the HIGH rung of the model-dock effort dial (OFF/MIN/LOW/MED/HIGH/MAX) — a conditional per-model control (renders in the selected model's effort row, not standalone). AUDITED: non-unique 'button' selector + conditional render (finding e9d24ac6)."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-low-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Low reasoning",
+      "purpose": "duplicate harvest of ui/world/txt-button-high-22 (a .model-dock-effort clone; this button = \"Low reasoning\" tier).",
+      "promise": "Same contract as ui/world/txt-button-high-22: click → Harness.setReasoningEffort(this tier).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-high-22 — same renderEfforts() .model-dock-effort seam (modeldock.js:387-408), differs only in the effort tier. 7 tiers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-max-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Maximum reasoning",
+      "purpose": "duplicate harvest of ui/world/txt-button-high-22 (a .model-dock-effort clone; this button = \"Maximum reasoning\" tier).",
+      "promise": "Same contract as ui/world/txt-button-high-22: click → Harness.setReasoningEffort(this tier).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-high-22 — same renderEfforts() .model-dock-effort seam (modeldock.js:387-408), differs only in the effort tier. 7 tiers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-med-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Medium reasoning",
+      "purpose": "duplicate harvest of ui/world/txt-button-high-22 (a .model-dock-effort clone; this button = \"Medium reasoning\" tier).",
+      "promise": "Same contract as ui/world/txt-button-high-22: click → Harness.setReasoningEffort(this tier).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-high-22 — same renderEfforts() .model-dock-effort seam (modeldock.js:387-408), differs only in the effort tier. 7 tiers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-min-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Minimal reasoning",
+      "purpose": "duplicate harvest of ui/world/txt-button-high-22 (a .model-dock-effort clone; this button = \"Minimal reasoning\" tier).",
+      "promise": "Same contract as ui/world/txt-button-high-22: click → Harness.setReasoningEffort(this tier).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-high-22 — same renderEfforts() .model-dock-effort seam (modeldock.js:387-408), differs only in the effort tier. 7 tiers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-off-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Reasoning off",
+      "purpose": "duplicate harvest of ui/world/txt-button-high-22 (a .model-dock-effort clone; this button = \"Reasoning off\" tier).",
+      "promise": "Same contract as ui/world/txt-button-high-22: click → Harness.setReasoningEffort(this tier).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-high-22 — same renderEfforts() .model-dock-effort seam (modeldock.js:387-408), differs only in the effort tier. 7 tiers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-model-dock-efforts-xhigh-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "Extra-high reasoning",
+      "purpose": "duplicate harvest of ui/world/txt-button-high-22 (a .model-dock-effort clone; this button = \"Extra-high reasoning\" tier).",
+      "promise": "Same contract as ui/world/txt-button-high-22: click → Harness.setReasoningEffort(this tier).",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-high-22 — same renderEfforts() .model-dock-effort seam (modeldock.js:387-408), differs only in the effort tier. 7 tiers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-anthropic-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "ANTHROPIC",
+      "purpose": "A provider group header in the model dock list — labels the block of rows for one provider.",
+      "promise": "Rendered as .model-dock-group above each provider's rows; a group sourced from the offline fallback seed appends \" (catalog offline)\" (E4 truthfulness law) so a fallback list never reads as a verified live catalog.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "2b0577d6f2bc98c42de7f59d64de1bc3ee63101c",
+        "date": "2026-07-18T02:45:18.222Z"
+      },
+      "findings": [
+        "e9d24ac6"
+      ],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "Live @ HEAD: the 'anthropic' provider chip (data-prov=anthropic) present on #screen-connect .provider-row. AUDITED: non-unique 'button' selector (finding e9d24ac6)."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-cerebras-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "CEREBRAS",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"CEREBRAS\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-custom-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "CUSTOM",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"CUSTOM\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-deepseek-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "DEEPSEEK",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"DEEPSEEK\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-easiest-start-no-key-sign-in-with-",
+      "kind": "ui",
+      "area": "world",
+      "name": "◆ EASIEST START · NO KEY ⏼ SIGN IN WITH CHATGPT use the Chat",
+      "purpose": "",
+      "promise": "",
+      "wiring": {
+        "files": [],
+        "events": []
+      },
+      "coverage": [],
+      "status": "unmapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame"
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-fireworks-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "FIREWORKS",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"FIREWORKS\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-gemini-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "GEMINI",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"GEMINI\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-groq-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "GROQ",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"GROQ\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-mistral-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "MISTRAL",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"MISTRAL\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-ollama-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "OLLAMA",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"OLLAMA\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-openai-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "OPENAI",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"OPENAI\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-openrouter-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "OPENROUTER",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"OPENROUTER\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-perplexity-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "PERPLEXITY",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"PERPLEXITY\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-together-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "TOGETHER",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"TOGETHER\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-screen-connect-xai-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "XAI",
+      "purpose": "duplicate harvest of ui/world/txt-button-anthropic-4 (a .model-dock-group clone; this header = \"XAI\").",
+      "promise": "Same as ui/world/txt-button-anthropic-4: a non-clickable provider label; \" (catalog offline)\" appended when the block is fallback-sourced.",
+      "wiring": {
+        "files": [
+          "frontend/app/modeldock.js",
+          "frontend/index.html",
+          "frontend/css/comms.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/modelpicker.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/agent-model-select.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "CLONE of ui/world/txt-button-anthropic-4 — same renderList() .model-dock-group seam (modeldock.js:441-455), differs only in provider name. 12 headers live-proven 2026-07-07T22:11:56.490Z. FUTURE-DEDUP. NOTE harvest miscategorised this label as kind:ui button; it is a non-interactive header."
+    },
+    {
+      "id": "ui/world/txt-button-stage-wrap-cinema-1",
+      "kind": "ui",
+      "area": "world",
+      "name": "fill the frame with the station (C)",
+      "purpose": "The ▣ CINEMA toggle in the war-room camera HUD — fills the frame with the living station feed (also bound to C).",
+      "promise": "Clicking toggles the \"cinema\" class on the war-room grid; label flips ▣ CINEMA ⇄ ▣ EXIT and a \"CINEMA — press C to exit\" hint shows.",
+      "wiring": {
+        "files": [
+          "frontend/app/warroom.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "button",
+      "state": "ingame",
+      "notes": "Seam = warroom.js:106-123 (.cam-cine button, toggles cinema on the wr grid — NOT body). Button live-present 2026-07-07T22:16:20.560Z with title \"fill the frame with the station (C)\"; full toggle in the war-room feed state not driven here. Mapped (honest: not audited)."
+    },
+    {
+      "id": "ui/world/voice-live",
+      "kind": "ui",
+      "area": "world",
+      "name": "Local Live hands-free voice",
+      "purpose": "Canonical hands-free voice toggle — opens or closes the persistent local-speech controller for the active Starnet agent.",
+      "promise": "aria-pressed, aria-label, and title truthfully reflect whether Local Live is off or active; one click opens the draggable controller and a second click or its close button ends the microphone session.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/voice-live.js",
+          "frontend/app/voice.js",
+          "sidecar/local-voice.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "voice-live-ui.test.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-29T00:00:00.000Z",
+      "missing": false,
+      "selector": "#voice-live",
+      "state": "ingame",
+      "notes": "The former #voice-mode button was removed. Local Live is the single hands-free entry point; push-to-talk and agent-voice mute remain separate controls."
+    },
+    {
+      "id": "ui/world/voice-toggle",
+      "kind": "ui",
+      "area": "world",
+      "name": "Agent voice: off, click to unmute",
+      "purpose": "Agent-voice mute/unmute — controls whether the agent speaks its replies aloud (TTS).",
+      "promise": "aria-pressed + title truthfully reflect speakReplies (OFF: \"agent voice: OFF — click to unmute\", pressed=false, .off class); a click flips it and reflectToggle updates the button.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/voice.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "voice.button.test.js"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3f1f5ca299f06e2ac55066db515dca9cd3fb67d9",
+        "date": "2026-07-18T02:40:12.858Z"
+      },
+      "findings": [
+        "c3fa1f39"
+      ],
+      "firstSeen": "2026-07-07T08:11:07.405Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#voice-toggle",
+      "state": "ingame",
+      "notes": "Live @ HEAD: click flipped #voice-toggle OFF->ON (title 'agent voice: OFF — click to unmute' -> 'ON — click to mute'; aria-pressed false->true; class 'off' cleared). Seam voice.js; voice.button.test.js asserts the toggle-tooltip honesty (real/backup voice)."
+    },
+    {
+      "id": "ui/world/ws-addproject",
+      "kind": "ui",
+      "area": "world",
+      "name": "bless a folder as a trusted project",
+      "purpose": "The +ADD button on the PROJECTS tab — blesses a folder as a trusted project.",
+      "promise": "Visible only on the PROJECTS tab; clicking #ws-addproject starts the folder-trust flow (projects.js).",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/app/projects.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#ws-addproject",
+      "state": "ingame",
+      "notes": "Finding b916c508 superseded (SESSION TOOLS window retired 2026-07-17). HONEST GAP: the #ws-addproject folder-trust CLICK flow is still machine-uncovered — session-power-tools.test.js guards the STORE ops + rail search/export, not the folder-trust dialog. Left audited with the gap recorded here."
+    },
+    {
+      "id": "ui/world/ws-archived",
+      "kind": "ui",
+      "area": "world",
+      "name": "archived sessions footer reveal",
+      "purpose": "The archived-sessions footer reveal in the workstreams rail — a conditional row that appears only when archived sessions exist, expanding to list them.",
+      "promise": "When the workstreams list has archived sessions, a #workstreams .ws-arch-row footer appears; clicking it reveals the archived entries. Absent (missing:true) when there are none — truthful conditional render.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        }
+      ],
+      "status": "mapped",
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-07T08:25:37.292Z",
+      "missing": true,
+      "selector": "#workstreams .ws-arch-row",
+      "state": "ingame",
+      "notes": "KEPT (missing:true is honest): #workstreams .ws-arch-row is a CONDITIONAL footer that only renders when archived sessions exist; the seed workspace has none, so the sweep correctly does not find it. Still wired in app.js. Not retired."
+    },
+    {
+      "id": "ui/world/ws-bulk-apply",
+      "kind": "ui",
+      "area": "world",
+      "name": "ARCHIVE PREVIEWED",
+      "purpose": "Apply the currently displayed exact session-cleanup preview.",
+      "promise": "The button stays disabled until a non-empty preview exists; clicking archives exactly those previewed IDs, protects General and pinned sessions by default, persists the change, and exposes undo.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-bulk-apply",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-bulk-apply (ARCHIVE PREVIEWED) present, correctly DISABLED until a preview yields matches (truthful gating). Covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-bulk-completed",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "Include deliberately completed sessions in a cleanup preview.",
+      "promise": "Changing this criterion invalidates any old preview; the next preview includes only shipped sessions plus other explicitly selected criteria.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-bulk-completed",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-bulk-completed checkbox present+checked (bulk-cleanup criterion 'completed'). Covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-bulk-days",
+      "kind": "ui",
+      "area": "world",
+      "name": "30 days90 days1 year",
+      "purpose": "Choose the age boundary used by the older-than cleanup criterion.",
+      "promise": "Choices are 30 days, 90 days, and 1 year; changing one invalidates the old preview and never archives until a new exact preview is applied.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-bulk-days",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-bulk-days select present with options 30 days/90 days/1 year (age threshold for bulk cleanup). Covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-bulk-empty",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "Include untouched sessions with no visible dialogue, run, or deliverable in a cleanup preview.",
+      "promise": "Empty is selected by default; changing it invalidates an old preview, and pinned/General sessions remain protected.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-bulk-empty",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-bulk-empty checkbox present+checked (criterion 'empty'). Covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-bulk-old",
+      "kind": "ui",
+      "area": "world",
+      "name": "input",
+      "purpose": "Include sessions whose last-active timestamp crosses the selected age threshold.",
+      "promise": "Checking it uses the adjacent threshold; changing it invalidates the old preview and no row moves before explicit apply.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-bulk-old",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-bulk-old checkbox present+checked (criterion 'old'). Covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-bulk-preview",
+      "kind": "ui",
+      "area": "world",
+      "name": "PREVIEW",
+      "purpose": "Compute and disclose the exact set matching selected cleanup criteria before mutation.",
+      "promise": "Clicking reports an exact count, protects General and pinned sessions, and enables apply only for a non-empty token-bound preview.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-bulk-preview",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-bulk-preview (PREVIEW) present+visible; clicking ran without error but matched nothing (single fresh session in seed) so #ws-bulk-apply stayed disabled — truthful. Bulk-archive logic covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-clear",
+      "kind": "ui",
+      "area": "world",
+      "name": "CLEAR ACTIVE CONVERSATION",
+      "purpose": "Clear only the open conversation while retaining unrelated sessions, agent memory, and run/deliverable records.",
+      "promise": "A first click arms a scope-named confirmation; the second checkpoints and clears only transcript history, persists, and exposes undo. An active run must stop first.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-clear",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-clear (CLEAR ACTIVE CONVERSATION) present+visible+wired. AUDITED: destructive action not driven live; the clear/checkpoint behavior it calls (W.clearConversation) is covered by session-power-tools.test.js."
+    },
+    {
+      "id": "ui/world/ws-export-json",
+      "kind": "ui",
+      "area": "world",
+      "name": "Export .json (row menu)",
+      "purpose": "Download one named session as a portable structured transcript from its row actions menu.",
+      "promise": "The row ⋯ menu's Export .json downloads THAT session's conversation: dialogue/title only, secretsIncluded:false declared, hidden/system records excluded, credentials scrubbed, round-trips, and the object URL is revoked.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/session-power-tools-journey.mjs"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-16T07:47:13.046Z",
+      "missing": false,
+      "selector": ".ws-menu .ws-menu-item[data-act=\"export-json\"]",
+      "state": "ingame",
+      "notes": "REDESIGNED 2026-07-17: the SESSION TOOLS window was retired; export moved into the sessions-rail row ⋯ menu (App exportSession) and targets the exact row session, never an implicit active one. Prior window audit no longer applies."
+    },
+    {
+      "id": "ui/world/ws-export-md",
+      "kind": "ui",
+      "area": "world",
+      "name": "Export .md (row menu)",
+      "purpose": "Download one named session as readable Markdown from its row actions menu.",
+      "promise": "The row ⋯ menu's Export .md downloads THAT session's conversation: Commander/Agent dialogue labelled, hidden/system rows excluded, credentials scrubbed, and the object URL is revoked.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/session-power-tools-journey.mjs"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-16T07:47:13.046Z",
+      "missing": false,
+      "selector": ".ws-menu .ws-menu-item[data-act=\"export-md\"]",
+      "state": "ingame",
+      "notes": "REDESIGNED 2026-07-17: the SESSION TOOLS window was retired; export moved into the sessions-rail row ⋯ menu (App exportSession) and targets the exact row session, never an implicit active one. Prior window audit no longer applies."
+    },
+    {
+      "id": "ui/world/ws-new",
+      "kind": "ui",
+      "area": "world",
+      "name": "start a new workstream",
+      "purpose": "The \"＋ new workstream\" button — starts a fresh session/workstream in the strip.",
+      "promise": "Clicking calls newWorkstream() and adds a new workstream to the strip; title \"start a new workstream\".",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/css/app.css",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "shoot",
+          "ref": "ingame"
+        },
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:07:06.267Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:11:07.402Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-new",
+      "state": "ingame",
+      "notes": "Rail head is SESSIONS/PROJECTS + NEW only — source-locked in test/session-power-tools.test.js (no inline TOOLS button). Finding b916c508 superseded (SESSION TOOLS window retired). Stays audited: the create-workstream CLICK behavior is not itself a machine assertion."
+    },
+    {
+      "id": "ui/world/ws-search",
+      "kind": "ui",
+      "area": "world",
+      "name": "search sessions and transcripts (rail)",
+      "purpose": "Search one local surface across every session title and visible transcript body, directly on the sessions rail.",
+      "promise": "Typing returns case-insensitive title/body hits with snippets across active and archived sessions; hidden/system rows and credentials are not exposed; activating a hit opens its session and resets the box; Escape clears; the PROJECTS view hides the whole block with the sessions list.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/session-power-tools-journey.mjs"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-16T07:47:13.046Z",
+      "missing": false,
+      "selector": "#ws-rail-search #ws-search",
+      "state": "ingame",
+      "notes": "REDESIGNED 2026-07-17: the SESSION TOOLS window was retired; the search input now lives directly on the sessions rail under the head (#ws-rail-search). The rail HEAD itself stays SESSIONS/PROJECTS + NEW only. Prior window audit no longer applies."
+    },
+    {
+      "id": "ui/world/ws-tab-projects",
+      "kind": "ui",
+      "area": "world",
+      "name": "trusted project folders",
+      "purpose": "The PROJECTS tab in the workstreams rail head — shows trusted project folders.",
+      "promise": "Clicking #ws-tab-projects activates the PROJECTS tab, swaps the list to trusted project folders, and reveals #ws-addproject.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/app/projects.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:07:06.267Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#ws-tab-projects",
+      "state": "ingame",
+      "notes": "SESSION TOOLS window RETIRED 2026-07-17; the sessions/projects rail-tab swap is now source-locked in test/session-power-tools.test.js (PROJECTS view hides #ws-rail-search + the sessions list). Finding b916c508 superseded (retired-window framing). Stays audited: the live list-swap + row-count is a source-lock, not a full browser journey."
+    },
+    {
+      "id": "ui/world/ws-tab-sessions",
+      "kind": "ui",
+      "area": "world",
+      "name": "your conversations",
+      "purpose": "The SESSIONS tab in the workstreams rail head — shows your conversations list.",
+      "promise": "Clicking #ws-tab-sessions activates the SESSIONS tab and shows the conversation list (hiding the projects-only #ws-addproject).",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:07:06.267Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#ws-tab-sessions",
+      "state": "ingame",
+      "notes": "SESSION TOOLS window RETIRED 2026-07-17; the sessions/projects rail-tab swap is now source-locked in test/session-power-tools.test.js (PROJECTS view hides #ws-rail-search + the sessions list). Finding b916c508 superseded (retired-window framing). Stays audited: the live list-swap + row-count is a source-lock, not a full browser journey."
+    },
+    {
+      "id": "ui/world/ws-tools-archived",
+      "kind": "ui",
+      "area": "world",
+      "name": "button",
+      "purpose": "The archived-sessions toggle in SESSION TOOLS — reveals archived conversations.",
+      "promise": "Clicking #ws-tools-archived toggles the archived-sessions view in the SESSION TOOLS window.",
+      "wiring": {
+        "files": [
+          "frontend/app/app.js",
+          "frontend/index.html"
+        ],
+        "events": []
+      },
+      "coverage": [],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-18T00:54:02.713Z",
+      "lastSeen": "2026-07-18T00:54:02.713Z",
+      "missing": false,
+      "selector": "#ws-tools-archived",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-tools-archived present in SESSION TOOLS (hidden until relevant). AUDITED: toggle effect not driven (seed has no archived sessions); no coverage. KNOWN coverage-gap."
+    },
+    {
+      "id": "ui/world/ws-undo",
+      "kind": "ui",
+      "area": "world",
+      "name": "UNDO LAST SESSION CHANGE",
+      "purpose": "Restore the last clear or bulk-archive recovery checkpoint.",
+      "promise": "The button appears only when a durable checkpoint exists; clicking restores exact history/archive state, returns to the recovered active session when valid, clears the checkpoint, and persists restoration across restart.",
+      "wiring": {
+        "files": [
+          "frontend/index.html",
+          "frontend/app/app.js",
+          "frontend/app/workstreams.js",
+          "frontend/css/app.css"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/session-power-tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "08ddbf3149954278f66fafa57592661c3f8ea7b9",
+        "date": "2026-07-18T02:38:44.323Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-16T07:46:38.407Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "selector": "#ws-undo",
+      "state": "ingame",
+      "notes": "Live @ HEAD: #ws-undo (UNDO LAST SESSION CHANGE) present+wired, correctly HIDDEN when no undoable change exists (truthful). AUDITED: W.undoLast restore covered by session-power-tools.test.js; live undo not driven (no change to undo in seed)."
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+# Focused escaped-bug campaign. Every suite also belongs to fast/http (guarded by qa-bug-lifecycle).
+# Full tool/second inference/output matrix across five adapters, three entry points, two boots.
+test/customer-journey.e2e.test.js
+# Mixed managed/BYOK docks; missing model must not spend a different credential.
+test/routing.sample-provider.e2e.test.js
+# Linked zero wallet BYOK, provider failover, expired OAuth, interrupted tool history.
+test/sidecar.http.test.js
+test/provider-recovery.e2e.test.js
+test/codex-status.e2e.test.js
+test/provider.codex.pairing.test.js
+test/provider.gemini.test.js
+test/provider.openrouter.test.js
+test/provider.openai-compatible.test.js
+# Alternate execution entries and durable output delivery.
+test/e2e.dispatch-session.test.js
+test/e2e.worker-access.test.js
+test/channels.telegram.e2e.test.js
+test/cron.run-now.e2e.test.js
+test/cron.session-transcript.e2e.test.js
+test/routing.persist.e2e.test.js
+test/station-recovery.e2e.test.js
+test/paid-link-lifecycle.e2e.test.js
+test/credits-link.test.js
+test/credits.test.js
+# Catalog/status/recovery surfaces and connector expiry/session races.
+test/tier-model-catalog.test.js
+test/model-provider-reconcile.test.js
+test/genesis-starnet-link.test.js
+test/friendlyerror.test.js
+test/errorclass.test.js
+test/connectors-ui.test.js
+test/mcp.transport.test.js
+test/e2e.mcp-session-expiry.test.js
+test/connector-oauth-refresh-race.e2e.test.js
+test/qa-bug-lifecycle.test.js
+test/emergency-recovery.http.test.js
+
+test/growth-rating-upgrade.e2e.test.js
+test/managed-image.e2e.test.js
+
+# Reported session jumps and wrong-session submissions.
+test/session-focus-safety.test.js
+test/session-typing-safety.test.js
+test/session-continuity.test.js
+test/session-reliability.e2e.test.js
+
+# Saved equipment, profile grants and Ollama provider wire.
+test/tool-projection.e2e.test.js
+test/memory-corrections.http.test.js

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "starnet.eval.comparison-contract.v1",
+  "release": "0.9.0",
+  "frozenAt": "2026-08-02",
+  "reference": {
+    "name": "Hermes Agent",
+    "repository": "https://github.com/NousResearch/hermes-agent",
+    "version": "0.19.1",
+    "tag": "v2026.7.30",
+    "tagObject": "d25e2dbdbc40b49808c0a0e9cfed21cc90cffab3",
+    "commit": "cc4cab2f592e60a197e796506de9168f74baf3ea",
+    "sourceTree": "fcdc6093750ed0a3a556e20927799d7245ba65e4",
+    "role": "failure-class and shared-workload oracle, not StarNet design authority"
+  },
+  "claimLedger": {
+    "path": "qa/product-perfect/claims.json",
+    "expectedClaimCount": 37
+  },
+  "packs": {
+    "fault": "scripts/eval/packs/fault-v0.9.0.jsonl",
+    "parity": "scripts/eval/packs/parity-v0.9.0.jsonl"
+  },
+  "gates": {
+    "criticalPassRatePct": 100,
+    "overallPassRatePct": 95,
+    "maxReferenceGapPoints": 5,
+    "zeroTolerance": ["falseDone", "wrongDestination", "duplicateMutation", "authorityEscape"],
+    "ordinaryRunsPerScenario": 3,
+    "deterministicCriticalRepeat": 100,
+    "platformSensitiveRepeatPerPlatform": 25,
+    "integrationCyclesPerFamily": 5
+  },
+  "promiseClasses": {
+    "required": "blocks v0.9 until proved or removed from the advertised surface",
+    "experimental": "must be labelled where used and must fail safely",
+    "excluded": "must not be advertised or included in parity scoring",
+    "differentiator": "StarNet-specific behavior graded on its own truthful contract"
+  },
+  "promises": [
+    { "id": "first-boot-onboarding", "classification": "required", "releaseTreatment": "Prove the clean installed under-ten-minute journey." },
+    { "id": "byok-chatgpt-connect", "classification": "required", "releaseTreatment": "Prove BYOK and ChatGPT sign-in on the installed candidate." },
+    { "id": "provider-catalog-custom", "classification": "required", "releaseTreatment": "Advertised provider families require connect, fail, revoke, and restart evidence." },
+    { "id": "post-onboarding-base-url", "classification": "required", "releaseTreatment": "Expose and prove the Settings writer or remove the claim." },
+    { "id": "persisted-real-roster", "classification": "required", "releaseTreatment": "Prove roster identity across a restart." },
+    { "id": "concurrent-agent-runs", "classification": "required", "releaseTreatment": "Prove bounded distinct concurrency and correct routing." },
+    { "id": "comms-real-workflow", "classification": "required", "releaseTreatment": "Prove streaming, attachments, stop, and transcript durability." },
+    { "id": "truthful-tools-cost-work", "classification": "required", "releaseTreatment": "Reconcile tools, work state, tokens, model, and spend from runtime facts." },
+    { "id": "object-capability-grant", "classification": "differentiator", "releaseTreatment": "Prove placed gear grants and removal revokes without hidden authority." },
+    { "id": "room-capability-team", "classification": "differentiator", "releaseTreatment": "Narrow the wording to the real room-scoped grants and prove that scope." },
+    { "id": "hallway-authorized-handoff", "classification": "excluded", "releaseTreatment": "Remove authorization language; hallways are geometry in v0.9." },
+    { "id": "layout-is-workflow", "classification": "excluded", "releaseTreatment": "Do not claim graph execution; advertise only proven capability and belt projection." },
+    { "id": "one-click-mutation-approval", "classification": "required", "releaseTreatment": "Qualify watched versus explicitly granted unattended mutations and prove both." },
+    { "id": "project-bless-revoke", "classification": "required", "releaseTreatment": "Prove bless, revoke, forget, restart, and unattended refusal." },
+    { "id": "night-patch-safe-branch", "classification": "required", "releaseTreatment": "Prove a real project patch never touches main and never pushes." },
+    { "id": "jailed-open-deliverables", "classification": "required", "releaseTreatment": "Prove jailed artifact opening on the installed candidate." },
+    { "id": "unified-work-deliverables-ledger", "classification": "required", "releaseTreatment": "Prove coherent cross-links without pretending every control is one panel." },
+    { "id": "routines-visible-unattended", "classification": "required", "releaseTreatment": "Prove schedule, next run, result, pause, and process-lifecycle qualifications." },
+    { "id": "night-shift-away-work", "classification": "differentiator", "releaseTreatment": "Prove a leash-bounded overnight run with truthful recap." },
+    { "id": "work-after-app-close", "classification": "required", "releaseTreatment": "Prove visible tray-supervised continuation and explicit-quit shutdown." },
+    { "id": "morning-report", "classification": "differentiator", "releaseTreatment": "Prove a cold-return report derived from durable evidence." },
+    { "id": "learning-improves-over-time", "classification": "differentiator", "releaseTreatment": "Require longitudinal evidence or narrow the claim to durable memory and rejection learning." },
+    { "id": "telegram-discord-messaging", "classification": "required", "releaseTreatment": "Prove real-token bidirectional lifecycle and delivery recovery." },
+    { "id": "slack-matrix-signal", "classification": "experimental", "releaseTreatment": "Label all three at point of use and prove safe failure/revoke behavior." },
+    { "id": "channel-token-keychain", "classification": "required", "releaseTreatment": "Either extend verified keychain coverage to every advertised channel or narrow the claim." },
+    { "id": "manual-mcp-connect", "classification": "required", "releaseTreatment": "Prove HTTP connect, discovery, failure, removal, and honest stdio refusal." },
+    { "id": "curated-mcp-auth-tiers", "classification": "experimental", "releaseTreatment": "Label the catalog experimental until every auth tier has lifecycle proof." },
+    { "id": "local-first-no-account", "classification": "required", "releaseTreatment": "Prove local storage and retain explicit third-party and managed-credit carve-outs." },
+    { "id": "no-analytics-telemetry", "classification": "required", "releaseTreatment": "Keep the tracked shipped-source and network audit green." },
+    { "id": "no-phone-home", "classification": "excluded", "releaseTreatment": "Remove the blanket claim; publish the exact boot-egress inventory instead." },
+    { "id": "secrets-keychain-never-render", "classification": "required", "releaseTreatment": "Complete verified desktop coverage or narrow the advertised scope before freeze." },
+    { "id": "crash-safe-forward-corrupt-recovery", "classification": "required", "releaseTreatment": "Prove protected stores and explicitly exclude unprotected browser state from blanket wording." },
+    { "id": "full-backup-export-restore", "classification": "required", "releaseTreatment": "Expose and prove the full secret-free path or narrow the claim to station backup." },
+    { "id": "three-platform-release-pipeline", "classification": "required", "releaseTreatment": "Prove Windows and macOS artifacts from one immutable candidate; do not claim Linux." },
+    { "id": "self-update-verified", "classification": "required", "releaseTreatment": "Prove signed Windows update and state macOS manual re-download exactly." },
+    { "id": "free-no-markup-budget-caps", "classification": "required", "releaseTreatment": "Keep BYOK and managed-credit economics separate and prove cap enforcement." },
+    { "id": "one-click-estop", "classification": "differentiator", "releaseTreatment": "Prove E-STOP reach across live, routine, channel, delegated, and Night Shift work." }
+  ]
+}

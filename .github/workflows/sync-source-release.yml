@@ -1,0 +1,155 @@
+# Keep the source repository's Releases sidebar aligned with the dedicated updater repository.
+# Publishing on androoAGI/starnet-releases remains the human ship gate. This workflow observes
+# only its latest published stable release, mirrors the human installers byte-for-byte, and
+# creates the source release draft-first so a failed copy can never expose a partial release.
+name: sync-source-release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-source-release
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DISTRIBUTION_REPO: androoAGI/starnet-releases
+      SOURCE_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the latest published distribution release
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GITHUB_TOKEN is deliberately scoped to the source repository. The distribution
+          # repository is public, so read it anonymously instead of broadening credentials.
+          curl --fail --silent --show-error --location \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'User-Agent: starnet-source-release-mirror' \
+            "https://api.github.com/repos/$DISTRIBUTION_REPO/releases/latest" \
+            --output "$RUNNER_TEMP/distribution-release.json"
+          jq '{tag_name, name, draft, prerelease, assets: [.assets[] | {name, size, state, digest, browser_download_url}]}' \
+            "$RUNNER_TEMP/distribution-release.json"
+
+      - name: Read the matching source release, if one exists
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=$(jq -r .tag_name "$RUNNER_TEMP/distribution-release.json")
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" --repo "$SOURCE_REPO" \
+            --json name,tagName,isDraft,isPrerelease,body,assets \
+            > "$RUNNER_TEMP/source-release.json" 2> "$RUNNER_TEMP/source-release.err"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif grep -qi 'release not found' "$RUNNER_TEMP/source-release.err"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$RUNNER_TEMP/source-release.err" >&2
+            exit 1
+          fi
+
+      - name: Plan and validate the mirror
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --release-json "$RUNNER_TEMP/distribution-release.json"
+            --distribution-repo "$DISTRIBUTION_REPO"
+            --out-dir "$RUNNER_TEMP/source-release-plan"
+          )
+          if [ "${{ steps.source.outputs.exists }}" = "true" ]; then
+            args+=(--source-release-json "$RUNNER_TEMP/source-release.json")
+          fi
+          node scripts/source-release-mirror.mjs "${args[@]}"
+          echo "action=$(jq -r .action "$RUNNER_TEMP/source-release-plan/plan.json")" >> "$GITHUB_OUTPUT"
+          echo "title=$(jq -r .title "$RUNNER_TEMP/source-release-plan/plan.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Require the immutable source tag
+        if: steps.plan.outputs.action != 'noop'
+        shell: bash
+        env:
+          TAG: ${{ steps.source.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$SOURCE_REPO/git/ref/tags/$TAG" --silent
+
+      - name: Download and hash-check the human installers
+        if: steps.plan.outputs.action != 'noop'
+        shell: bash
+        env:
+          TAG: ${{ steps.source.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/source-release-assets"
+          while IFS= read -r row; do
+            name=$(jq -r .name <<< "$row")
+            expected=$(jq -r .digest <<< "$row")
+            url=$(jq -r .downloadUrl <<< "$row")
+            expected=${expected#sha256:}
+            curl --fail --silent --show-error --location --retry 3 \
+              --output "$RUNNER_TEMP/source-release-assets/$name" "$url"
+            actual=$(sha256sum "$RUNNER_TEMP/source-release-assets/$name" | awk '{print $1}')
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::$name sha256 mismatch after download"
+              exit 1
+            fi
+          done < <(jq -c '.assets[]' "$RUNNER_TEMP/source-release-plan/plan.json")
+
+      - name: Create or repair the source draft
+        if: steps.plan.outputs.action != 'noop'
+        shell: bash
+        env:
+          TAG: ${{ steps.source.outputs.tag }}
+          TITLE: ${{ steps.plan.outputs.title }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.plan.outputs.action }}" = "create" ]; then
+            gh release create "$TAG" --repo "$SOURCE_REPO" --verify-tag --draft \
+              --title "$TITLE" --notes-file "$RUNNER_TEMP/source-release-plan/body.md"
+          else
+            while IFS= read -r stale; do
+              [ -z "$stale" ] || gh release delete-asset "$TAG" "$stale" --repo "$SOURCE_REPO" --yes
+            done < <(jq -r '.staleAssets[]' "$RUNNER_TEMP/source-release-plan/plan.json")
+            gh release edit "$TAG" --repo "$SOURCE_REPO" --draft \
+              --title "$TITLE" --notes-file "$RUNNER_TEMP/source-release-plan/body.md"
+          fi
+          gh release upload "$TAG" --repo "$SOURCE_REPO" --clobber "$RUNNER_TEMP/source-release-assets"/*
+
+      - name: Publish the complete source release as latest
+        if: steps.plan.outputs.action != 'noop'
+        shell: bash
+        env:
+          TAG: ${{ steps.source.outputs.tag }}
+          TITLE: ${{ steps.plan.outputs.title }}
+        run: |
+          set -euo pipefail
+          gh release edit "$TAG" --repo "$SOURCE_REPO" --draft=false --latest \
+            --title "$TITLE" --notes-file "$RUNNER_TEMP/source-release-plan/body.md"
+
+      - name: Verify the published mirror and latest pointer
+        shell: bash
+        env:
+          TAG: ${{ steps.source.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$SOURCE_REPO/releases/tags/$TAG" > "$RUNNER_TEMP/source-release-verified.json"
+          node scripts/source-release-mirror.mjs \
+            --release-json "$RUNNER_TEMP/distribution-release.json" \
+            --source-release-json "$RUNNER_TEMP/source-release-verified.json" \
+            --distribution-repo "$DISTRIBUTION_REPO" \
+            --out-dir "$RUNNER_TEMP/source-release-verified"
+          test "$(jq -r .action "$RUNNER_TEMP/source-release-verified/plan.json")" = "noop"
+          test "$(gh api "repos/$SOURCE_REPO/releases/latest" --jq .tag_name)" = "$TAG"
+          echo "::notice::source Releases latest is $TAG (distribution mirror verified)"

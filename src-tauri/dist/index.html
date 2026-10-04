@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKYNET</title>
+<style>
+  :root { --amber: #ffb000; --bg: #0b0b0c; --dim: #7a6a3a; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--amber);
+    font-family: "Consolas", "Cascadia Mono", ui-monospace, monospace;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 2rem;
+    -webkit-user-select: none; user-select: none;
+  }
+  .wrap { max-width: 34rem; }
+  h1 { font-size: 2.4rem; letter-spacing: .35rem; margin: 0 0 .25rem; }
+  .sub { color: var(--dim); letter-spacing: .2rem; margin-bottom: 2rem; font-size: .85rem; }
+  p { line-height: 1.7; color: #d8c089; }
+  code { color: var(--amber); }
+  .hint { margin-top: 1.5rem; color: var(--dim); font-size: .8rem; }
+  .cursor { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body class="theme-amber">
+  <div class="wrap">
+    <h1>SKYNET</h1>
+    <div class="sub">▸ AI-AGENT HARNESS</div>
+    <p>The local sidecar didn't come up.<span class="cursor">▮</span></p>
+    <p>The bundled agent host could not start. Relaunch SKYNET once; if this repeats, reinstall the app.</p>
+    <div class="hint">If this keeps happening, another process may be holding the local port or the installation may be damaged.</div>
+  </div>
+</body>
+</html>

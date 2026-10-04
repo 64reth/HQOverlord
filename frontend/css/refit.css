@@ -1,0 +1,345 @@
+/* STARNET — refit.css : premium polish for the REFIT (station-build) modal forms.
+   BAY PICKER · WORKSTATION PICKER · FILTER EDITOR · MERGER EDITOR — the pickers that ride the
+   .refit-guide card in build.js. This file replaces the old inline hex + inline layout on those
+   forms with the station's premium vocabulary: theme vars only (no hardcoded hex outside var()
+   fallbacks), settings-panel input styling, .sec-style region dividers, motion focus ring, and a
+   soft entrance on open. Loaded after app.css/comms.css, before motion.css — see index.html.
+
+   Contract: every selector here is authored to match a DOM id / class that build.js emits. If you
+   rename a class, grep build.js first. */
+
+/* ---------- form scaffold on the guide card ---------- */
+/* a labelled region inside a picker (mirrors the .sec divider vocabulary): a hairline rule + the
+   fields that follow. Keeps the AGENTS / MANUAL-ID / ACTIONS zones legible. */
+.refit-form { display: flex; flex-direction: column; gap: 0; }
+.refit-sec {
+  margin: 10px 0 5px; padding-top: 8px;
+  border-top: 1px solid var(--ph-faint);
+  font-size: 10.5px; letter-spacing: 2px; color: var(--ph-dim);
+  text-transform: uppercase;
+}
+.refit-sec:first-child { margin-top: 4px; border-top: none; padding-top: 0; }
+
+/* the quick-pick agent chips (was inline flex-wrap on .refit-bay-agents) */
+.refit-agents { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 2px; }
+
+/* ---------- inputs — echo the SETTINGS panel field, sized for the compact card ---------- */
+/* base rule in app.css already themes input[type=text]/[type=number].key-input; these give the
+   picker fields the same phosphor grade at the card's tighter 11px monospace scale. */
+.refit-input,
+.refit-num {
+  font-family: 'VT323', monospace; color: var(--ph-bright);
+  background: var(--bg, #000);
+  border: 1px solid var(--ph-dim);
+  outline: none; border-radius: 3px;
+  text-shadow: 0 0 5px var(--ph-glow2);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, .65);
+  transition: border-color var(--t-fast, .12s) ease, box-shadow var(--t-fast, .12s) ease;
+}
+.refit-input {
+  width: 100%; box-sizing: border-box; margin: 6px 0;
+  padding: 6px 8px; font-size: 15px; letter-spacing: .5px;
+}
+.refit-num { width: 52px; margin-left: 6px; padding: 4px 6px; font-size: 15px; text-align: center; }
+.refit-input::placeholder { color: var(--ph-dim); opacity: 1; }
+.refit-input:focus,
+.refit-num:focus { border-color: var(--ph); box-shadow: inset 0 0 18px rgba(0, 0, 0, .7), 0 0 12px var(--ph-glow2); }
+
+/* validation: a --bad hairline PLUS a small message line — visible but in-vocabulary (not just a
+   raw red border). build.js toggles .is-error on the field; .refit-error carries the reason. */
+.refit-input.is-error,
+.refit-num.is-error { border-color: var(--bad); box-shadow: inset 0 2px 5px rgba(0, 0, 0, .65), 0 0 10px rgba(255, 92, 77, .28); }
+.refit-error {
+  display: none; margin: -1px 0 4px; font-size: 11px; letter-spacing: .5px;
+  color: var(--bad); font-family: 'VT323', monospace;
+}
+.refit-input.is-error ~ .refit-error,
+.refit-error.show { display: block; }
+
+/* an inline field label (MERGER's "combine K =") */
+.refit-field { display: block; margin: 6px 0; font-family: 'VT323', monospace; font-size: 15px; letter-spacing: .5px; color: var(--text); }
+
+/* LINE BUDGET (INBOX flow card): three inline fields in the .refit-field voice, numbers right-aligned so
+   the column of ceilings reads as one panel. Fields are .refit-num (skinned above) — never OS paint. */
+.lb-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; }
+.lb-field .lb-num { width: 72px; margin-left: 0; }
+.lb-note { margin-top: 4px; }
+
+/* a soft note line (no-active-agents / lay-belts-first) — warn-amber, in-vocabulary */
+.refit-note { color: var(--warn); font-family: 'VT323', monospace; font-size: 14px; letter-spacing: .5px; margin: 6px 0; }
+.refit-note.bad { color: var(--gold); }
+
+/* ---------- FILTER route rows ---------- */
+.refit-filter-rows { margin: 4px 0 2px; }
+.refit-route-row { display: flex; align-items: center; gap: 5px; margin: 3px 0; }
+.refit-route-lbl { width: 104px; flex: 0 0 auto; font-family: 'VT323', monospace; font-size: 14px; letter-spacing: .5px; color: var(--ok); }
+/* a lane pick button in the selected state — replaces the old inline background/border hex so the
+   JS toggle just flips .sel (no inline hex in build.js). */
+.lane-btn.sel { background: var(--ph-faint); border-color: var(--ph); color: var(--ph-bright); box-shadow: 0 0 10px var(--ph-glow2); }
+/* LOOP gate (2026-08-22): the DONE-lane picker lists the gate's real exits ("E → OUTBOX" / "S → to WRITER"),
+   one chip per lane in the .refit-agents voice; the verdict-tag row reuses the FILTER route-row vocabulary
+   (same .sel state) so "route by content" reads the same on both junction cards. */
+.loop-exits .loop-exit { letter-spacing: .5px; }
+.loop-when-row .refit-route-lbl { width: auto; }
+.loop-when.sel { background: var(--ph-faint); border-color: var(--ph); color: var(--ph-bright); box-shadow: 0 0 10px var(--ph-glow2); }
+
+/* ---------- action row (ASSIGN · CANCEL · …) ---------- */
+.refit-actions { display: flex; gap: 6px; margin-top: 8px; }
+.refit-actions { flex-wrap: wrap; }
+
+/* ---------- the destructive action on a card (2026-08-07) ----------
+   Reads as the one dangerous verb in the row without being a red slab, and takes the ArmConfirm
+   two-step (never window.confirm — the station owns its own dialogs). `.armed` is the class
+   ArmConfirm stamps while the second click is pending. */
+.btn-sm.refit-danger { color: rgba(255,150,138,.9); border-color: rgba(255,92,77,.3); }
+.btn-sm.refit-danger:hover:not(:disabled) { color: #ffb0a8; border-color: var(--bad); background: rgba(255,92,77,.10); }
+.btn-sm.refit-danger.armed { color: var(--ink); background: var(--bad); border-color: var(--bad); text-shadow: none; }
+
+/* ---------- ROOM CARD: the room's own sheet (name · size · deck · the three verbs) ---------- */
+.refit-room-card .refit-guide-card { width: min(340px, 90vw); }
+.refit-room-card .step-fact { margin: 3px 0; }
+
+/* ---------- connector-portal editor state dot (a coloured ● glyph, so it themes via `color`) ---------- */
+.refit-conn-rows .conn-dot { background: none; width: auto; height: auto; border-radius: 0; color: var(--ph-dim); }
+.refit-conn-rows .conn-dot.ok { color: var(--ok); }
+.refit-conn-rows .conn-dot.warn { color: var(--warn); }
+.refit-conn-rows .conn-dot.bad { color: var(--bad); }
+
+/* ---------- ⊕ SUMMON A <ROLE> HERE — the leading action on a role-carrying dock's picker ---------- */
+.refit-summon { display: flex; align-items: center; justify-content: center; width: 100%; margin: 2px 0 4px; }
+
+/* ---------- THE STEP CARD — the per-dock step editor (workflow studio) ----------
+   Three zones on the shared guide card: THE STEP (provable line facts), THE AGENT (the folded-in
+   picker), THE WORK (the standing job brief). Matte, theme vars only, VT323 for readouts. */
+.step-fact { font-family: 'VT323', monospace; font-size: 14.5px; letter-spacing: .5px; color: var(--text); margin: 2px 0; }
+.step-fact b { color: var(--ph-bright); }
+#step-bound { color: var(--ph-bright); text-transform: none; letter-spacing: .5px; }
+.refit-brief {
+  resize: vertical; min-height: 58px; max-height: 180px;
+  line-height: 1.25; font-size: 14.5px;
+}
+.step-brief-note { font-size: 12px; color: var(--ph-dim); margin: 2px 0 0; }
+.step-agent-actions { margin-top: 2px; }
+
+/* ---------- THE TRIGGER ZONE — the INBOX card's WHY (inbox-trigger, 2026-08-05) ----------
+   Truth rows (feed state + this line's routines off the live cron store) and the inline create
+   mini-form. Matte, theme vars only, VT323 readouts — same vocabulary as the step card zones. */
+.trg-list { margin: 2px 0 4px; }
+.trg-row { font-family: 'VT323', monospace; font-size: 14px; letter-spacing: .4px; color: var(--text); margin: 2px 0; line-height: 1.25; }
+.trg-row b { color: var(--ph-bright); }
+/* the meta sits UNDER the name, indented past the state dot — the schedule is a sentence now ("every
+   Tuesday at 9:00 AM"), and run inline after the name it wrapped mid-phrase. */
+.trg-row-meta { color: var(--ph-dim); padding-left: 1.15em; }
+.trg-state { color: var(--ph-dim); }
+.trg-state.on { color: var(--gold); }
+.trg-warn { color: var(--warn); }
+.trg-preview { min-height: 1em; font-family: 'VT323', monospace; font-size: 13px; letter-spacing: .4px; color: var(--ph-dim); margin: 0 0 2px; }
+.trg-doors { margin-top: 6px; }
+.trg-msg { margin: 6px 0 0; }
+/* the trigger RULE is an explanation, not a warning — .refit-note is the amber voice, and an amber
+   paragraph on every INBOX card teaches the Commander to stop reading amber. */
+.trg-explain { font-family: 'VT323', monospace; font-size: 14px; letter-spacing: .4px; line-height: 1.3; color: var(--ph-dim); margin: 6px 0; }
+
+/* ---------- NEW ROUTINE — the create form as ONE object (2026-08-14) ----------
+   Same vocabulary as AUTOMATION's inline RESCHEDULE editor (.rt-resched): a hairline box with a lit
+   left edge. The fields used to float loose on a card that is already six zones tall, so nothing said
+   where the form began or ended. */
+.trg-form {
+  display: flex; flex-direction: column; gap: 2px;
+  margin: 4px 0 2px; padding: 7px 9px 9px;
+  border: 1px solid var(--ph-dim); border-left: 2px solid var(--ph); border-radius: var(--r-sm, 4px);
+  background: rgba(0, 0, 0, .28);
+}
+.trg-form-k { font-size: 10.5px; letter-spacing: 2px; color: var(--ph-dim); text-transform: uppercase; margin-top: 3px; }
+.trg-form .refit-input { margin: 3px 0 2px; }
+.trg-form .refit-sec { margin-top: 7px; }
+.trg-when { gap: 5px; margin: 2px 0 4px; }
+
+/* ---------- the WHEN picker (.sp) INSIDE a refit card ----------
+   Same instrument as the AUTOMATION window mounts — restated at the card's readout scale (its facts run
+   14.5px VT323, against which the console's 12px keys read like fine print) and with the card's own field
+   skin on the CUSTOM input, so the graduation path doesn't arrive dressed as a console control. */
+.refit-guide-card .sp { gap: 5px; }
+.refit-guide-card .sp-mode { font-size: 14px; letter-spacing: .5px; padding: 3px 8px; }
+.refit-guide-card .sp-day { width: 30px; height: 27px; font-size: 15px; }
+.refit-guide-card .sp-lbl { font-size: 13.5px; }
+.refit-guide-card .sp-tz { font-size: 13px; }
+.refit-guide-card .sp-hint, .refit-guide-card .sp-note { font-size: 13px; letter-spacing: .4px; }
+.refit-guide-card .sp select { padding: 3px 6px; }
+.refit-guide-card .sp .sp-num { width: 58px; padding: 3px 6px; font-size: 15px; }
+.refit-guide-card .sp [data-sp-input] {
+  width: 100%; box-sizing: border-box; flex: 0 0 auto;
+  font-family: 'VT323', monospace; font-size: 15px; letter-spacing: .5px; padding: 6px 8px;
+}
+
+/* A CARD THAT OUTGROWS THE GLASS MUST SCROLL, NOT SPILL. The INBOX card is the tallest in REFIT — flow
+   strip, line name, trigger truth, routine list AND the create form — and `.refit-guide` centres it in a
+   fixed inset:0 layer with no scroll of its own. Measured on an 820px-tall window with this rule lifted:
+   978px tall, top −79, bottom 899, ✓ GOT IT past the bottom edge and unreachable. Scoped to the flow
+   card; the thumb is skinned (the station paints its own scrollbars). */
+.refit-flow-card .refit-guide-card {
+  max-height: calc(100% - 28px); overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--ph-dim) transparent;
+}
+.refit-flow-card .refit-guide-card::-webkit-scrollbar { width: 8px; }
+.refit-flow-card .refit-guide-card::-webkit-scrollbar-thumb { background: var(--ph-dim); border-radius: 4px; }
+.refit-flow-card .refit-guide-card::-webkit-scrollbar-track { background: transparent; }
+/* the INTAKE card carries a whole form; the other flow cards are a paragraph. A little more glass keeps
+   the six cadence keys on two rows instead of three. */
+.refit-flow-intake .refit-guide-card { width: min(468px, 92vw); }
+
+/* ---------- FINISH THE LINE — the per-line checklist card (guided workflows Phase 2) ----------
+   A floating side card in the station's matte panel vocabulary: theme vars only, VT323, and every
+   mixed-glyph label BOX-centred (flex), never padded from font-size (symbol-glyph fallback law).
+   position:fixed — it shares the flashTip/clientX coordinate basis build.js positions it in.
+   z-index 3 (with the action tip): every .refit-guide picker (z 4) opens OVER it by design. */
+.refit-finline {
+  position: fixed; z-index: 3; width: 236px; padding: 8px 10px 10px;
+  background: var(--panel); border-radius: 7px;
+  box-shadow: 0 0 0 1.5px var(--ph), 0 0 0 3px rgba(0,0,0,.9), 0 0 18px var(--ph-glow2), inset 0 0 30px rgba(0,0,0,.85);
+  font-family: 'VT323', monospace;
+}
+.refit-finline .fl-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+.fl-overview { color: var(--ph-bright); font-size: 16px; line-height: 1.2; margin: 8px 0; overflow-wrap: anywhere; }
+.refit-workflow { border-block: 1px solid var(--ph-dim); margin: 12px 0; padding: 6px 0; }
+.refit-workflow p { margin: 8px 0; line-height: 1.35; }
+.refit-workflow-step { display: flex; flex-direction: column; width: 100%; text-align: left; gap: 3px; padding: 9px; margin: 6px 0; white-space: normal; overflow-wrap: anywhere; }
+.refit-workflow-step b { color: var(--ph-bright); }
+.refit-workflow-edit, .refit-workflow-note { color: var(--ph-dim); }
+.refit-workflow-advanced { margin: 12px 0; }
+.refit-workflow-advanced summary { cursor: pointer; color: var(--ph); padding: 6px 0; }
+/* Workflow setup is a wide editing screen. Its main choices stay separate from
+   connection facts; only the body scrolls, keeping Close and Done reachable. */
+.refit-workflow-editor { backdrop-filter: none; }
+.refit-workflow-editor .refit-guide-card {
+  width: min(calc(960px * var(--sn-unzoom,1)),calc(100% - 32px));
+  max-height: calc(100% - 32px); box-sizing: border-box; overflow: hidden;
+  display: flex; flex-direction: column; padding: 0; container-type: inline-size;
+  border: 1px solid var(--ph-dim); border-radius: 7px; font-family: 'VT323',monospace;
+  background: var(--panel); box-shadow: 0 0 0 3px rgba(0,0,0,.9), 0 18px 70px rgba(0,0,0,.65), inset 0 1px var(--ui-highlight);
+}
+.workflow-header { display: flex; align-items: flex-start; gap: 20px; flex: 0 0 auto; padding: 16px 24px; border-bottom: 1px solid var(--ui-edge); background: var(--ui-face); }
+.workflow-header > div { min-width: 0; flex: 1; }
+.workflow-kicker { display: block; font-size: 11px; letter-spacing: 1.6px; color: var(--ph-dim); margin-bottom: 7px; }
+.refit-workflow-editor .workflow-header h3 { display: block; font-weight: 400; font-size: 30px; line-height: 1.1; color: var(--ph-bright); background: none; padding: 0; margin: 0 0 9px; letter-spacing: .4px; }
+.workflow-header p { font-size: 17px; color: var(--text); line-height: 1.35; margin: 0; max-width: 68ch; }
+.workflow-close { min-width: 32px; min-height: 32px; display: flex; align-items: center; justify-content: center; padding: 4px; flex: 0 0 auto; }
+.workflow-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--ph-dim) transparent; padding: 22px 24px; font-size: 17px; line-height: 1.35; }
+.workflow-columns { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(0,1fr); padding: 0; }
+.workflow-main { min-width: 0; padding: 18px 24px; }
+.workflow-body:not(.workflow-columns) > .workflow-main { padding: 0; }
+.workflow-aside { min-width: 0; padding: 22px 22px; border-left: 1px solid var(--ui-edge); background: rgba(0,0,0,.2); }
+.workflow-section + .workflow-section { border-top: 1px solid var(--ui-edge); padding-top: 16px; margin-top: 16px; }
+.refit-workflow-editor h4 { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 400; letter-spacing: .2px; color: var(--ph-bright); margin: 0 0 10px; line-height: 1.2; }
+.refit-workflow-editor h4 > span { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: 0 0 auto; border: 1px solid var(--ui-edge); background: var(--ph-faint); font-size: 16px; border-radius: 3px; }
+.workflow-help, .refit-workflow-editor .step-fact, .refit-workflow-editor .trg-explain { font-size: 16px; line-height: 1.4; letter-spacing: .1px; color: var(--text); margin: 8px 0; }
+.workflow-help + .workflow-help { margin-top: 14px; }
+.workflow-selection { color: var(--ph-bright); font-size: 15px; margin: 10px 0 7px; }
+.refit-workflow-editor .refit-input { padding: 9px 10px; font-size: 17px; letter-spacing: .1px; }
+.refit-workflow-editor .refit-brief { min-height: 112px; max-height: 260px; line-height: 1.4; }
+.refit-workflow-editor .refit-note { font-size: 15px; line-height: 1.35; }
+.refit-workflow-editor .step-brief-note { font-size: 14px; line-height: 1.35; }
+.refit-workflow-editor :is(.bb,.btn-sm) { white-space: normal; }
+.refit-workflow-editor #step-rows { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; max-height: 118px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--ph-dim) transparent; margin: 8px 0 10px; padding: 2px; }
+.refit-workflow-editor .bay-agent { text-align: left; padding: 8px 6px; min-height: 34px; font-size: 14px; letter-spacing: .3px; overflow-wrap: anywhere; }
+.refit-workflow-editor .bay-agent.active { color: var(--ph-bright); background: var(--ph-faint); border-color: var(--ph); box-shadow: inset 2px 0 var(--ph); }
+.refit-workflow-editor [hidden] { display: none !important; }
+.refit-workflow-editor details { font-size: 14px; margin-top: 14px; }
+.refit-workflow-editor summary { cursor: pointer; color: var(--ph-dim); padding: 5px 0; }
+.refit-workflow-editor summary:hover { color: var(--ph-bright); }
+.workflow-start-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.workflow-start-options .workflow-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 14px 12px; text-align: left; border: 1px solid var(--ph-dim); background: var(--ui-face),var(--panel2); }
+.workflow-choice b { font-size: 19px; font-weight: 400; letter-spacing: .1px; }
+.workflow-choice span { font-size: 14px; color: var(--ph-dim); line-height: 1.35; letter-spacing: .1px; }
+.workflow-start-options .workflow-choice.active { border-color: var(--ph); box-shadow: inset 3px 0 var(--ph); background: var(--ui-face),var(--ph-faint); }
+.refit-workflow-editor .trg-form { margin-top: 12px; padding: 14px; }
+.refit-workflow-editor .trg-form-k { font-size: 15px; letter-spacing: .4px; }
+.refit-workflow-editor .refit-workflow { border: 0; margin: 0; padding: 0; }
+.refit-workflow-editor .refit-workflow-step { background: var(--panel2); border: 1px solid var(--ui-edge); box-shadow: none; font-size: 15px; padding: 12px; gap: 5px; letter-spacing: .1px; }
+.refit-workflow-editor .refit-workflow-step:hover { border-color: var(--ph); }
+.refit-workflow-editor .refit-workflow-step b { font-size: 18px; }
+.refit-workflow-editor .refit-workflow-note { font-size: 13px; }
+.refit-workflow-editor .refit-filter-rows { display: grid; gap: 18px; margin-top: 20px; }
+.refit-workflow-editor .refit-filter-rows .refit-route-row { display: block; margin: 0; }
+.refit-workflow-editor .refit-filter-rows .refit-route-lbl { display: block; width: auto; font-size: 15px; color: var(--ph-bright); margin-bottom: 7px; }
+.workflow-lane-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.refit-workflow-editor :is(.lane-btn,.loop-exit,.loop-when) { min-height: 32px; padding: 7px 10px; font-size: 15px; }
+.refit-workflow-editor .loop-when-row { flex-wrap: wrap; gap: 7px; }
+.workflow-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; padding: 14px 24px; border-top: 1px solid var(--ui-edge); background: var(--ui-face); }
+.workflow-footer > span { flex: 1; font-size: 13px; line-height: 1.3; color: var(--ph-dim); }
+.workflow-footer .btn-sm { min-height: 34px; padding: 7px 15px; font-size: 15px; }
+.refit-workflow-editor :is(button,input,textarea,summary):focus-visible { outline: 2px solid var(--ph-bright); outline-offset: 2px; }
+/* A placement hint can arrive while adding a workstation from the Bay editor.
+   Keep that hint for after setup instead of covering the fields with a second panel. */
+body:has(.refit-workflow-editor) > .tut-coach:not(.kit),
+body:has(.refit-workflow-editor):has(> .tut-coach:not(.kit)) > .tut-ring { visibility: hidden; pointer-events: none; }
+@container (max-width: 700px) {
+  .workflow-columns { grid-template-columns: minmax(0,1fr); }
+  .workflow-aside { border-left: 0; border-top: 1px solid var(--ui-edge); }
+  .workflow-header { padding: 16px 18px; gap: 10px; }
+  .refit-workflow-editor .workflow-header h3 { font-size: 26px; }
+  .workflow-main, .workflow-aside, .workflow-body:not(.workflow-columns) { padding: 18px; }
+  .workflow-footer { padding: 12px 18px; flex-wrap: wrap; }
+  .workflow-footer > span { flex-basis: 100%; }
+}
+@container (max-width: 420px) {
+  .workflow-start-options { grid-template-columns: minmax(0,1fr); }
+  .refit-workflow-editor #step-rows { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .workflow-header p { font-size: 15px; }
+}
+/* STARTER GEAR (was STATION ORDERS) — the stage BEFORE a line exists, in the same card slot. The count is the only
+   new part: a real n/4 off the live model, so progress reads at a glance. */
+.refit-finline .fl-count { margin-left: auto; font-size: 13px; letter-spacing: 1px; color: var(--ph-dim); }
+.refit-orders .fl-step { transition: color var(--t-fast, .12s) ease; }
+/* the card's closing word — quiet permission, not another control */
+.refit-orders .fl-opt { margin-top: 6px; font-size: 12px; letter-spacing: 1.5px; color: var(--ph-dim); text-align: center; }
+@keyframes refit-levelup {
+  0%   { filter: brightness(1); }
+  25%  { filter: brightness(2.1); }
+  100% { filter: brightness(1); }
+}
+/* the size-word beat: the readout flares once when the floor earns a bigger name */
+.refit-levelup { animation: refit-levelup .9s ease-out 1; }
+.refit-tier { color: var(--gold); letter-spacing: 2px; text-shadow: 0 0 9px rgba(var(--gold-rgb), .45); }
+@media (prefers-reduced-motion: reduce) { .refit-levelup { animation: none; } }
+.refit-finline .fl-title { color: var(--ink); background: var(--ph); padding: 1px 8px; font-size: 13px; letter-spacing: 1.5px; }
+.refit-finline .fl-x { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; min-width: 22px; }
+.refit-finline .fl-step {
+  display: flex; align-items: center; text-align: left; width: 100%; margin-top: 4px;
+  font-family: 'VT323', monospace; font-size: 14.5px; letter-spacing: .5px; line-height: 1.2;
+  padding: 4px 7px;
+}
+.refit-finline .fl-step.done { color: var(--ok); opacity: .8; }
+/* an OFF step keeps pointer events so the station tooltip ("coming online soon") still speaks */
+.refit-finline .fl-step.off { opacity: .45; cursor: default; }
+/* the SAMPLE readout (2026-08-22): the server's recorded outcome under ③ — stages ▸ cost ▸ the first line the
+   line delivered. Matte inset, dim voice; REFUSED reads in the bad colour with the server's own reason. */
+.refit-finline .fl-result {
+  margin-top: 5px; padding: 5px 7px; font-size: 13.5px; line-height: 1.25; letter-spacing: .4px; color: var(--text);
+  background: rgba(0, 0, 0, .35); border: 1px solid var(--ph-dim); border-radius: 4px; word-break: break-word;
+}
+.refit-finline .fl-result.bad { color: var(--bad); border-color: rgba(255, 92, 77, .45); }
+.refit-finline .fl-result-k { color: var(--ph-dim); letter-spacing: 1px; font-size: 11.5px; margin-right: 3px; }
+.refit-finline .fl-result-reply { color: var(--ph-bright); }
+.refit-guide.refit-swap .refit-guide-card { animation: refit-rise var(--t-med, .22s) var(--ease-out, cubic-bezier(.2, .7, .3, 1)); }
+@keyframes refit-rise {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refit-guide.refit-swap .refit-guide-card { animation: none; }
+  .refit-input, .refit-num { transition: none; }
+}
+
+/* One compact explanation in the existing selected-prop palette. */
+.refit-equipment-info { color:var(--ph); font-size:13px; line-height:1.45; padding:8px; border-top:1px solid var(--ph-dim); max-width:660px; }
+.refit-equipment-info label { display:inline-flex; align-items:center; gap:6px; }
+.refit-equipment-info select { max-width:160px; }
+.refit-equipment-info summary { cursor:pointer; }
+@media (min-width:601px) and (max-width:1000px) {
+  .refit-top { height:auto; min-height:46px; flex-wrap:wrap; gap:6px; padding-block:4px; }
+  .refit-title { white-space:nowrap; }
+  .refit-sub, .refit-spacer { display:none; }
+  .refit-top .bb { padding-inline:7px; }
+}

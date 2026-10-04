@@ -1,0 +1,311 @@
+/* sidecar/skills/package.js - filesystem-backed runtime skill packages.
+
+   StarNet's append-only JSONL skill log remains the durable event stream.
+   This module mirrors the latest skill state into inspectable package dirs:
+
+     <root>/<agentId>/<skillId>/SKILL.md
+     <root>/<agentId>/<skillId>/references|templates|scripts|assets/...
+
+   It is dependency-injected for tests and sidecar containment.
+*/
+'use strict';
+const packageFormat = require('./package-format.js');
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else { (root.SK = root.SK || {}).skillPackage = api; }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const SUPPORT_DIRS = ['references', 'templates', 'scripts', 'assets'];
+  function str(v) { return v == null ? '' : String(v); }
+  function escYaml(v) { return JSON.stringify(str(v)); }
+  function arr(v) { return Array.isArray(v) ? v.map(x => str(x)).filter(Boolean) : []; }
+  function safeSegment(v) {
+    return str(v).toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'skill';
+  }
+  function supportPath(raw) {
+    let p = str(raw).trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+/g, '/');
+    if (!p || /^[A-Za-z]:/.test(p) || p.indexOf('..') >= 0 || /[\x00-\x1F]/.test(p)) return null;
+    const root = p.split('/')[0];
+    if (SUPPORT_DIRS.indexOf(root) < 0 || p === root) return null;
+    return p;
+  }
+  function frontmatter(skill) {
+    const lines = [
+      '---',
+      'name: ' + escYaml(skill.name || skill.id || 'Skill'),
+      'description: ' + escYaml(skill.description || skill.summary || ''),
+      'category: ' + escYaml(skill.category || 'General'),
+      'state: ' + escYaml(skill.state || 'active'),
+      'created_by: ' + escYaml(skill.createdBy || 'agent'),
+      'source_run_id: ' + escYaml(skill.sourceRunId || ''),
+      'pinned: ' + (!!skill.pinned ? 'true' : 'false')
+    ];
+    if (skill.sourceUrl) lines.push('source_url: ' + escYaml(skill.sourceUrl));
+    if (skill.sourceDigest) lines.push('source_digest: ' + escYaml(skill.sourceDigest));
+    if (skill.sourceVersion) lines.push('source_version: ' + escYaml(skill.sourceVersion));
+    if (skill.sourceAuthor) lines.push('source_author: ' + escYaml(skill.sourceAuthor));
+    if (skill.sourceLicense) lines.push('source_license: ' + escYaml(skill.sourceLicense));
+    // Consolidation lineage: an archived package says which live skill absorbed it, so the merge is
+    // readable on disk and not just in the JSONL log.
+    if (skill.absorbedInto) lines.push('absorbed_into: ' + escYaml(skill.absorbedInto));
+    const platforms = arr(skill.platforms);
+    const requires = arr(skill.requires);
+    if (platforms.length) lines.push('platforms: [' + platforms.map(escYaml).join(', ') + ']');
+    if (requires.length) lines.push('requires: [' + requires.map(escYaml).join(', ') + ']');
+    lines.push('---');
+    return lines.join('\n');
+  }
+  function renderSkillMd(skill) {
+    const setup = str(skill.setup).trim();
+    const body = str(skill.body).trim();
+    const files = Array.isArray(skill.files) ? skill.files : [];
+    const pointers = files.length
+      ? '\n\n## Support Files\n' + files.map(f => '- `' + str(f.path) + '`').join('\n')
+      : '';
+    return frontmatter(skill) + '\n\n' + (setup ? '## Setup\n' + setup + '\n\n' : '') + body + pointers + '\n';
+  }
+  /* INVERSE of renderSkillMd's composition. hydrate() reads back a document THIS module wrote, so the
+     leading '## Setup' section and the trailing '## Support Files' pointer list in it are RENDERED
+     artifacts, not part of the author's body. Handing them back as `body` breaks the round-trip: the
+     next persist renders a second '## Setup' in front of a body that already has one — unbounded growth,
+     one copy per cycle — and skill.view prints the setup twice, because it composes setup + body + files
+     itself from the separate fields.
+
+     The Setup section's END is a blank line, and a setup value may itself contain blank lines, so the
+     boundary CANNOT be recovered from the document text alone. Do not guess: strip the EXACT block the
+     renderer would have written for the values we already hold (`known`), repeatedly, so a package
+     already corrupted by the re-append heals instead of carrying its duplicates forever.
+
+     When the document has a '## Setup' heading we cannot claim exactly — someone hand-edited SKILL.md,
+     which the package dir is explicitly there to invite — we keep the WHOLE region as the body and
+     report setup:'' rather than guessing a split. Nothing is lost (the setup text stays where the author
+     put it) and the round-trip is still a fixed point: an empty setup renders no Setup block, so the
+     next hydrate reads back the same bytes.
+
+     The trailing pointer list IS unambiguous (every line is a backtick-quoted path), so it is matched
+     structurally — that also strips a list gone stale against the files now on disk. A '## Support
+     Files' section written as prose does not match and is left alone. */
+  function splitRendered(text, known) {
+    let body = str(text).trim();
+    known = known || {};
+    const knownSetup = str(known.setup).trim();
+    let setup = '';
+    if (knownSetup) {
+      const block = '## Setup\n' + knownSetup;
+      while (body === block || body.indexOf(block + '\n') === 0) {
+        body = body.slice(block.length).replace(/^(?:\r?\n)+/, '');
+        setup = knownSetup;
+      }
+    }
+    // No claim possible and the region still opens with a Setup heading: hand-edited. Leave it in the body.
+    if (!setup && /^##[ \t]+Setup[ \t]*(?:\r?\n|$)/.test(body)) setup = '';
+    else if (!setup) setup = knownSetup;   // the heading is simply absent; keep what we hold
+    for (;;) {
+      const tail = body.match(/(?:^|\r?\n)##[ \t]+Support Files[ \t]*\r?\n(?:[ \t]*-[ \t]+`[^`\r\n]*`[ \t]*(?:\r?\n|$))+$/);
+      if (!tail) break;
+      body = body.slice(0, body.length - tail[0].length).replace(/(?:\r?\n)+$/, '');
+    }
+    return { setup, body: body.trim() };
+  }
+  function parseFrontmatter(text) {
+    const t = str(text);
+    const m = t.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n?([\s\S]*)$/);
+    if (!m) return { meta: {}, body: t };
+    const meta = {};
+    for (const line of m[1].split(/\r?\n/)) {
+      const mm = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+      if (!mm) continue;
+      let v = mm[2].trim();
+      if (v === 'true') v = true;
+      else if (v === 'false') v = false;
+      else if (v[0] === '[' && v[v.length - 1] === ']') v = v.slice(1, -1).split(',').map(x => x.trim().replace(/^"|"$/g, '')).filter(Boolean);
+      else v = v.replace(/^"|"$/g, '');
+      meta[mm[1]] = v;
+    }
+    return { meta, body: m[2].trim() };
+  }
+
+  function makePackageStore(opts) {
+    opts = opts || {};
+    const fs = opts.fs;
+    const path = opts.pathMod;
+    const root = opts.root;
+    const now = typeof opts.now === 'function' ? opts.now : () => 0;
+    if (!fs || !path || !root) {
+      return { writePackage() {}, hydrate(skill) { return skill; }, packageDir() { return ''; }, renderSkillMd, parseFrontmatter, splitRendered };
+    }
+    function packageDir(skill) {
+      return path.join(root, safeSegment(skill.agentId || 'agent'), safeSegment(skill.id || skill.name || 'skill'));
+    }
+    function archiveDir(skill) {
+      return path.join(root, '.archive', safeSegment(skill.agentId || 'agent'), safeSegment(skill.id || skill.name || 'skill'));
+    }
+    function ensureDir(dir) { fs.mkdirSync(dir, { recursive: true }); }
+    /* PATH REDIRECT GUARD. supportPath() already refuses `..`, absolute paths, drive letters and
+       control bytes, so the STRING can't escape — but a SYMLINK can: if `skill-packages/agent/x`
+       or a `references` dir inside it is a link, a "contained" relative write lands wherever the
+       link points. String validation cannot see that; only resolving can. Resolve the deepest
+       existing ancestor, re-attach the rest, and require the result to sit under the real root. */
+    function realOf(p) { try { return fs.realpathSync(p); } catch (_) { return null; } }
+    function insideRoot(target) {
+      const rootReal = realOf(root) || path.resolve(root);
+      let probe = path.resolve(target);
+      const rest = [];
+      for (;;) {
+        const real = realOf(probe);
+        if (real) {
+          const full = rest.length ? path.join(real, rest.join(path.sep)) : real;
+          const rel = path.relative(rootReal, full);
+          return !!rel && rel.indexOf('..') !== 0 && !path.isAbsolute(rel);
+        }
+        const parent = path.dirname(probe);
+        if (parent === probe) return false;    // walked past the filesystem root without finding anything real
+        rest.unshift(path.basename(probe));
+        probe = parent;
+      }
+    }
+    function writeText(file, text) {
+      // Check BEFORE mkdir: creating the directory chain first would materialize the escape path.
+      if (!insideRoot(file)) throw new Error('skill package path escapes the package root: ' + file);
+      ensureDir(path.dirname(file));
+      if (!insideRoot(file)) throw new Error('skill package path escapes the package root: ' + file);
+      fs.writeFileSync(file, text, 'utf8');
+    }
+    function writeBytes(file, bytes) {
+      if (!insideRoot(file)) throw new Error('skill package path escapes the package root: ' + file);
+      ensureDir(path.dirname(file));
+      if (!insideRoot(file)) throw new Error('skill package path escapes the package root: ' + file);
+      fs.writeFileSync(file, bytes);
+    }
+    function projectedFiles(skill) {
+      const files = Array.isArray(skill.files) ? skill.files : [];
+      return files.map(f => ({ path: supportPath(f.path), content: str(f.content), updatedAt: f.updatedAt || 0 })).filter(f => f.path);
+    }
+    function writePackage(skill) {
+      ensureDir(root);   // so insideRoot() can realpath the root itself — a root that does not exist yet would otherwise compare an unresolved path against resolved ones (fail-closed on any symlinked save dir)
+      const dir = skill.state === 'archived' ? archiveDir(skill) : packageDir(skill);
+      const visible = packageDir(skill);
+      if (skill.state === 'archived' && visible !== dir) {
+        try { if (fs.existsSync(visible)) fs.rmSync(visible, { recursive: true, force: true }); } catch (_) {}
+      }
+      ensureDir(dir);
+      if (Array.isArray(skill.packageFiles) && skill.packageFiles.length && skill.packageDigest && !skill.packageDiverged) {
+        const pkg = packageFormat.fromEnvelope({ format: packageFormat.FORMAT, digest: skill.packageDigest, files: skill.packageFiles });
+        // The manifest is complete, so the directory must be complete too. Remove the prior contained
+        // generation before writing; otherwise an upstream-deleted script remains executable on disk.
+        if (!insideRoot(dir)) throw new Error('skill package path escapes the package root: ' + dir);
+        if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+        ensureDir(dir);
+        for (const f of pkg.files) writeBytes(path.join(dir, f.path), Buffer.from(f.content, 'base64'));
+        return dir;
+      }
+      const s = Object.assign({}, skill, { files: projectedFiles(skill) });
+      writeText(path.join(dir, 'SKILL.md'), renderSkillMd(s));
+      for (const f of s.files) writeText(path.join(dir, f.path), f.content);
+      return dir;
+    }
+    function readSupportFiles(dir) {
+      const out = [];
+      for (const sd of SUPPORT_DIRS) {
+        const base = path.join(dir, sd);
+        if (!fs.existsSync(base)) continue;
+        const stack = [base];
+        while (stack.length) {
+          const cur = stack.pop();
+          let entries = [];
+          try { entries = fs.readdirSync(cur, { withFileTypes: true }); } catch (_) { continue; }
+          for (const ent of entries) {
+            const full = path.join(cur, ent.name);
+            // A symlink inside the package is skipped, never followed: hydrate() feeds these bytes
+            // straight into skill.view, so following a link would let anything on disk be read out
+            // as this skill's "support file".
+            if (ent.isSymbolicLink()) continue;
+            if (ent.isDirectory()) stack.push(full);
+            else if (ent.isFile()) {
+              const rel = path.relative(dir, full).replace(/\\/g, '/');
+              const p = supportPath(rel);
+              if (!p) continue;
+              let content = Buffer.alloc(0);
+              try { content = fs.readFileSync(full); } catch (_) {}
+              const asText = content.toString('utf8');
+              const isUtf8 = Buffer.from(asText, 'utf8').equals(content);
+              out.push({ path: p, content: isUtf8 ? asText : content.toString('base64'), encoding: isUtf8 ? 'utf8' : 'base64', updatedAt: 0, bytes: content.length });
+            }
+          }
+        }
+      }
+      out.sort((a, b) => a.path.localeCompare(b.path));
+      return out;
+    }
+    function hydrate(skill) {
+      if (!skill) return skill;
+      const dir = skill.state === 'archived' ? archiveDir(skill) : packageDir(skill);
+      const md = path.join(dir, 'SKILL.md');
+      if (!fs.existsSync(md)) return skill;
+      if (!insideRoot(md)) return skill;   // same law as the write side: a redirected package is not this skill's package
+      let parsed = null;
+      let files = [];
+      if (Array.isArray(skill.packageFiles) && skill.packageFiles.length && skill.packageDigest && !skill.packageDiverged) {
+        try {
+          const pkg = packageFormat.fromEnvelope({ format: packageFormat.FORMAT, digest: skill.packageDigest, files: skill.packageFiles });
+          const main = pkg.files.find(f => f.path === 'SKILL.md');
+          parsed = parseFrontmatter(Buffer.from(main.content, 'base64').toString('utf8'));
+          files = pkg.files.filter(f => f.path !== 'SKILL.md').map(f => ({
+            path: f.path, content: f.content, encoding: 'base64', updatedAt: 0, bytes: f.bytes
+          }));
+        } catch (_) { parsed = null; files = []; }
+      }
+      if (!parsed) try { parsed = parseFrontmatter(fs.readFileSync(md, 'utf8')); } catch (_) {}
+      if (!files.length) files = readSupportFiles(dir);
+      const out = Object.assign({}, skill);
+      if (parsed) {
+        out.description = parsed.meta.description || out.description || out.summary || '';
+        out.platforms = Array.isArray(parsed.meta.platforms) ? parsed.meta.platforms : (out.platforms || []);
+        // Split the rendered artifacts back off, so hydrate -> persist re-renders the SAME bytes
+        // instead of nesting another '## Setup' / pointer list on every cycle. See splitRendered.
+        const split = splitRendered(parsed.body || '', skill);
+        // A body region that split down to nothing (a setup-only document) is legitimately empty; a
+        // region that was ALREADY empty means a blank/unreadable SKILL.md, so keep what we hold.
+        out.body = split.body || (str(parsed.body).trim() ? '' : (out.body || ''));
+        out.setup = split.setup;
+      }
+      out.files = files.length ? files : (out.files || []);
+      out.packagePath = dir;
+      return out;
+    }
+    function generationDir(skill) {
+      return path.join(root, '.generations', safeSegment(skill.agentId || 'agent'), safeSegment(skill.id || skill.name || 'skill'));
+    }
+    function snapshot(skill) {
+      if (!skill || !skill.packageDigest || !Array.isArray(skill.packageFiles) || !skill.packageFiles.length) return null;
+      const pkg = packageFormat.fromEnvelope({ format: packageFormat.FORMAT, digest: skill.packageDigest, files: skill.packageFiles });
+      const dir = generationDir(skill); ensureDir(dir);
+      const target = path.join(dir, pkg.digest + '.json');
+      if (!fs.existsSync(target)) writeText(target, packageFormat.toEnvelope(pkg, {
+        name: skill.name || '', sourceUrl: skill.sourceUrl || '', sourceVersion: skill.sourceVersion || '', savedAt: now()
+      }));
+      return { digest: pkg.digest, bytes: pkg.bytes, fileCount: pkg.files.length };
+    }
+    function generations(skill) {
+      const dir = generationDir(skill); if (!fs.existsSync(dir)) return [];
+      return fs.readdirSync(dir).filter(n => /^[a-f0-9]{64}\.json$/.test(n)).map(n => {
+        try {
+          const raw = fs.readFileSync(path.join(dir, n), 'utf8'); const envelope = JSON.parse(raw);
+          const pkg = packageFormat.fromEnvelope(envelope);
+          return { digest: pkg.digest, bytes: pkg.bytes, fileCount: pkg.files.length, metadata: envelope.metadata || {} };
+        } catch (_) { return null; }
+      }).filter(Boolean);
+    }
+    function readGeneration(skill, digest) {
+      if (!/^[a-f0-9]{64}$/.test(str(digest))) throw new Error('invalid generation digest');
+      const file = path.join(generationDir(skill), str(digest) + '.json');
+      if (!insideRoot(file) || !fs.existsSync(file)) throw new Error('no such offline generation');
+      return packageFormat.fromEnvelope(fs.readFileSync(file, 'utf8'));
+    }
+    return { writePackage, hydrate, packageDir, archiveDir, renderSkillMd, parseFrontmatter, splitRendered, supportPath, snapshot, generations, readGeneration };
+  }
+
+  return { makePackageStore, renderSkillMd, parseFrontmatter, splitRendered, supportPath, safeSegment, SUPPORT_DIRS };
+});

@@ -1,0 +1,284 @@
+{
+  "kind": "review-only-prop-sprite-template",
+  "sourceDir": "frontend/assets/furniture",
+  "pixelsPerTile": 48,
+  "alphaInvariant": true,
+  "samples": [
+    {
+      "id": "desk2",
+      "source": "frontend/assets/furniture/desk2.png",
+      "polished": "docs/prop-sprite-review/variants/desk2-polished.png",
+      "template": "docs/prop-sprite-review/templates/desk2-template.png",
+      "size": {
+        "width": 96,
+        "height": 72
+      },
+      "alphaBounds": [
+        9,
+        13,
+        87,
+        56
+      ],
+      "alphaPixels": 2290,
+      "sourceAlphaHash": "bfbd483b6522e5db85ae539172b84396f5687cf668b0f5daa952bed06fdc0dca",
+      "polishedAlphaHash": "bfbd483b6522e5db85ae539172b84396f5687cf668b0f5daa952bed06fdc0dca",
+      "alphaIdentical": true,
+      "sourceHash": "cacf199c4d03e6a064faffaac8716d1f0c7113955818d4dfde45265ac14b3071",
+      "polishedHash": "6cddb89e1b19a29a4c0117d9821daa6d82eee23788f1b2ad9e6e3305207c6f7c",
+      "catalog": {
+        "id": "desk2",
+        "label": "DESK \u00d72",
+        "cat": "workstation",
+        "tier": "functional",
+        "w": 2,
+        "h": 1,
+        "blocks": true,
+        "animated": true,
+        "seat": true
+      },
+      "notes": []
+    },
+    {
+      "id": "pixelrig",
+      "source": "frontend/assets/furniture/pixelrig.png",
+      "polished": "docs/prop-sprite-review/variants/pixelrig-polished.png",
+      "template": "docs/prop-sprite-review/templates/pixelrig-template.png",
+      "size": {
+        "width": 96,
+        "height": 72
+      },
+      "alphaBounds": [
+        14,
+        6,
+        82,
+        72
+      ],
+      "alphaPixels": 3145,
+      "sourceAlphaHash": "883ab3f7a0618dda0eb8ccc408061bf4cf30754acbeac9bbc8d74586c6d7fea8",
+      "polishedAlphaHash": "883ab3f7a0618dda0eb8ccc408061bf4cf30754acbeac9bbc8d74586c6d7fea8",
+      "alphaIdentical": true,
+      "sourceHash": "f6d0fa305a1b6a583770d4041e729c21ffd125998a285b7e67b22782e9f0874b",
+      "polishedHash": "b71a30c49bdb5828e4426d901698d1e06d3460cbbd287610b0d8535efdca0a1d",
+      "catalog": {
+        "id": "pixelrig",
+        "label": "PIXEL RIG",
+        "cat": "workstation",
+        "tier": "functional",
+        "w": 2,
+        "h": 1,
+        "blocks": true,
+        "animated": true,
+        "seat": true
+      },
+      "notes": []
+    },
+    {
+      "id": "holotable",
+      "source": "frontend/assets/furniture/holotable.png",
+      "polished": "docs/prop-sprite-review/variants/holotable-polished.png",
+      "template": "docs/prop-sprite-review/templates/holotable-template.png",
+      "size": {
+        "width": 192,
+        "height": 96
+      },
+      "alphaBounds": [
+        38,
+        16,
+        154,
+        83
+      ],
+      "alphaPixels": 5607,
+      "sourceAlphaHash": "72bd61a7b6d6ff65f81d530c72a7c6c0fbf2aad4968e3355ebde2f3c9b9a455c",
+      "polishedAlphaHash": "72bd61a7b6d6ff65f81d530c72a7c6c0fbf2aad4968e3355ebde2f3c9b9a455c",
+      "alphaIdentical": true,
+      "sourceHash": "e3e331c4ac447edcac760ef2c011a7ca4d25996b79888595750a304c44995e4b",
+      "polishedHash": "850263e15c1d863c4dfa17bac31cdb6295ce3a06542fb3a5f0bb0e2797540458",
+      "catalog": {
+        "id": "holotable",
+        "label": "HOLOTABLE",
+        "cat": "screens",
+        "tier": "cosmetic",
+        "w": 4,
+        "h": 2,
+        "blocks": true,
+        "animated": true,
+        "seat": false
+      },
+      "notes": []
+    },
+    {
+      "id": "crate",
+      "source": "frontend/assets/furniture/crate.png",
+      "polished": "docs/prop-sprite-review/variants/crate-polished.png",
+      "template": "docs/prop-sprite-review/templates/crate-template.png",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "alphaBounds": [
+        2,
+        4,
+        46,
+        44
+      ],
+      "alphaPixels": 1214,
+      "sourceAlphaHash": "2bf332c3432663bf9735982a2665b89fea23ed341913165e7dc1d52268ad24ba",
+      "polishedAlphaHash": "2bf332c3432663bf9735982a2665b89fea23ed341913165e7dc1d52268ad24ba",
+      "alphaIdentical": true,
+      "sourceHash": "a0a2592ade4b6c3368c0aac00e8b308a40d347667d42d3ac4b0f39305e90b009",
+      "polishedHash": "31df387fae70412c4e18f5c215891aff97c52c25b2cf3bd9a5675c02aafbe303",
+      "catalog": {
+        "id": "crate",
+        "label": "CRATE",
+        "cat": "storage",
+        "tier": "cosmetic",
+        "w": 2,
+        "h": 1,
+        "blocks": true,
+        "animated": true,
+        "seat": false
+      },
+      "notes": [
+        "canvas width 48px differs from catalog footprint width 96px"
+      ]
+    },
+    {
+      "id": "plant",
+      "source": "frontend/assets/furniture/plant.png",
+      "polished": "docs/prop-sprite-review/variants/plant-polished.png",
+      "template": "docs/prop-sprite-review/templates/plant-template.png",
+      "size": {
+        "width": 48,
+        "height": 48
+      },
+      "alphaBounds": [
+        11,
+        7,
+        38,
+        43
+      ],
+      "alphaPixels": 617,
+      "sourceAlphaHash": "0183151a7c95d3746232ec55cc8aa35180422def2e5c2113f57b7ee00a6939ce",
+      "polishedAlphaHash": "0183151a7c95d3746232ec55cc8aa35180422def2e5c2113f57b7ee00a6939ce",
+      "alphaIdentical": true,
+      "sourceHash": "44ce421970b2e0270af84532d021aa8f262af8c519410106dd8b8f3d23b52298",
+      "polishedHash": "16dfca125c47edba3be45247b5c4b28037e2a3687df7e3456cff505dbd0c777a",
+      "catalog": {
+        "id": "plant",
+        "label": "PLANT",
+        "cat": "decor",
+        "tier": "cosmetic",
+        "w": 1,
+        "h": 1,
+        "blocks": false,
+        "animated": true,
+        "seat": false
+      },
+      "notes": []
+    },
+    {
+      "id": "arcade",
+      "source": "frontend/assets/furniture/arcade.png",
+      "polished": "docs/prop-sprite-review/variants/arcade-polished.png",
+      "template": "docs/prop-sprite-review/templates/arcade-template.png",
+      "size": {
+        "width": 80,
+        "height": 104
+      },
+      "alphaBounds": [
+        15,
+        6,
+        68,
+        101
+      ],
+      "alphaPixels": 3982,
+      "sourceAlphaHash": "4b309ea8949424a02040ca81be41fd3e8fa7c0eb927291a8fb794a4b2893766c",
+      "polishedAlphaHash": "4b309ea8949424a02040ca81be41fd3e8fa7c0eb927291a8fb794a4b2893766c",
+      "alphaIdentical": true,
+      "sourceHash": "236672fedad9f8ae3a01737041811e3f6ef300619cc760a027d9347f827cd69f",
+      "polishedHash": "11e831df5b6154c4fd7d65f0a24434f7303f0dbf0e834af7d91cd42805fd483d",
+      "catalog": {
+        "id": "arcade",
+        "label": "ARCADE",
+        "cat": "lounge",
+        "tier": "cosmetic",
+        "w": 1,
+        "h": 2,
+        "blocks": true,
+        "animated": true,
+        "seat": false
+      },
+      "notes": [
+        "canvas width 80px differs from catalog footprint width 48px"
+      ]
+    },
+    {
+      "id": "vault",
+      "source": "frontend/assets/furniture/vault.png",
+      "polished": "docs/prop-sprite-review/variants/vault-polished.png",
+      "template": "docs/prop-sprite-review/templates/vault-template.png",
+      "size": {
+        "width": 144,
+        "height": 108
+      },
+      "alphaBounds": [
+        32,
+        11,
+        112,
+        92
+      ],
+      "alphaPixels": 5069,
+      "sourceAlphaHash": "23e48b5b38b5dfcb4ee1e0599611e516b0d378d1fa5647370516644e615fcf6f",
+      "polishedAlphaHash": "23e48b5b38b5dfcb4ee1e0599611e516b0d378d1fa5647370516644e615fcf6f",
+      "alphaIdentical": true,
+      "sourceHash": "3d7d00b12087e05af6a59a4114c1bdde7a16b97c4fd79667b082f5bb76db01df",
+      "polishedHash": "cd1552ad2d0b0cdccfe940fb8025effb99a114b7d5728c73c8538cc8fe38d8a4",
+      "catalog": {
+        "id": "vault",
+        "label": "VAULT",
+        "cat": "capability",
+        "tier": "functional",
+        "w": 3,
+        "h": 2,
+        "blocks": true,
+        "animated": true,
+        "seat": false
+      },
+      "notes": []
+    },
+    {
+      "id": "whiteboard",
+      "source": "frontend/assets/furniture/whiteboard.png",
+      "polished": "docs/prop-sprite-review/variants/whiteboard-polished.png",
+      "template": "docs/prop-sprite-review/templates/whiteboard-template.png",
+      "size": {
+        "width": 192,
+        "height": 56
+      },
+      "alphaBounds": [
+        50,
+        9,
+        141,
+        44
+      ],
+      "alphaPixels": 3185,
+      "sourceAlphaHash": "c30b9eca2f54eca20c7ddacb5b4d472caac17bcc7927a9b02074acadc312a4d9",
+      "polishedAlphaHash": "c30b9eca2f54eca20c7ddacb5b4d472caac17bcc7927a9b02074acadc312a4d9",
+      "alphaIdentical": true,
+      "sourceHash": "952d057b93bbfa8a672d97e97fcf2acc5c20eba5294f9aa11a3071eda327302b",
+      "polishedHash": "3767c08ac656aa366eeb00ec9444562b1df9b1793a37ff47da77b460d0fb44f1",
+      "catalog": {
+        "id": "whiteboard",
+        "label": "WHITEBOARD",
+        "cat": "screens",
+        "tier": "cosmetic",
+        "w": 4,
+        "h": 1,
+        "blocks": false,
+        "animated": true,
+        "seat": false
+      },
+      "notes": []
+    }
+  ]
+}

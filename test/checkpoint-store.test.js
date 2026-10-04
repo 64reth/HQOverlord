@@ -1,0 +1,236 @@
+/* node test/checkpoint-store.test.js — the AMBIENT checkpoint edge (execution-spine Commit 1), with REAL git.
+
+   Proves the shadow-git rollback net against a real temp workspace + real git + a FAKE clock: a snapshot
+   captures the pre-mutation state, content-dedup avoids redundant commits, restore reverts an edited file
+   BYTE-EXACT and removes files created after the snapshot, the index round-trips, the shadow git-dir lives
+   OUTSIDE the agent's fs jail, and every guard (bad agentId / unknown snapshot / restore of an unrecorded id)
+   fails closed. Spawns git, so it rides test:http (the subprocess bucket), not the fast unit gate. */
+'use strict';
+const A = require('./_assert.js');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { execFileSync } = require('child_process');
+const { makeClock } = require('../shared/clock-rng.js');
+const { makeCheckpointStore } = require('../sidecar/checkpoint-store.js');
+
+// a real synchronous git runner (the test analogue of index.js's async execFile runner).
+function runGit(args, opts) {
+  try {
+    const stdout = execFileSync('git', args, { cwd: (opts && opts.cwd) || process.cwd(), windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return Promise.resolve({ code: 0, stdout: String(stdout || ''), stderr: '' });
+  } catch (e) {
+    return Promise.resolve({ code: (e && typeof e.status === 'number') ? e.status : 1, stdout: String((e && e.stdout) || ''), stderr: String((e && e.stderr) || '') });
+  }
+}
+
+(async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sk-cp-'));
+  const clock = makeClock(1700000000000);
+  const store = makeCheckpointStore({ fs, pathMod: path, root, runGit, clock, keep: 5 });
+  const aid = 'a1';
+  const wt = path.join(root, aid);
+  fs.mkdirSync(wt, { recursive: true });
+  const write = (rel, body) => fs.writeFileSync(path.join(wt, rel), body);
+  const read = (rel) => fs.readFileSync(path.join(wt, rel), 'utf8');
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'sk-cp-project-'));
+
+  try {
+    // ---- 1. baseline snapshot of a non-empty workspace ----
+    write('report.md', 'line one\nline two\n');
+    const s1 = await store.snapshot(aid, { runId: 'r1', turn: 0, label: 'fs.write' });
+    A.ok(s1 && s1.created, 'baseline snapshot created');
+    A.ok(store.isValidId(s1.id), 'snapshot id is a valid git oid');
+    A.ok(s1.files >= 1, 'measured at least one file');
+
+    // ---- 2. content dedup: snapshot with NO change -> no new commit, same head ----
+    const dup = await store.snapshot(aid, { runId: 'r1', turn: 1, label: 'fs.write' });
+    A.ok(dup && dup.created === false, 'no-change snapshot is deduped (created:false)');
+    A.eq(dup.id, s1.id, 'dedup returns the existing head id');
+
+    // ---- 3. a real edit + a new file -> a fresh snapshot ----
+    write('report.md', 'line one CHANGED\nline two\n');
+    write('extra.txt', 'added after baseline\n');
+    const s2 = await store.snapshot(aid, { runId: 'r1', turn: 2, label: 'fs.edit' });
+    A.ok(s2 && s2.created, 'second snapshot created after a real change');
+    A.ok(s2.id !== s1.id, 'a changed workspace yields a new snapshot id');
+
+    // ---- 4. restore to the baseline: edited file reverts BYTE-EXACT + the new file is removed ----
+    write('untracked-after-snapshot.txt', 'must be removed by git clean\n');
+    const cleanFailStore = makeCheckpointStore({
+      fs, pathMod: path, root, clock, keep: 5,
+      runGit: (args, opts) => args.indexOf('clean') >= 0
+        ? Promise.resolve({ code: 1, stdout: '', stderr: 'simulated clean failure' })
+        : runGit(args, opts)
+    });
+    const cleanFail = await cleanFailStore.restoreDetailed(aid, s1.id);
+    A.eq(cleanFail.ok, false,
+      'restore reports failure when git clean cannot remove post-snapshot files');
+    // The pre-restore undo point (checkpoint-restore-undoable.test.js) now commits the post-snapshot file BEFORE
+    // the reset, so the reset itself removes it; what a failed clean must still guarantee is that nothing is lost:
+    // the file is recoverable from the undo point the failed restore reports.
+    A.ok(cleanFail.preRestoreId && store.list(aid).snapshots.some(s => s.id === cleanFail.preRestoreId),
+      'a failed clean still leaves a recorded pre-restore undo point holding the post-snapshot file');
+    A.ok(await store.restore(aid, cleanFail.preRestoreId), 'the undo point restores');
+    A.ok(fs.existsSync(path.join(wt, 'untracked-after-snapshot.txt')),
+      'the post-snapshot file is back from the undo point (the incomplete restore lost nothing)');
+    const ok = await store.restore(aid, s1.id);
+    A.ok(ok, 'restore to baseline succeeded');
+    A.eq(read('report.md'), 'line one\nline two\n', 'edited file reverted byte-exact');
+    A.ok(!fs.existsSync(path.join(wt, 'extra.txt')), 'file created after the baseline was removed on restore');
+
+    // ---- 5. the index round-trips + records both real snapshots (lineage threaded) ----
+    const idx = store.list(aid);
+    A.ok(idx.snapshots.length >= 2, 'index records both snapshots');
+    A.ok(idx.snapshots.some(s => s.id === s1.id) && idx.snapshots.some(s => s.id === s2.id), 'both ids present in the index');
+
+    // ---- 6. jail isolation: the shadow git-dir is OUTSIDE the agent work-tree ----
+    const gitDir = path.join(root, '.checkpoints', aid, 'git');
+    A.ok(fs.existsSync(path.join(gitDir, 'HEAD')), 'shadow repo exists');
+    A.ok(gitDir.indexOf(path.join(root, aid) + path.sep) !== 0, 'git-dir is NOT inside the agent fs jail');
+
+    // ---- 7. guards fail closed ----
+    A.eq(await store.snapshot('bad id!', {}), null, 'snapshot rejects a bad agentId');
+    A.eq(await store.restore(aid, 'not-a-real-sha-but-valid-chars'), false, 'restore refuses an id not in the index');
+    A.eq(await store.restore('bad id!', s1.id), false, 'restore rejects a bad agentId');
+
+    // ---- 7b. EXTERNAL PROJECT ROOT: isolated history, exact-root identity, revocation-safe restore ----
+    let projectAllowed = true;
+    const scoped = makeCheckpointStore({
+      fs, pathMod: path, root, runGit, clock, keep: 20,
+      scopeIdOf: () => '0123456789abcdef01234567',
+      allowWorkTree: (candidate) => projectAllowed && path.resolve(candidate) === path.resolve(project)
+    });
+    execFileSync('git', ['init', '-q'], { cwd: project, windowsHide: true });
+    fs.writeFileSync(path.join(project, '.git', 'STARNET_TEST_MARKER'), 'user repo metadata\n');
+    fs.writeFileSync(path.join(project, 'project.txt'), 'project baseline\n');
+    const ps1 = await scoped.snapshot('pr', { runId: 'external', turn: 0, label: 'shell.exec', workTree: project, authorizedWorkTree: true });
+    A.ok(ps1 && ps1.created, 'external project baseline snapshot created');
+    A.ok(/^0123456789abcdef01234567:/.test(ps1.id), 'external snapshot id is bound to its root scope');
+    fs.writeFileSync(path.join(project, 'project.txt'), 'project changed\n');
+    fs.writeFileSync(path.join(project, 'new.txt'), 'created later\n');
+    projectAllowed = false;
+    A.eq(scoped.list('pr').snapshots.find(s => s.id === ps1.id).restoreAvailable, false, 'revoked project checkpoint is listed but truthfully unavailable');
+    A.eq(await scoped.restore('pr', ps1.id), false, 'restore fails closed after the project grant is revoked');
+    A.eq(fs.readFileSync(path.join(project, 'project.txt'), 'utf8'), 'project changed\n', 'revoked restore did not touch project bytes');
+    projectAllowed = true;
+    A.eq(scoped.list('pr').snapshots.find(s => s.id === ps1.id).restoreAvailable, true, 're-authorizing the exact root makes its restore point available again');
+    A.ok(await scoped.restore('pr', ps1.id), 're-authorized external project restore succeeds');
+    A.eq(fs.readFileSync(path.join(project, 'project.txt'), 'utf8'), 'project baseline\n', 'external project bytes restore exactly');
+    A.ok(!fs.existsSync(path.join(project, 'new.txt')), 'external project restore removes files created after the snapshot');
+    A.eq(fs.readFileSync(path.join(project, '.git', 'STARNET_TEST_MARKER'), 'utf8'), 'user repo metadata\n', 'shadow restore never reads, resets, or cleans the project\'s own .git metadata');
+    const projectIndex = path.join(root, '.checkpoints', 'pr', 'index.json');
+    fs.rmSync(projectIndex, { force: true }); fs.rmSync(projectIndex + '.bak', { force: true });
+    projectAllowed = false;
+    const rebuiltProject = await scoped.listResilient('pr');
+    A.eq(rebuiltProject.snapshots.find(s => s.id === ps1.id).restoreAvailable, false,
+      'index-loss rebuild preserves revoked project history as visible but unavailable');
+    projectAllowed = true;
+    const projectRecord = scoped.list('pr').snapshots.find(s => s.id === ps1.id);
+    A.eq(projectRecord.workTree, fs.realpathSync(project), 'index identifies the exact project root affected');
+    A.eq(projectRecord.gitCommit, ps1.id.split(':')[1], 'index binds the scoped id to its real git commit');
+    const projectGit = path.join(root, '.checkpoints', 'pr', 'roots', '0123456789abcdef01234567', 'git');
+    A.ok(fs.existsSync(path.join(projectGit, 'HEAD')), 'project history is isolated outside both project and agent jail');
+
+    // ---- 8. prune keeps the cap (keep:5) ----
+    for (let i = 0; i < 8; i++) { write('report.md', 'rev ' + i + '\n'); await store.snapshot(aid, { runId: 'r1', turn: 10 + i, label: 'fs.write' }); }
+    A.ok(store.list(aid).snapshots.length <= 5, 'index pruned to the keep cap');
+
+    // ---- 9. index durability: a .bak snapshot is written; a torn (zero-length) index recovers sync from .bak ----
+    const idxFile = path.join(root, '.checkpoints', aid, 'index.json');
+    A.ok(fs.existsSync(idxFile + '.bak'), 'saveIndex wrote a .bak last-known-good snapshot');
+    const beforeTorn = store.list(aid).snapshots.length;
+    fs.writeFileSync(idxFile, '');                                    // simulate a torn index write
+    A.eq(store.list(aid).snapshots.length, beforeTorn, 'a torn (zero-length) index recovers from .bak (sync list)');
+
+    // ---- 10. REBUILD from git: wipe BOTH index.json and its .bak; the commits are the truth ----
+    fs.rmSync(idxFile, { force: true });
+    fs.rmSync(idxFile + '.bak', { force: true });
+    A.eq(store.list(aid).snapshots.length, 0, 'with index + .bak gone, the sync list is empty (git not consulted)');
+    const rebuilt = await store.listResilient(aid);                  // async path rebuilds from git log
+    A.ok(rebuilt.snapshots.length >= 5, 'listResilient rebuilt the index from the shadow-git commits');
+    A.ok(rebuilt.snapshots.every(s => store.isValidId(s.id)), 'every rebuilt record has a valid git-oid id');
+    A.ok(fs.existsSync(idxFile), 'the rebuilt index was re-persisted for fast subsequent reads');
+    A.eq(store.list(aid).snapshots.length, rebuilt.snapshots.length, 'a subsequent sync list sees the re-persisted rebuild');
+    // and a per-id restore works again off the rebuilt index (the commit is real)
+    const targetId = rebuilt.snapshots[rebuilt.snapshots.length - 1].id;
+    A.ok(await store.restore(aid, targetId), 'restore works against a rebuilt-from-git index');
+
+    /* ---- 10b. the WRITE order a live run actually takes ------------------------------------------
+       Case 10 covers the READ order: wipe both files, then list. A real mutating tool call SNAPSHOTS
+       FIRST. snapshot() was async but used the SYNC loadIndex, which returns an EMPTY index when
+       index.json and its .bak are both gone — so it recorded on top of nothing and persisted ONE entry.
+       readIndexRaw then reports 'ok' forever, loadIndexResilient short-circuits and never reaches the
+       git-log rebuild again, and restore() refuses every surviving commit: the rewind UI shows a single
+       restore point while the Commander's real history sits intact on disk, unreachable. */
+    const preCrashIds = rebuilt.snapshots.map(x => x.id);
+    A.ok(preCrashIds.length >= 5, 'we have a real pre-crash history to lose');
+    fs.rmSync(idxFile, { force: true });
+    fs.rmSync(idxFile + '.bak', { force: true });
+    write('report.md', 'edited again after the index loss\n');
+    const afterCrash = await store.snapshot(aid, { runId: 'r-after', turn: 99, label: 'fs.write' });
+    A.ok(afterCrash && afterCrash.id, 'the post-crash snapshot still commits');
+    const idxAfter = await store.listResilient(aid);
+    A.ok(idxAfter.snapshots.length > 1,
+      'snapshot() REBUILT from git instead of collapsing the history to ONE entry (got ' + idxAfter.snapshots.length + ')');
+    A.eq(idxAfter.snapshots.length, 5, 'the index is back at the keep cap, not at 1');
+    /* The rebuild reads the SHADOW REPO, which holds more history than the pruned index did, so the exact
+       overlap with the previous window is not the invariant — these are: the newest pre-crash snapshot is
+       still recorded, and the Commander can still roll back to one. Before the fix the index held exactly
+       the post-crash entry and restore() refused every id above. */
+    const survived = preCrashIds.filter(id => idxAfter.snapshots.some(x => x.id === id));
+    A.ok(survived.length >= 1, 'pre-crash snapshots are still recorded (' + survived.length + ' of ' + preCrashIds.length + ' within the keep cap)');
+    A.ok(idxAfter.snapshots.some(x => x.id === preCrashIds[preCrashIds.length - 1]),
+      'the NEWEST pre-crash snapshot specifically survived the post-crash write');
+    A.ok(await store.restore(aid, survived[survived.length - 1]),
+      'and the Commander can still roll back to a pre-crash snapshot');
+
+    // ---- 11. SIZE CEILING: a tiny threshold forces a sweep; the repo shrinks and stays restorable ----
+    const aid2 = 'sz';
+    const wt2 = path.join(root, aid2);
+    fs.mkdirSync(wt2, { recursive: true });
+    // 1-byte ceiling => any repo trips it. A store dedicated to this agent with the tiny cap.
+    const tiny = makeCheckpointStore({ fs, pathMod: path, root, runGit, clock, keep: 5, maxRepoBytes: 1 });
+    for (let i = 0; i < 4; i++) { fs.writeFileSync(path.join(wt2, 'f.txt'), 'v' + i + '\n'.repeat(1000)); await tiny.snapshot(aid2, { runId: 'r', turn: i, label: 'fs.write' }); }
+    const gitDir2 = path.join(root, '.checkpoints', aid2, 'git');
+    A.ok(fs.existsSync(path.join(gitDir2, 'HEAD')), 'repo still present after ceiling sweeps');
+    // the last snapshot (post-sweep) is in the index and restorable — the store stays functional under the ceiling
+    const idx2 = tiny.list(aid2);
+    A.ok(idx2.snapshots.length >= 1, 'index still holds at least the post-sweep baseline');
+    const last2 = idx2.snapshots[idx2.snapshots.length - 1].id;
+    A.ok(await tiny.restore(aid2, last2), 'restore works after a size-ceiling re-init');
+    // an explicit enforce call reports it swept (repo is > 1 byte)
+    const rep = await tiny.enforceSizeCeiling(aid2);
+    A.ok(rep.swept, 'enforceSizeCeiling reports a sweep when over the ceiling');
+    // a huge ceiling is a no-op
+    const big = makeCheckpointStore({ fs, pathMod: path, root, runGit, clock, keep: 5, maxRepoBytes: 1 << 30 });
+    const rep2 = await big.enforceSizeCeiling(aid2);
+    A.eq(rep2.swept, false, 'a repo under the ceiling is left untouched (no sweep)');
+    // ---- TRANSIENT-UNREADABLE INDEX: an EBUSY read must NEVER trigger the lossy git rebuild ----
+    // The rebuild reconstructs from `git log`, where runId/turn are unrecoverable (come back ''/0), and it
+    // RE-PERSISTS over the index. Conflating a transient errno (AV/backup lock, EMFILE) with "absent"
+    // therefore permanently killed rollback-by-run the moment one read hiccuped. An unreadable index now
+    // serves .bak/empty for the pass and leaves the good file alone.
+    {
+      const indexFile = path.join(root, '.checkpoints', aid, 'index.json');
+      const goodBytes = fs.readFileSync(indexFile, 'utf8');
+      A.ok(goodBytes.length > 2, 'fixture: a real non-empty index exists on disk');
+      const busyFs = Object.assign({}, fs, {
+        readFileSync(p, enc) {
+          if (String(p) === indexFile || String(p) === indexFile + '.bak') { const e = new Error('EBUSY: locked'); e.code = 'EBUSY'; throw e; }
+          return fs.readFileSync(p, enc);
+        }
+      });
+      const busyStore = makeCheckpointStore({ fs: busyFs, pathMod: path, root, runGit, clock, keep: 5 });
+      const listed = await busyStore.listResilient(aid);
+      A.eq((listed.snapshots || []).length, 0, 'an unreadable index serves EMPTY for the pass (fail-closed), not a rebuild');
+      const after = fs.readFileSync(indexFile, 'utf8');
+      A.eq(after, goodBytes, 'the good index file was NOT overwritten by the lossy git rebuild');
+    }
+  } finally {
+    try { fs.rmSync(root, { recursive: true, force: true }); } catch (_) {}
+    try { fs.rmSync(project, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  A.report('checkpoint-store.test');
+})().catch(e => { console.log('FAIL: checkpoint-store.test threw — ' + (e && e.stack || e)); process.exit(1); });

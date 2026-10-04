@@ -1,0 +1,696 @@
+/* STARNET — conveyor.js : directional belts + the boxes that ride them.
+
+   The WorldModel owns belt TOPOLOGY (a keyed "x,y"->dir graph, walkable floor machinery). This
+   module owns everything ALIVE: the transport simulation (boxes flowing tile-to-tile, spawned at
+   sources, sinking at open ends, spaced so they never stack) and the pixel art.
+
+   Bridge-reference materials: layered blackened steel rails, graphite mechanical rollers,
+   dull amber wear and sparse cyan drive markers. Riveted cargo modules retain semantic
+   inbound/result/unproductive-work colours. Topology-aware tracks keep every bend and
+   incoming merge arm aligned with the tile graph. Cosmetic material changes never drive
+   the simulation, create work, or report a run.
+
+   Frame-agnostic: `Conveyor.create()` returns a self-contained instance handed a belt list in
+   whatever tile frame the caller draws in (build.js = world coords, world.js = local coords).
+   DETERMINISM: no Math.random, no wall-clock — nowMs/dtMs injected; variety from U.hash(''+id). */
+'use strict';
+
+const Conveyor = (() => {
+  const DIRV = { E: [1, 0], W: [-1, 0], S: [0, 1], N: [0, -1] };
+  const OPP = { E: 'W', W: 'E', S: 'N', N: 'S' };
+  const SPEED = 1.7;        // tiles / second a box travels
+  const SINK_MS = 300;      // chute fall + fade time once a box rides off the end
+  const POP_MS = 180;       // spawn-pop settle time
+  const MIN_GAP = 0.82;     // tiles of clear space a box keeps behind the one ahead (no stacking)
+  const MAX_BOXES = 80;     // hard cap (a runaway loop can't explode)
+  const MAX_PENDING = 240;  // queued work-items awaiting a clear source tile (see enqueueAt)
+
+  const key = (x, y) => x + ',' + y;
+  /* The tile->dir lookup is rebuilt from the belt list on every call, and a REFIT frame calls into
+     here three times (the sim's tick, the ghost projection's tick, drawBelts) — 3x the belt count in
+     Map writes, every frame, for a graph that only changes when the floor does. Memoized on the
+     ARRAY IDENTITY, which is the honest key: callers hand out a freshly-allocated list whenever the
+     topology moves, and the list is read-only on this side, so "same array" means "same graph".
+     A caller that still allocates per call simply misses the memo and pays exactly what it did. */
+  let mapSrc = null, mapMemo = null;
+  const buildMap = belts => {
+    if (belts && mapSrc === belts) return mapMemo;
+    const m = new Map();
+    for (const b of belts) m.set(key(b.x, b.y), b.dir);
+    if (belts) { mapSrc = belts; mapMemo = m; }
+    return m;
+  };
+  // a junction's out-lanes: neighbour belts that DON'T flow back into the tile. Fixed order → deterministic routing.
+  const LANE_ORDER = ['E', 'S', 'W', 'N'];
+  function outLanes(x, y, map) {
+    const lanes = [];
+    for (const d of LANE_ORDER) { const v = DIRV[d], nb = map.get(key(x + v[0], y + v[1])); if (nb && nb !== OPP[d]) lanes.push(d); }
+    return lanes;
+  }
+  // Art topology follows actual incoming neighbours, including every arm of a merge.
+  // A neighbour feeds this tile only if its own heading points into it. Looking behind
+  // the outgoing heading alone mislabels a real bend as a source hatch.
+  function classify(map, b) {
+    const dir = b.dir, v = DIRV[dir], incoming = [];
+    for (const from of LANE_ORDER) {
+      const f = DIRV[from];
+      if (map.get(key(b.x - f[0], b.y - f[1])) === from) incoming.push(from);
+    }
+    const sink = !map.has(key(b.x + v[0], b.y + v[1]));
+    return { dir, incoming, source: !incoming.length, sink };
+  }
+
+  /* ---- art context (module-local, set per draw call — like propsprites/sprites) ---- */
+  let _ctx = null, _now = 0;
+  const px = (x, y, w, h, c) => { _ctx.fillStyle = c; _ctx.fillRect(x, y, w, h); };
+  const SH = (c, n) => U.shade(c, n);
+
+  /* ============================ CARGO ART ============================ */
+  // Handled blackened-steel modules keep the 9x8 floor stance. Nested armour,
+  // recessed seams, corner bolts and worn leading edges follow the bridge reference.
+  function cargoChassis(cx, py, h32, body, dir) {
+    const x = cx - 4, y = py - 5;
+    px(x, y, 9, 8, '#090c0c');
+    px(x + .4, y + .3, 8.2, 4.8, '#53534a');
+    px(x + .8, y + .8, 7.4, 4.2, '#252b29');
+    px(x + 1.2, y + 1.15, 6.6, 3.2, '#343934');
+    px(x + 1.7, y + 1.7, 5.6, 2.3, '#121918');
+    px(x + 2.1, y + 2, 4.8, 1.6, body);
+    // Deep apron with two protected catches and a recessed grab handle.
+    px(x + .4, y + 5, 8.2, 2.6, '#222725');
+    px(x + .5, y + 5, 8, .35, '#555448');
+    px(x + 2.8, y + 5.8, 3.4, 1.1, '#0a1111');
+    px(x + 3, y + 5.8, 3, .25, '#77705b');
+    for (const xx of [x + 1.2, x + 7.15]) {
+      px(xx, y + .65, .6, 6.1, '#161b1a');
+      px(xx, y + .65, .2, 6.1, '#696350');
+      px(xx - .1, y + 5.7, .85, 1.1, '#3e4239');
+      px(xx + .1, y + 5.8, .25, .5, '#9d8150');
+    }
+    for (const dx of [.9, 7.65]) for (const dy of [.7, 4.25]) {
+      px(x + dx, y + dy, .6, .6, '#111817');
+      px(x + dx + .05, y + dy + .05, .25, .25, '#8a8067');
+    }
+    // A restrained scuff is deterministic per module, never a flashing status.
+    const wear = (h32 >>> 2) % 4;
+    px(x + 2.2 + wear * .65, y + 1, .8, .2, '#7c7154');
+    px(x + 5.4 - wear * .5, y + 4.4, .45, .15, '#696854');
+    const v = DIRV[dir] || DIRV.E;
+    if (v[0]) px(cx + (v[0] > 0 ? 4.15 : -3.8), y + 1.2, .2, 2.6, '#7d755d');
+    else px(x + 2.5, v[1] < 0 ? y + .4 : y + 4.75, 4, .2, '#7d755d');
+    return { tx: x + 1, ty: y };
+  }
+
+  function cargoProduction(cx, py, h32, dir) {
+    cargoChassis(cx, py, h32, '#454638', dir);
+    px(cx - 1.5, py - 2.5, 3, .5, '#a48c55');
+  }
+  function cargoUtility(cx, py, h32, dir) {
+    cargoChassis(cx, py, h32, '#303c39', dir);
+    px(cx - 1, py - 3, 2, 1, '#787b66');
+  }
+  function cargoData(cx, py, h32, dir) {
+    cargoChassis(cx, py, h32, '#1a353c', dir);
+    px(cx - 1.5, py - 2.5, 3, .5, '#659ca4');
+    px(cx + 1, py - 3, .5, 1, '#8bb8b6');
+  }
+  function cargoCommand(cx, py, h32, dir) {
+    cargoChassis(cx, py, h32, '#412927', dir);
+    px(cx, py - 3, .5, 1.5, '#ba7961');
+  }
+  function cargoMoney(cx, py, h32, dir) {
+    cargoChassis(cx, py, h32, '#41412b', dir);
+    px(cx - 1.5, py - 3, 1, 1, '#a79556');
+    px(cx + .5, py - 3, 1, 1, '#a79556');
+  }
+  // Incoming work has a uniform module size: it cannot imply a cost estimate.
+  function cargoOre(cx, py, h32, dir, weight) {
+    cargoChassis(cx, py, h32, '#4b412b', dir);
+    px(cx - 1.5, py - 2.5, 3, .5, '#ac8d48');
+  }
+  // Seal pips still express only reconciled spend, never a guessed future cost.
+  const FULL_MASS_USD = 1.00;
+  function weightForUsd(usd) { return (typeof usd === 'number' && isFinite(usd) && usd > 0) ? Math.min(1, usd / FULL_MASS_USD) : 0; }
+  function cargoProduct(cx, py, h32, dir, weight) {
+    const w = Math.max(0, Math.min(1, weight || 0));
+    cargoChassis(cx, py, h32, '#233c32', dir);
+    px(cx - .5, py - 3, 1, 1, '#6d9c79');
+    for (let i = 0; i < Math.round(w * 2); i++) px(cx - 2 + i * 4, py - 2.5, .5, .5, '#95b799');
+  }
+  function cargoSlag(cx, py, h32, dir) {
+    cargoChassis(cx, py, h32, '#3e2421', dir);
+    px(cx - 1, py - 3, .5, .5, '#b16a4e'); px(cx + .5, py - 3, .5, .5, '#b16a4e');
+    px(cx - .5, py - 2.5, 1, .5, '#b16a4e');
+  }
+
+  /* ---- GHOST projection crate (guided workflows Phase 3): NOT a cargo type. A payload flagged
+     `ghost:true` rides with a hollow dashed outline + a faint interior — deliberately unlike every
+     real body above (no solid faces, no economy colour, no shadow, no tag), so a viewer can never
+     mistake the projection for real work. Marching dashes + shimmer run off the injected _now only
+     (deterministic). Drawn by ghostline.js's DEDICATED engine — a real conveyor never carries one. */
+  function cargoGhost(cx, py, h32, dir) {
+    const x = cx - 4, y = py - 5;                 // same 9x8 stance as the chassis, so it rides the belt right
+    const C = '#8fd8e8';                          // projection phosphor (pale scanner cyan)
+    const a = _ctx.globalAlpha;
+    _ctx.globalAlpha = a * 0.14; px(x + 1, y + 1, 7, 6, C);            // faint field — the belt shows through
+    _ctx.globalAlpha = a * 0.26; px(x + 2, y + 2, 5, 4, '#0c2a32');    // dim interior (net ~0.4 read)
+    // interior scan shimmer: one pale line sweeping the field (injected clock, hash-phased)
+    const sweep = ((((_now / 240) | 0) + (h32 & 7)) % 5);
+    _ctx.globalAlpha = a * 0.30; px(x + 2 + sweep, y + 2, 1, 4, C);
+    // ◇ projection glyph at the heart
+    _ctx.globalAlpha = a * 0.55;
+    px(cx, py - 3, 1, 1, C); px(cx - 1, py - 2, 1, 1, C); px(cx + 1, py - 2, 1, 1, C); px(cx, py - 1, 1, 1, C);
+    // dashed outline: 2-on/1-off pixels marching around the silhouette (reads "drawn, not built")
+    _ctx.globalAlpha = a * 0.75;
+    let i = ((_now / 160) | 0) % 3;
+    const dot = (dx, dy) => { if ((i++ % 3) !== 2) px(dx, dy, 1, 1, C); };
+    for (let k = 0; k < 9; k++) dot(x + k, y);
+    for (let k = 1; k < 8; k++) dot(x + 8, y + k);
+    for (let k = 8; k >= 0; k--) dot(x + k, y + 7);
+    for (let k = 7; k >= 1; k--) dot(x, y + k);
+    // leading-edge tick (travel direction, like the rim light — but dashed-thin, never a lit face)
+    const v = DIRV[dir];
+    _ctx.globalAlpha = a * 0.9;
+    if (v[0] > 0) px(x + 8, y + 3, 1, 2, C);
+    else if (v[0] < 0) px(x, y + 3, 1, 2, C);
+    else if (v[1] < 0) px(x + 3, y, 3, 1, C);
+    else px(x + 3, y + 7, 3, 1, C);
+    _ctx.globalAlpha = a;
+  }
+
+  // pure, replayable id -> type. weights keep the meaningful colours rare.
+  function cargoType(id) {
+    const r = U.hash('' + id) % 100;
+    if (r < 34) return 0;      // 34% utility (steel)
+    if (r < 64) return 1;      // 30% production (amber)
+    if (r < 80) return 2;      // 16% data (cyan)
+    if (r < 93) return 3;      // 13% command (red)
+    return 4;                  //  7% money (gold)
+  }
+  const CARGO_FN = [cargoUtility, cargoProduction, cargoData, cargoCommand, cargoMoney];
+
+  /* a floating tag marking a box that carries a REAL work-item. Colour reads its economic ROLE:
+     amber = inbound ore, green = banked product, red = wasted slag (legacy: outbound -> green). */
+  const TAG_FACE = { ore: ['#ad843c', '#d0b16c'], product: ['#4e8d79', '#86b3a2'], slag: ['#a8583e', '#cc8964'] };
+  function payloadTag(cx, py, role) {
+    const fs = TAG_FACE[role] || TAG_FACE.ore, face = fs[0], sheen = fs[1], yy = py - 8.5;
+    px(cx - .25, yy + 2.5, .5, 1.5, '#5b5744');
+    px(cx - 2.5, yy, 5, 3, '#080d0c');
+    px(cx - 2, yy + .5, 4, 2, face);
+    px(cx - 2, yy + .5, 4, .5, sheen);
+    px(cx - .75, yy + 1.5, 1.5, .5, SH(face, -.2));
+  }
+
+  /* ---- motion bundle: bob/lean/shadow + spawn-pop + sink-chute. translate-only (no ctx.scale). ---- */
+  function boxMotion(bx, now) {
+    const s = U.hash('' + bx.id);
+    const ph = (s % 1000) / 1000 * 6.2832;
+    const wob = ((s >> 10) & 255) / 255;
+    let bob = Math.sin(now / (520 * (0.85 + wob * 0.3)) + ph) * 0.9;          // ~±1px ride shimmer
+    const v = DIRV[bx.dir];
+    const lift0 = (bob + 0.9) / 1.8;                                          // 0..1 for the shadow
+    let alpha = 1, slide = 0, shadowMul = 1;
+    // spawn pop: quick alpha ramp + a small overshoot lift (easeOutBack stand-in)
+    const age = now - (bx.t0 || 0);
+    if (age < POP_MS) {
+      const k = age / POP_MS, kk = k - 1, c = 1.70158;
+      bob += -((1 + c) * kk * kk * kk + c * kk * kk) * 3;
+      alpha = Math.min(1, age / 60);
+    }
+    // corner jolt: a brief upward hop when the box just changed heading (reads as reacting to the turn)
+    const ta = now - (bx.turn0 || -1e9);
+    if (ta >= 0 && ta < 140) bob -= Math.sin((ta / 140) * Math.PI) * 1.4;
+    // sink chute: fall + fade + slide off in the travel dir + shrinking shadow
+    if (bx.sink > 0) {
+      const e = Math.min(1, bx.sink / SINK_MS); const ee = e * e;
+      alpha *= 1 - ee; slide = ee * 3.5; shadowMul = 1 - 0.9 * ee; bob += ee * 2.5;
+    }
+    return { bob, lx: -v[0] * 0.6 + v[0] * slide, ly: -v[1] * 0.6 + v[1] * slide, lift: lift0, alpha, shadowMul };
+  }
+
+  function create(opts) {
+    const onDeliver = (opts && opts.onDeliver) || null;   // called ONCE when a PAYLOAD box rides off the open end
+    const onAdvance = (opts && opts.onAdvance) || null;    // junction telemetry seam: (bx, info) on each routing decision
+    let boxes = [];
+    let nid = 1;
+    const pending = [];                                    // enqueueAt() work-items, born inside tick() (live nowMs + dir)
+    const rr = new Map();                                  // per-junction round-robin counter (deterministic splitter routing)
+    const mergeFx = [];                                    // {x, y, t0} — a crate crossing a MERGE junction pulses the tile
+
+    function reset() { boxes = []; pending.length = 0; rr.clear(); mergeFx.length = 0; }
+
+    /* FRAME SHIFT (origin-move truth, 2026-08-11): world.js hands us belts in its LOCAL tile frame
+       (origin = station bounds − margin), so a floor edit that grows the bounds on the north/west
+       edge moves every belt to new coordinates while riding boxes and queued pending items keep the
+       OLD frame — tick() then reads "belt pulled out" and sinks paid work mid-ride (or splices the
+       pending item as belt-less). The crates are real work; the frame moved, not the line. Mirror the
+       crew-body treatment: shift every tile-frame field by the same delta — riding boxes (+ their
+       birth-tile latch, so dock-delivery's own-birth-tile exemption stays true), queued pending
+       items, splitter round-robin keys, and the merge pulses. Callers in a fixed frame never call this. */
+    function shiftFrame(dtx, dty) {
+      if (!dtx && !dty) return;
+      for (const bx of boxes) {
+        bx.x += dtx; bx.y += dty;
+        if (bx.spawnTile) { const s = bx.spawnTile.split(','); bx.spawnTile = key(+s[0] + dtx, +s[1] + dty); }
+      }
+      for (const p of pending) { p.x += dtx; p.y += dty; }
+      if (rr.size) {
+        const moved = [...rr].map(([k, n]) => { const s = k.split(','); return [key(+s[0] + dtx, +s[1] + dty), n]; });
+        rr.clear(); for (const [k, n] of moved) rr.set(k, n);
+      }
+      for (const fx of mergeFx) { fx.x += dtx; fx.y += dty; }
+    }
+
+    /* a junction overrides a box's exit at its tile. Three kinds, all deterministic (per-tile state + the
+       fixed LANE_ORDER, no RNG/clock):
+         SPLIT  — round-robin across out-lanes (load-balance = real parallelism, drawn).
+         FILTER — route by the box's payload.tag (config.routes[tag] || config.def), so content sorts to the
+                  right agent's bay. A tag pointing at a missing lane falls back to def then the first lane —
+                  a filter NEVER drops work (mirrors pipeline.resolveTarget so visual == dispatch).
+         MERGE  — a LANE FUNNEL: several lanes converge, every crate rides on out the single exit.
+
+       MERGE USED TO BE A LIE (fixed 2026-07-26). It buffered K crates per tile, ABSORBED the first K-1 (they
+       vanished into the junction, never delivered) and sent the K-th on carrying a combined `merged` id list.
+       Nothing downstream ever read that list, and — the actual problem — the harness has no batching concept
+       at all: `resolveTarget` resolves and dispatches every work-item independently, so K inbound messages
+       were always K separate paid runs. The floor was animating a map-reduce barrier the server never
+       performed, and if K never arrived the absorbed work was swallowed with no delivery beat at all.
+       Real batching is a FEATURE with an open product question (the hub keys inflight by chatId and replies
+       to a chat — a run merged from N chats has no defined reply target), not a bug fix. So the merger now
+       claims only what is true: lanes converge here. K crates in, K crates out, K runs — visual == dispatch.
+       Returns an out-lane dir, or null (go straight). */
+    function chooseExit(jt, bx, x, y, map, nowMs) {
+      const lanes = outLanes(x, y, map);
+      if (!lanes.length) return null;                      // open-end junction: nothing to override, deliver/sink
+      const k = key(x, y);
+      // ADDRESSED work rides HOME (crate-physics truth, 2026-07-05): a box that already belongs to an
+      // agent (payload.agentId — a cron, a bound chat) ignores content/balance routing and takes the lane
+      // that reaches ITS OWNER's bay (jt.owners = {dir: [agentIds]}, precompiled from the plan). Filters
+      // and splitters only ever decide for UNOWNED work — so the crate's path can never contradict who
+      // actually runs the job. Deterministic: fixed LANE_ORDER scan.
+      // (multi-bay, 2026-09-22) a crate addressed to ONE BAY (payload.dockId) steers by the lanes' DOCKS first —
+      // quill's bay C crate must take the lane to bay C even where another lane reaches quill's bay A.
+      if (bx.payload && bx.payload.dockId && !bx.payload.outbound && jt.ownerDocks) {
+        for (const d of lanes) { const own = jt.ownerDocks[d]; if (own && own.indexOf(bx.payload.dockId) >= 0) { if (onAdvance) onAdvance(bx, { kind: jt.kind, tile: { x, y }, lane: d, owner: bx.payload.agentId }); return d; } }
+      }
+      if (bx.payload && bx.payload.agentId && !bx.payload.outbound && jt.owners) {
+        for (const d of lanes) { const own = jt.owners[d]; if (own && own.indexOf(bx.payload.agentId) >= 0) { if (onAdvance) onAdvance(bx, { kind: jt.kind, tile: { x, y }, lane: d, owner: bx.payload.agentId }); return d; } }
+      }
+      if (jt.kind === 'split') {
+        const n = rr.get(k) || 0;
+        rr.set(k, (n + 1) % lanes.length);
+        return lanes[n % lanes.length];
+      }
+      if (jt.kind === 'filter') {
+        const tag = (bx.payload && bx.payload.tag) || 'general';
+        const want = jt.routes && jt.routes[tag];
+        const dir = (want && lanes.indexOf(want) >= 0) ? want
+                  : (jt.def && lanes.indexOf(jt.def) >= 0) ? jt.def
+                  : lanes[0];                              // safety: an unroutable tag takes the first lane, never dropped
+        if (onAdvance) onAdvance(bx, { kind: 'filter', tile: { x, y }, lane: dir, tag });
+        return dir;
+      }
+      if (jt.kind === 'join') {
+        // the BARRIER is performed by the sidecar chain runner (one merged crate per run leaves it as a real
+        // workitem.placed); on the floor a crate reaching the joiner simply rides on out its single exit —
+        // K in, one out is the server's doing, and the sprite's latch bar is what says so.
+        mergeFx.push({ x, y, t0: nowMs });
+        if (onAdvance) onAdvance(bx, { kind: 'join', tile: { x, y }, lane: bx.dir });
+        return null;
+      }
+      if (jt.kind === 'loop') {
+        /* the gate: an addressed crate already took the owner's lane above (the runner's re-entry crate is
+           addressed to the upstream dock, its done crate to the downstream one). An unowned crate counts
+           its own passes: back lane under the cap, then the ESCALATION lane if the gate has one, else done.
+
+           THE LANES COME FROM THE COMPILED CFG (2026-08-30 sweep). This branch used to re-derive `back` as
+           "first lane that isn't done" — on a THREE-lane gate (a FIRE ESCAPE) LANE_ORDER put the escape
+           first, so the crate you watched rode the escalation wire while the dispatcher looped it upstream:
+           visual ≠ dispatch, the one law this file exists to keep. jt IS plan.junctions[tile] on both
+           surfaces (world.js and REFIT both merge the compiled cfg in), so jt.back/jt.esc are the same
+           lanes the runner routes by; the local derivation stays only as a fallback for a caller that
+           hands a bare {kind:'loop'} with no cfg. */
+        const n = (bx.payload && bx.payload.iteration) | 0, max = jt.max || 5;
+        const done = (jt.done && lanes.indexOf(jt.done) >= 0) ? jt.done : lanes[0];
+        const back = (jt.back && lanes.indexOf(jt.back) >= 0) ? jt.back : (lanes.find(d => d !== done) || null);
+        const esc = (jt.esc && jt.esc !== back && lanes.indexOf(jt.esc) >= 0) ? jt.esc : null;
+        const dir = (back && n < max) ? back : (esc || done);
+        if (dir === back && bx.payload) bx.payload.iteration = n + 1;
+        if (onAdvance) onAdvance(bx, { kind: 'loop', tile: { x, y }, lane: dir, iteration: n, escalated: dir === esc || undefined });
+        return dir;
+      }
+      if (jt.kind === 'merge') {
+        // a funnel: nothing is buffered, nothing is consumed. The crate takes the belt's own direction (a
+        // merge tile has exactly ONE out-lane by construction — the inbound neighbours flow INTO it, so
+        // outLanes already excludes them). Returning null keeps a mis-built multi-exit merger predictable.
+        mergeFx.push({ x, y, t0: nowMs });                 // a real crossing, so a real pulse
+        if (onAdvance) onAdvance(bx, { kind: 'merge', tile: { x, y }, lane: bx.dir });
+        return null;
+      }
+      return null;
+    }
+
+    /* event-driven spawn: drop ONE work-item-carrying box at a named SOURCE tile, bypassing the hash
+       auto-spawn cadence. The box is actually born inside tick() so it gets the live nowMs and belt dir.
+       Now that the drain waits for MIN_GAP at the source, a source emits at the belt's real capacity
+       (~SPEED/MIN_GAP ≈ 2 crates/sec), so the queue is bounded here for the same reason boxes are: a runaway
+       feed must not grow without limit, and a crate for work that finished minutes ago is its own small lie.
+       The OLDEST overflow is shed (the line stays current); the server already ran every one of them. */
+    function enqueueAt(x, y, payload) {
+      pending.push({ x, y, payload });
+      if (pending.length > MAX_PENDING) pending.splice(0, pending.length - MAX_PENDING);
+    }
+
+    /* supersede drop: early-sink the riding box whose work-item was aborted (a newer message took over the
+       chat). It falls off the belt via the chute animation and — crucially — never fires onDeliver. */
+    function dropWorkitem(workitemId) {
+      // also purge any not-yet-born pending item with this id, so a supersede that races the spawn still drops it
+      for (let i = pending.length - 1; i >= 0; i--) { const p = pending[i].payload; if (p && p.workitemId === workitemId) pending.splice(i, 1); }
+      for (const bx of boxes) {
+        if (bx.sink <= 0 && bx.payload && bx.payload.workitemId === workitemId) { bx.sink = 1; bx.delivered = true; return true; }
+      }
+      return false;
+    }
+
+    /* distance (in tiles, along the path) to the nearest box ahead — for backpressure spacing.
+       TIES COUNT (2026-07-26): two boxes at the SAME progress on the same tile used to see no leader at all
+       (the test was strictly `>`), so they advanced in lockstep and rode the line permanently overlapped.
+       The older box (lower id) is the leader at a tie — deterministic, and it resolves the pile in one tick
+       because the younger one measures a 0-tile gap, freezes, and the leader pulls ahead. */
+    function leaderDist(bx, tileMap) {
+      let best = Infinity;
+      const same = tileMap.get(key(bx.x, bx.y));
+      if (same) for (const c of same) if (c !== bx && c.sink <= 0 && (c.prog > bx.prog || (c.prog === bx.prog && c.id < bx.id))) best = Math.min(best, c.prog - bx.prog);
+      const v = DIRV[bx.dir], nxt = tileMap.get(key(bx.x + v[0], bx.y + v[1]));
+      if (nxt) for (const c of nxt) if (c.sink <= 0) best = Math.min(best, (1 - bx.prog) + c.prog);   // a box that began sinking mid-tick no longer blocks
+      return best;
+    }
+
+    /* stops (optional 5th arg): { "x,y": agentId | { agentId, dockId } } — bound-bay hookup tiles (the object form
+       names the DOCK — multi-bay agents, 2026-09-22 — so one agent's two bays are two different stops). An INBOUND crate arriving on
+       a stop tile is DELIVERED there (the dock consumes the job): an unowned crate stops at the FIRST dock
+       it reaches; an addressed crate stops only at ITS OWNER's dock and rides past every other. Outbound
+       crates ignore stops entirely (they START at a dock and ship out). This is what makes "the crate ends
+       at the bay" physically true even when the lane continues on toward an OUTBOX. */
+    function tick(dtMs, nowMs, belts, junctions, stops) {
+      const map = buildMap(belts || []);
+      const dt = Math.min(64, dtMs) / 1000;
+
+      // expire spent merge-crossing pulses (append-ordered, so the head is always the oldest)
+      while (mergeFx.length && nowMs - mergeFx[0].t0 > MERGE_FX_MS) mergeFx.shift();
+
+      // occupancy index of RIDING boxes (sinking boxes are leaving — they don't block)
+      const tileMap = new Map();
+      for (const bx of boxes) { if (bx.sink > 0) continue; const k = key(bx.x, bx.y); (tileMap.get(k) || tileMap.set(k, []).get(k)).push(bx); }
+
+      // NO auto-spawn: a box exists ONLY for a real work-item placed via enqueueAt(). The original
+      // decorative source-spawn was removed on purpose — belts stay QUIET until real work rides them, so
+      // every crate on a belt means something. The only spawn path is the enqueueAt drain below.
+      // event-driven work-items (enqueueAt): born here so each gets the live nowMs + the tile's belt dir.
+      // No belt under the tile → nothing rides (the server still ran the work; the world just shows no crate).
+      //
+      // SOURCE BACKPRESSURE (2026-07-26): work does not arrive one crate at a time. A Telegram flurry or a
+      // cron fan-out enqueues N items in ONE tick, and every one of them used to be born on the same tile at
+      // prog 0 — a perfect stack that MIN_GAP could never open (nothing was "ahead"), riding the whole line
+      // as one pile that DRAWS AS A SINGLE CRATE. The floor then under-reported its own queue depth, which is
+      // the one thing a conveyor exists to show. The honest place to hold a burst is the QUEUE: an item waits
+      // in `pending` until its source tile has MIN_GAP of clear room, then is born. Nothing is dropped, FIFO
+      // per source tile is preserved, and items bound for a DIFFERENT (clear) source still spawn this tick —
+      // so one busy inbox can never stall another room's line.
+      for (let i = 0; i < pending.length && boxes.length < MAX_BOXES;) {
+        const p = pending[i], k = key(p.x, p.y), d = map.get(k);
+        if (!d) { pending.splice(i, 1); continue; }         // no belt under it → nothing rides
+        const here = tileMap.get(k);
+        let clear = true;
+        if (here) for (const c of here) if (c.sink <= 0 && c.prog < MIN_GAP) { clear = false; break; }
+        if (!clear) { i++; continue; }                      // its source tile is still occupied — WAIT in the queue
+        pending.splice(i, 1);
+        const nb = { id: nid++, x: p.x, y: p.y, dir: d, prog: 0, sink: 0, t0: nowMs, turn0: -1e9, payload: p.payload, spawnTile: k };
+        boxes.push(nb);
+        (tileMap.get(k) || tileMap.set(k, []).get(k)).push(nb);   // the newborn blocks the next spawn on THIS tile
+      }
+
+      // advance: cap each box so it never closes within MIN_GAP of the box ahead (no stacking; backpressure)
+      for (let i = boxes.length - 1; i >= 0; i--) {
+        const bx = boxes[i];
+        if (bx.sink > 0) { bx.sink += dtMs; if (bx.sink > SINK_MS) boxes.splice(i, 1); continue; }
+        const here = map.get(key(bx.x, bx.y));
+        if (!here) { bx.sink = 1; continue; }                                 // belt pulled out → sink
+        bx.dir = here;
+        const want = SPEED * dt, ld = leaderDist(bx, tileMap);
+        const allowed = ld === Infinity ? want : Math.min(want, Math.max(0, ld - MIN_GAP));
+        bx.prog += allowed;
+        let guard = 0;
+        while (bx.prog >= 1 && guard++ < 8) {
+          // DOCK DELIVERY: an inbound crate whose tile is a qualifying stop is consumed HERE — it never
+          // rides past its dock. (Outbound crates skip this — they were born ON a dock tile and ship out —
+          // and no crate is ever consumed on its own birth tile. A DOCK NEVER EATS ITS OWN OUTPUT:
+          // payload.fromAgentId names the PRODUCER, so a handoff crate rides past every OTHER ring tile of
+          // the bay that made it — physics, not just an emitter convention; the spawn-tile check alone only
+          // covered the birth tile of a multi-tile hookup.)
+          // (multi-bay) a stop may name its DOCK: the crate is consumed at stopDock === payload.dockId (when the
+          // crate names one) and never at the dock that PRODUCED it (payload.fromDockId) — the same agent's other
+          // bay is a different dock and does consume a handoff addressed to it.
+          const stop = stops && stops[key(bx.x, bx.y)];
+          const stopOwner = stop && typeof stop === 'object' ? stop.agentId : stop;
+          const stopDock = stop && typeof stop === 'object' ? (stop.dockId || null) : null;
+          const own = bx.payload && (stopDock && bx.payload.fromDockId ? bx.payload.fromDockId === stopDock : bx.payload.fromAgentId === stopOwner);
+          const mine = bx.payload && (stopDock && bx.payload.dockId ? bx.payload.dockId === stopDock : (!bx.payload.agentId || bx.payload.agentId === stopOwner));
+          if (stopOwner && bx.payload && !bx.payload.outbound && bx.spawnTile !== key(bx.x, bx.y) && !own && mine) {
+            if (onDeliver && !bx.delivered) { bx.delivered = true; onDeliver(bx, bx.x, bx.y); }
+            bx.prog = 1; bx.sink = 1; break;
+          }
+          let dir = bx.dir;
+          const jt = junctions && junctions.get(key(bx.x, bx.y));            // a junction picks the exit lane (else straight)
+          if (jt) { const ex = chooseExit(jt, bx, bx.x, bx.y, map, nowMs); if (ex) dir = ex; }
+          const v = DIRV[dir], nx = bx.x + v[0], ny = bx.y + v[1], nd = map.get(key(nx, ny));
+          if (nd) {
+            if (nd !== dir) bx.turn0 = nowMs;
+            // RE-BUCKET IMMEDIATELY. The occupancy index used to be a tick-start snapshot, so two lanes
+            // converging on one tile (the whole point of a MERGER) could both step into it in the SAME tick,
+            // each having measured a map in which the other had not yet arrived — landing perfectly stacked.
+            // Moving the box between buckets as it crosses means the next box processed this tick measures
+            // the tile as taken (via leaderDist's next-tile branch) and holds at its lane head instead.
+            const ob = tileMap.get(key(bx.x, bx.y)); if (ob) { const oi = ob.indexOf(bx); if (oi >= 0) ob.splice(oi, 1); }
+            bx.x = nx; bx.y = ny; bx.dir = nd; bx.prog -= 1;
+            const nk = key(nx, ny); (tileMap.get(nk) || tileMap.set(nk, []).get(nk)).push(bx);
+          }
+          else {                                                              // rode off the open end → deliver, then sink
+            if (bx.payload && onDeliver && !bx.delivered) { bx.delivered = true; onDeliver(bx, bx.x, bx.y); }
+            bx.prog = 1; bx.sink = 1; break;
+          }
+        }
+      }
+      if (boxes.length > MAX_BOXES) boxes.splice(0, boxes.length - MAX_BOXES);
+    }
+
+    /* ---------- belt art (direction + topology aware) ---------- */
+    /* liveSet (optional): { "x,y": true } from Pipeline.liveTiles — tiles on a complete INTAKE→bound-BAY
+       route render ENERGIZED (moving rollers, pale drive light); everything else renders COLD
+       (static rollers, dark drive light, dimmed) so an incomplete line visibly isn't running. Omitted →
+       every tile draws live (legacy callers unchanged). The glow IS the compiled plan — truthful telemetry. */
+    function drawBelts(ctx, nowMs, T, belts, liveSet) {
+      if (!belts || !belts.length) return;
+      _ctx = ctx; _now = nowMs;
+      const map = buildMap(belts);
+      for (const b of belts) {
+        const live = !liveSet || !!liveSet[key(b.x, b.y)];
+        // A cold tile freezes at now=0: every roller parks instead of marching.
+        // The line reads as powered-down machinery, not broken art.
+        beltTile(b.x * T, b.y * T, T, classify(map, b), live ? nowMs : 0, live);
+      }
+      drawMergeFx(T);   // convergence pulses over the merge tiles (under the riding boxes)
+    }
+    /* MERGE PULSE: a crate just crossed a converging junction — pulse the tile so the convergence point
+       reads as live machinery. This is the ONLY thing the flash may say now: it fires once per real
+       crossing, and no crate is ever consumed here. (It used to burn brighter for the "combined carrier"
+       and softer for an "absorbed" crate — vocabulary for a combine the harness never performed.) A pale
+       cyan core + an expanding ring, ~450ms decay; driven only by real chooseExit decisions and the
+       injected nowMs (deterministic — no ambient clock). */
+    const MERGE_FX_MS = 450;
+    function drawMergeFx(T) {
+      if (!mergeFx.length) return;
+      for (const fx of mergeFx) {
+        const k = 1 - (_now - fx.t0) / MERGE_FX_MS;
+        if (k <= 0) continue;
+        const cx = (fx.x + 0.5) * T, cy = (fx.y + 0.5) * T;
+        _ctx.save();
+        _ctx.globalCompositeOperation = 'lighter';
+        _ctx.globalAlpha = Math.min(1, 0.55 * k);
+        _ctx.fillStyle = '#729f9f';
+        _ctx.fillRect(cx - 3, cy - 3, 6, 6);                        // hot core
+        _ctx.globalAlpha = 0.8 * k;
+        _ctx.strokeStyle = '#729f9f'; _ctx.lineWidth = 1;
+        _ctx.beginPath(); _ctx.arc(cx, cy, 2 + (1 - k) * 5, 0, 6.2832); _ctx.stroke();
+        _ctx.restore();
+      }
+    }
+    // Paths are authored in exact tile coordinates: a belt stays one walkable
+    // tile wide and joins the next tile at its edge centre in all four headings.
+    const BELT = { outline: '#070b0b', rim: '#545247', rail: '#292e2b',
+      edge: '#3e4138', bed: '#171f20', tread: '#3e4745', treadLight: '#777668',
+      groove: '#0a1112', mark: '#8a713d', light: '#82745a' };
+    function beltPaths(X, Y, T, info) {
+      const cx = X + T / 2, cy = Y + T / 2, out = DIRV[info.dir];
+      return (info.incoming.length ? info.incoming : [info.dir]).map(d => {
+        const v = DIRV[d];
+        return { from: d, points: [[cx - v[0] * T / 2, cy - v[1] * T / 2], [cx, cy],
+          [cx + out[0] * T / 2, cy + out[1] * T / 2]] };
+      });
+    }
+    function beltPathStroke(paths, width, colour) {
+      _ctx.strokeStyle = colour; _ctx.lineWidth = width; _ctx.lineJoin = 'bevel'; _ctx.lineCap = 'butt';
+      _ctx.beginPath();
+      for (const p of paths) { _ctx.moveTo(...p.points[0]); _ctx.lineTo(...p.points[1]); _ctx.lineTo(...p.points[2]); }
+      _ctx.stroke();
+    }
+    // The fixed edge plates occupy only solid rails. Corners use their real
+    // shortened rails plus a chamfer bolt, never fasteners floating in the lane.
+    function beltRailHardware(X, Y, T, ports, seed) {
+      const bend = ports.size === 2 && !(ports.has('N') && ports.has('S')) && !(ports.has('E') && ports.has('W'));
+      const closed = ['N', 'S', 'W', 'E'].filter(d => !ports.has(d));
+      for (const edge of closed) {
+        const horiz = edge === 'N' || edge === 'S';
+        const first = horiz ? ports.has('W') : ports.has('N');
+        const start = bend && !first ? T / 2 : 0, span = bend ? T / 2 : T;
+        const side = edge === 'N' || edge === 'W' ? .75 : T - 1.45;
+        for (let z = start + 1.1; z < start + span - .4; z += 3) {
+          const x = X + (horiz ? z : side), y = Y + (horiz ? side : z);
+          px(x - .15, y - .15, horiz ? 1.45 : 1, horiz ? 1 : 1.45, '#101716');
+          px(x, y, horiz ? 1.1 : .7, horiz ? .7 : 1.1, '#424438');
+          px(x + .15, y + .1, .28, .28, '#8b7c5c');
+          // Short worn amber witness marks sit on the metal, not across cargo.
+          if (((seed + Math.round(z)) & 3) === 0) px(x + (horiz ? .65 : .15), y + (horiz ? .15 : .65), horiz ? .65 : .22, horiz ? .22 : .65, '#957441');
+        }
+        const seam = start + span / 2;
+        if (horiz) px(X + seam, Y + side - .15, .22, 1, '#0a1110');
+        else px(X + side - .15, Y + seam, 1, .22, '#0a1110');
+      }
+      if (bend) {
+        const east = closed.includes('E'), south = closed.includes('S');
+        const x = X + T * (east ? .75 : .25) + (east ? -.6 : .6);
+        const y = Y + T * (south ? .75 : .25) + (south ? -.6 : .6);
+        px(x - .4, y - .4, .8, .8, '#0d1412'); px(x - .2, y - .2, .35, .35, '#837653');
+      }
+    }
+    function beltTile(X, Y, T, info, now, live) {
+      if (live === undefined) live = true;
+      const paths = beltPaths(X, Y, T, info), half = T / 2;
+      const ports = new Set([info.dir, ...paths.map(p => OPP[p.from])]);
+      _ctx.save(); _ctx.beginPath(); _ctx.rect(X, Y, T, T); _ctx.clip();
+      beltPathStroke(paths, T, BELT.outline);
+      beltPathStroke(paths, T - .5, BELT.rim);
+      beltPathStroke(paths, T - 1.1, BELT.rail);
+      beltPathStroke(paths, T - 2, BELT.outline);
+      beltPathStroke(paths, T - 2.6, BELT.edge);
+      beltPathStroke(paths, T - 3.9, BELT.groove);
+      beltPathStroke(paths, T - 4.7, BELT.bed);
+      // Unsigned distance along each incoming-to-outgoing route. The heading is
+      // applied once, so west/north rollers travel with their cargo too.
+      const pitch = T / 3, scroll = ((now / 180) % 1) * pitch;
+      for (const p of paths) for (let d = scroll; d < T; d += pitch) {
+        const first = d < half, v = DIRV[first ? p.from : info.dir], a = first ? p.points[0] : p.points[1];
+        const distance = first ? d : d - half, x = a[0] + v[0] * distance, y = a[1] + v[1] * distance;
+        // Keep the turning pocket open; the curved track, not a crossbar, owns it.
+        if (p.from !== info.dir && Math.abs(d - half) < 1.2) continue;
+        if (v[0]) {
+          px(x - .85, y - (T - 5.5) / 2, 1.7, T - 5.5, '#090f0f');
+          px(x - .6, y - (T - 5.5) / 2, 1.2, T - 5.5, BELT.tread);
+          px(x - .45, y - (T - 5.5) / 2, .25, T - 5.5, BELT.treadLight);
+          for (const z of [-2, 1.8]) px(x - .55, y + z, 1.1, .25, '#1b2625');
+        } else {
+          px(x - (T - 5.5) / 2, y - .85, T - 5.5, 1.7, '#090f0f');
+          px(x - (T - 5.5) / 2, y - .6, T - 5.5, 1.2, BELT.tread);
+          px(x - (T - 5.5) / 2, y - .45, T - 5.5, .25, BELT.treadLight);
+          for (const z of [-2, 1.8]) px(x + z, y - .55, .25, 1.1, '#1b2625');
+        }
+      }
+      const wear = U.hash('belt' + X + ',' + Y);
+      // Dark machining scratches live in the central tray, safely inside every
+      // turn shape. They are static per tile and never masquerade as activity.
+      for (let i = 0; i < 5; i++) {
+        const bits = (wear >>> (i * 4)) & 255;
+        px(X + T / 2 - 1.8 + (bits % 5) * .7, Y + T / 2 - 1.6 + ((bits >>> 3) % 5) * .65,
+          .25 + ((bits >>> 5) & 1) * .4, .12, i & 1 ? '#303632' : '#101718');
+      }
+      beltRailHardware(X, Y, T, ports, wear);
+      // The engraved exit arrow is legible even without power. It never claims
+      // that a request is running; only real cargo and crossing pulses do that.
+      beltChevron(X, Y, T, info.dir);
+      if (info.source) beltSource(X, Y, T, info);
+      if (info.sink) beltSink(X, Y, T, info);
+      const edge = ['N', 'S', 'W', 'E'].find(d => !ports.has(d));
+      if (edge) {
+        const v = DIRV[edge], x = X + T / 2 + v[0] * (T / 2 - 1), y = Y + T / 2 + v[1] * (T / 2 - 1);
+        px(x - (v[0] ? .3 : 1), y - (v[0] ? 1 : .3), v[0] ? .6 : 2, v[0] ? 2 : .6,
+          live ? '#729e9d' : '#273532');
+      }
+      // A powered route moves, an incomplete route freezes and loses its light.
+      // Reduce contrast without painting the floor outside the chamfered track.
+      if (!live) { _ctx.globalAlpha = .3; beltPathStroke(paths, T - 1, '#060c0c'); }
+      _ctx.restore();
+    }
+    function beltChevron(X, Y, T, dir) {
+      const v = DIRV[dir], cx = X + T / 2 + v[0] * T * .18, cy = Y + T / 2 + v[1] * T * .18;
+      const a = T * .10;
+      _ctx.strokeStyle = BELT.mark; _ctx.lineWidth = .55; _ctx.lineJoin = 'miter'; _ctx.beginPath();
+      _ctx.moveTo(cx - v[0] * a - v[1] * a, cy - v[1] * a + v[0] * a);
+      _ctx.lineTo(cx, cy);
+      _ctx.lineTo(cx - v[0] * a + v[1] * a, cy - v[1] * a - v[0] * a); _ctx.stroke();
+    }
+    function beltSource(X, Y, T, info) {
+      const v = DIRV[info.dir], cx = X + T / 2 - v[0] * (T / 2 - 1.2), cy = Y + T / 2 - v[1] * (T / 2 - 1.2);
+      // Fixed feeder collar: no ambient flash suggesting a job is about to spawn.
+      if (v[0]) { px(cx - .5, Y + 2, 1, T - 4, '#514c3a'); px(cx - .5, Y + 2, .3, T - 4, BELT.light); }
+      else { px(X + 2, cy - .5, T - 4, 1, '#514c3a'); px(X + 2, cy - .5, T - 4, .3, BELT.light); }
+    }
+    function beltSink(X, Y, T, info) {
+      const v = DIRV[info.dir], cx = X + T / 2 + v[0] * (T / 2 - 1), cy = Y + T / 2 + v[1] * (T / 2 - 1);
+      if (v[0]) { px(cx - .6, Y + 2, 1.2, T - 4, '#050a0b'); px(cx - .6, Y + 2, .3, T - 4, '#675e45'); }
+      else { px(X + 2, cy - .6, T - 4, 1.2, '#050a0b'); px(X + 2, cy - .6, T - 4, .3, '#675e45'); }
+    }
+
+    /* ---------- box art ---------- */
+    function drawBoxes(ctx, nowMs, T) {
+      if (!boxes.length) return;
+      _ctx = ctx; _now = nowMs;
+      const order = boxes.slice().sort((a, b) => boxPix(a, T).py - boxPix(b, T).py);  // painter's y-sort
+      for (const bx of order) {
+        const base = boxPix(bx, T), m = boxMotion(bx, nowMs);
+        if (m.alpha <= 0) continue;
+        const cx = Math.round(base.cx + m.lx), py = Math.round(base.py + m.bob + m.ly), h32 = U.hash('' + bx.id);
+        // a GHOST projection casts no contact shadow and wears no work tag — nothing about it may
+        // read as a real crate (ghostline.js rides these on its own dedicated engine)
+        const isGhost = !!(bx.payload && bx.payload.ghost);
+        // bob-coupled contact shadow (drawn first, under the box)
+        const sa = (0.30 - 0.12 * m.lift) * m.shadowMul;
+        if (sa > 0 && !isGhost) { ctx.globalAlpha = sa * m.alpha; const sw = 9 + Math.round(m.lift * 2); px(cx - (sw >> 1), Math.round(base.py) + 3, sw, 2, '#05080a'); }
+        ctx.globalAlpha = m.alpha;
+        if (isGhost) { cargoGhost(cx, py, h32, bx.dir); ctx.globalAlpha = 1; continue; }
+        // ECONOMIC role (set by world.js from real cost/outcome events) picks the art; an untyped
+        // payload still rides as the cyan data cassette, so nothing about existing boxes changes.
+        const role = bx.payload && bx.payload.box;
+        if (role === 'ore') cargoOre(cx, py, h32, bx.dir, +bx.payload.weight || 0);
+        else if (role === 'product') cargoProduct(cx, py, h32, bx.dir, +bx.payload.weight || 0);
+        else if (role === 'slag') cargoSlag(cx, py, h32, bx.dir);
+        else CARGO_FN[bx.payload ? 2 : cargoType(bx.id)](cx, py, h32, bx.dir);   // work-items default to cyan data cassettes
+        if (bx.payload) payloadTag(cx, py, role || (bx.payload.outbound ? 'product' : 'ore'));
+        ctx.globalAlpha = 1;
+      }
+    }
+    function boxPix(bx, T) {
+      const v = DIRV[bx.dir] || [0, 0];
+      return { cx: (bx.x + 0.5) * T + (bx.prog - 0.5) * T * v[0], py: (bx.y + 0.5) * T + (bx.prog - 0.5) * T * v[1] };
+    }
+
+    return {
+      tick, drawBelts, drawBoxes, reset, enqueueAt, dropWorkitem, shiftFrame,
+      boxCount: () => boxes.length,
+      peekBoxes: () => boxes.map(b => ({ id: b.id, x: b.x, y: b.y, dir: b.dir, sink: b.sink, prog: b.prog, payload: b.payload || null }))
+    };
+  }
+
+  return { create, weightForUsd };
+})();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = Conveyor;

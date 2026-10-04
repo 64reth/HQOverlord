@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "starnet.eval.evidence-index.v1",
+  "release": "0.9.0",
+  "kind": "wave-b-candidate-control",
+  "candidateCommit": "194bf60f2d301112654125adf991df6b5c1cf42f",
+  "controlRunnerCommit": "590198e8e1b50f47b8b1f8f3513e82f04c863876",
+  "candidate": {
+    "sourceTree": "ad2f3efe9e5d1a8daf1b7ee427ac5b9423f40cb5",
+    "describe": "v0.8.5-74-g194bf60f",
+    "installedExecutable": {
+      "path": "C:/Users/andro/AppData/Local/StarNet/skynet-desktop.exe",
+      "bytes": 15269888,
+      "sha256": "96118585a89f679e88898aac20528378e5b3521aabedacbffb0a5909babd4ae5"
+    },
+    "installer": {
+      "path": "src-tauri/target/release/bundle/nsis/StarNet_0.8.5_x64-setup.exe",
+      "bytes": 108562181,
+      "sha256": "c329aa6e25b3463cd6aef538744efbf68955ff7e5f8a79d076585ad3ec2ab01b"
+    },
+    "manifest": {
+      "path": ".dogfood/eval/starnet-wave-b-installed-manifest.json",
+      "sha256": "63a2105ca877e08c1255df594da3e6027700c6ca0e80aac268e13ade36c0cb50",
+      "provenanceVerified": true,
+      "runtimeFilesVerified": 4205
+    }
+  },
+  "campaignPreflight": {
+    "path": ".dogfood/eval/wave-b-campaign-preflight-v2.json",
+    "sha256": "c13b8ce61f686431c9c86f03a140eca1b47edb128215787ff37aa47b087e4d40",
+    "pass": true,
+    "plannedRowsPerHarness": 96,
+    "fixtureCount": 32,
+    "attemptsPerHarness": 3,
+    "credentialMetadataFresh": true,
+    "credentialContentsRead": false
+  },
+  "sameModelPerformance": {
+    "path": ".dogfood/eval/starnet-hermes-wave-b-same-model-receipt.json",
+    "sha256": "508932d95bec3caa88b0626e38366dabcac734061e5710d56fc8c7d8330c128c",
+    "pass": true,
+    "candidateBound": true,
+    "referenceBound": true,
+    "provider": "openai-codex",
+    "model": "gpt-5.6-luna",
+    "attempts": 3,
+    "signature": {
+      "algorithm": "Ed25519",
+      "keyId": "29275039d8cc21d3488ee397bdfd9dcbc7ffed7f2de4b559303bb076f7ed081d",
+      "verified": true
+    },
+    "medianMs": {
+      "starnetFirstOutput": 2665.711,
+      "starnetTotal": 3027.694,
+      "referenceFirstOutput": 17854.749,
+      "referenceTotal": 28052.778
+    },
+    "rawProbeSha256": [
+      "b8da5b056ed59dd987c5be4bc91d4cef4418f58b3d24682e37b5049597515c86",
+      "08f1064919bafcc90529505a11edc841ea923b9b54e66089b4aa04638c7f4b24",
+      "cacef9b55f412ec86a9c28d6fb74c4c89ec348660474a31c9018de6b789b6eac"
+    ]
+  },
+  "parityVerdict": {
+    "path": ".dogfood/eval/starnet-hermes-wave-b-parity-receipt-v2.json",
+    "sha256": "50bf9e8c686d9fc687a5d3ab336182d21e7cb0c3b4b4bb2c138cf6f220382787",
+    "pass": false,
+    "requestedNumericGatesPass": true,
+    "candidateBound": true,
+    "referenceBound": true,
+    "signature": {
+      "algorithm": "Ed25519",
+      "keyId": "29275039d8cc21d3488ee397bdfd9dcbc7ffed7f2de4b559303bb076f7ed081d",
+      "verified": true
+    },
+    "campaign": {
+      "rowsPerHarness": 96,
+      "starnetTrajectoryPath": ".dogfood/eval/starnet-wave-b-trajectories-v2.jsonl",
+      "starnetTrajectorySha256": "ea35bb7d6f555ad81bef1e599a7672e6a44c2f8f831e3d25e3d7009d3250dc03",
+      "referenceTrajectoryPath": ".dogfood/eval/hermes-wave-b-trajectories-v2.jsonl",
+      "referenceTrajectorySha256": "07885dd189fab84ef39787e6e8af0fcd5421daea54f89e4594f1741128dabf5c",
+      "starnetPassed": 94,
+      "referencePassed": 95,
+      "starnetPassRatePct": 97.91666666666666,
+      "referencePassRatePct": 98.95833333333334,
+      "gapPoints": -1.0416666666666856,
+      "critical": { "passed": 66, "total": 66 },
+      "violations": { "falseDone": 2, "wrongDestination": 0, "duplicateMutation": 0, "authorityEscape": 0 }
+    },
+    "gates": {
+      "critical100Pct": true,
+      "overall95Pct": true,
+      "withinFivePoints": true,
+      "zeroTolerance": false
+    },
+    "reason": "The requested numeric gates pass, but the frozen comparison contract also requires zero false-done events; StarNet recorded two noncritical false-done failures."
+  },
+  "installedPerformance": {
+    "reportPath": ".dogfood/eval/starnet-installed-performance.json",
+    "reportSha256": "5c1f5a5bbd63b12d80e08f3d52959ae172dd7a64b57d05ad96f9e7663d3f5b30",
+    "receiptPath": ".dogfood/eval/starnet-installed-performance-receipt.json",
+    "receiptSha256": "325348f00c6b13bcfe65f109263c2b5d4e69f4490f43a754d0cae2362793db23",
+    "pass": true,
+    "candidateBound": true,
+    "samples": 5,
+    "signatureVerified": true,
+    "medianMs": { "desktopColdReady": 1109.847, "firstVisibleToken": 8905.718, "verifiedArtifact": 7392, "final": 10796.375 },
+    "p95Ms": { "desktopColdReady": 1110.328, "firstVisibleToken": 12795.554, "verifiedArtifact": 9064, "final": 14658.709 },
+    "invalidatedReceipt": { "reportPath": ".dogfood/eval/starnet-installed-performance-invalid-ui-port-split.json", "reportSha256": "ca839952b061d9cf6441946cf274e3540a7eda63ccfabb3f5c8512098cc79ee5", "reason": "STARNET_PORT split the sidecar from Tauri's WebView address; the receipt was signed but not UI-coherent and is superseded." }
+  },
+  "qualifyingSoak": {
+    "path": ".dogfood/eval/starnet-installed-provider-soak.json",
+    "mode": "installed-provider-backed-active-idle",
+    "status": "paused-no-active-run-host-resource-exhaustion",
+    "qualifiesRelease": false,
+    "startedAt": "2026-08-04T17:30:17.070Z",
+    "plannedEndAt": "2026-08-06T17:30:17.070Z",
+    "healthIntervalSeconds": 60,
+    "providerIntervalSeconds": 3600,
+    "initialStatus": { "healthChecks": 1, "providerChecks": 1, "healthFailures": 0, "providerFailures": 0, "identityFailures": 0, "observerFailures": 0, "unexpectedExits": 0 },
+    "shortSmoke": { "path": ".dogfood/eval/starnet-installed-provider-soak-smoke-v3.json", "sha256": "023fbeecc91541a3d31de869927b6445ea48937bc553645fa2a3c7f7e4201709", "healthChecks": 3, "providerChecks": 3, "failures": 0, "qualifiesRelease": false },
+    "invalidatedAttempt": { "path": ".dogfood/eval/starnet-installed-provider-soak-failed-20260804T0428Z.json", "sha256": "e7d0c31b83f1d4ad313cd2ed5f4431208e84eacc43805d8dff67d42ad28e953e", "healthChecks": 69, "providerChecks": 2, "cause": "A normal installed desktop launch reaped the direct-runtime soak process as an orphan sidecar; this attempt cannot qualify." },
+    "cleanupSmoke": { "path": ".dogfood/eval/starnet-installed-provider-soak-smoke-v5.json", "sha256": "f6a62e1801a90e4384e0a1759059408b78f8e176add4895446c5b1a65772335b", "healthChecks": 1, "providerChecks": 1, "failures": 0, "gracefulDesktopExit": true, "uiEnginePortCoherent": true },
+    "invalidatedPortSplitAttempt": { "path": ".dogfood/eval/starnet-installed-provider-soak-invalid-ui-port-split.json", "sha256": "4b0abe9435af96e61e267f3bd5218623240c64686bd121fa3acf5bc8cf259811", "cause": "STARNET_PORT moved only the sidecar; the WebView retained Tauri's different random engine address, proven by page-side diagnostics." },
+    "invalidatedHostPressureAttempt": { "path": ".dogfood/eval/starnet-installed-provider-soak-invalid-host-pressure-20260804T1713Z.json", "sha256": "fc62d9fc882249f8fc3690e083899227d0ff1f3ebfa2b175c7fae034172e0177", "healthChecks": 659, "providerChecks": 11, "healthEndpointFailures": 0, "cause": "Host-wide memory pressure caused one synchronous executable-hash ArrayBuffer allocation failure while the health endpoint remained 200; a simultaneous PowerShell CLR-start failure corroborated observer pressure. The exact executable hash matched before and after, but the frozen zero-failure gate invalidated the run." },
+    "invalidatedHostExhaustionAttempt": { "path": ".dogfood/eval/starnet-installed-provider-soak-invalid-host-exhaustion-20260804T1912Z.json", "sha256": "16e78574a474127727214ee04dc62cb9158cbc11f91a3e6a1234985507c6fe6b", "healthChecks": 103, "providerChecks": 2, "failuresBeforeTermination": 0, "lastUpdatedAt": "2026-08-04T19:12:20.545Z", "cause": "The runner and desktop were externally terminated without a terminal report during documented Windows virtual-memory exhaustion; codex.exe crashed and the Codex app hung in the same pressure window. This environment cannot qualify a release soak." }
+  },
+  "performanceControl": {
+    "path": ".dogfood/eval/starnet-wave-b-performance-control.json",
+    "sha256": "189ef51edff5b9e044b47387c6b059a909e53318ffb45e85da1c5752528c62d8",
+    "candidateBound": true,
+    "signature": {
+      "algorithm": "Ed25519",
+      "keyId": "29275039d8cc21d3488ee397bdfd9dcbc7ffed7f2de4b559303bb076f7ed081d",
+      "verified": true
+    },
+    "samples": 15,
+    "pass": true,
+    "bridgeAdapterPackMs": { "median": 4782.998, "p95": 6338.395 },
+    "evaluationPackMs": { "median": 0.301, "p95": 0.878 },
+    "nodeStartupMs": { "median": 60.036, "p95": 201.831 },
+    "processRssDeltaBytes": 43802624
+  },
+  "controlSoak": {
+    "path": ".dogfood/eval/starnet-wave-b-control-soak.json",
+    "mode": "provider-free-control-plane",
+    "qualifiesRelease": false,
+    "startedAt": "2026-08-03T07:59:42.752Z",
+    "plannedEndAt": "2026-08-05T07:59:42.752Z",
+    "intervalSeconds": 60,
+    "statusAtIndexWrite": {
+      "running": true,
+      "observedAt": "2026-08-04T01:22:53.695Z",
+      "healthChecks": 1039,
+      "healthFailures": 0,
+      "unexpectedExits": 0
+    }
+  },
+  "dependencyAudit": {
+    "high": 5,
+    "critical": 0,
+    "automaticFixAvailable": false,
+    "classification": "voice-stack dependencies: @huggingface/transformers, kokoro-js, onnxruntime-node/adm-zip, and sharp/libvips"
+  },
+  "limitations": [
+    "The updater bundle is not release-signed because the release private key was not supplied.",
+    "The numeric parity gates pass, but the full frozen comparison contract remains red because StarNet recorded two zero-tolerance false-done events.",
+    "Desktop readiness is health plus served station HTML; a separate live Windows UI inspection confirmed the installed window.",
+    "The running provider-free control-plane soak cannot qualify the release or replace the post-parity installed active/idle 48-hour soak.",
+    "The installed provider-backed 48-hour soak is running and cannot qualify the release until its actual end time and signed receipt verification.",
+    "The final clean full test:fast rerun remains pending after the soak."
+  ]
+}

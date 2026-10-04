@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect a service — StarNet Docs</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="docs.css?v=20260913-brand-nav">
+</head>
+<body class="docs-page" data-group="Connect your tools" data-group-id="connections" data-kind="Guide" data-title="Connect a service">
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="crt-scan" aria-hidden="true"></div>
+<div class="crt-vignette" aria-hidden="true"></div>
+
+<header class="topbar" id="topbar">
+  <a class="brand" href="../index.html" aria-label="StarNet home"><img src="../assets/starnet-logo-small.png" alt="StarNet" width="355" height="60"></a>
+  <nav class="topnav" aria-label="Site">
+    <a href="../index.html#station">Product</a>
+    <a href="index.html" class="on">Docs</a>
+    <a href="../pricing.html" data-pricing-link>Pricing</a>
+    <a href="https://github.com/androoAGI/starnet" target="_blank" rel="noopener">GitHub<svg class="nav-external" aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="12" height="12"><path d="M3 13 13 3M4 3h9v9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></a>
+  </nav>
+  <span class="topbar-right">
+    <a href="help.html">Help</a>
+    <a class="nav-download" href="../index.html#download">Download &darr;</a>
+  </span>
+</header>
+
+<div class="docs-shell">
+  <aside class="docs-side" id="docs-side">
+    <div class="side-home">Documentation</div>
+    <div class="side-search"><label class="sr-only" for="docs-search">Search docs</label><input id="docs-search" type="search" placeholder="Search docs…" autocomplete="off" spellcheck="false" aria-controls="docs-results" aria-expanded="false"><kbd class="search-key" aria-hidden="true">/</kbd><div class="ss-results" id="docs-results" hidden></div><span id="docs-search-status" class="sr-only" role="status" aria-live="polite"></span></div>
+    <button class="side-toggle" type="button" aria-expanded="false" aria-controls="side-nav">Browse documentation</button>
+    <nav id="side-nav" class="side-nav" aria-label="Docs">
+      <div class="side-quick">
+      <a href="index.html">Docs overview</a>
+      <a href="guides/index.html">Step-by-step guides</a>
+      </div>
+      <p class="side-label">Browse topics</p>
+    <details class="side-group">
+    <summary class="side-title">Start here</summary>
+    <a href="getting-started.html">Install &amp; first task</a>
+    <a href="providers.html">Models &amp; providers</a>
+    </details>
+    <details class="side-group">
+    <summary class="side-title">Station &amp; agents</summary>
+    <a href="station.html">Station &amp; capabilities</a>
+    <a href="guides/crew.html">Set up your crew</a>
+    <a href="agents.html">Agents, teams &amp; voice</a>
+    <a href="guides/goals.html">Goals, quests &amp; XP</a>
+    </details>
+    <details class="side-group">
+    <summary class="side-title">Conveyor workflows</summary>
+    <a href="guides/first-line.html">Build your first workflow</a>
+    <a href="guides/conveyors.html">Conveyor basics</a>
+    <a href="guides/filter.html">Filter &amp; route work</a>
+    <a href="guides/splitter-joiner.html">Split &amp; combine results</a>
+    </details>
+    <details class="side-group">
+    <summary class="side-title">Repeat &amp; automate</summary>
+    <a href="guides/routines.html">Create repeatable work</a>
+    <a href="skills.html">Skills &amp; routines reference</a>
+    <a href="guides/night-shift.html">Set up Night Shift</a>
+    <a href="autonomy.html">Autonomy controls</a>
+    </details>
+    <details class="side-group" open>
+    <summary class="side-title">Connect your tools</summary>
+    <a href="connect-a-platform.html" class="active" aria-current="page">Connect a service</a>
+    <a href="guides/channels.html">Messaging channels</a>
+    <a href="connectors.html">Connectors &amp; MCP reference</a>
+    <a href="migrating.html">From OpenClaw or Hermes</a>
+    </details>
+    <details class="side-group">
+    <summary class="side-title">Troubleshooting &amp; help</summary>
+    <a href="help.html">Help center</a>
+    <a href="troubleshooting.html">Troubleshooting</a>
+    <a href="shortcuts.html">Keyboard shortcuts</a>
+    <a href="glossary.html">Glossary</a>
+    </details>
+    </nav>
+  </aside>
+  <main class="docs-main" id="main-content" tabindex="-1">
+<h1>Connect a service</h1>
+<p class="doc-sub">// Printify, Etsy, Shopify, Stripe, your own internal API — the whole decision in one page</p>
+
+<h2 id="which-route-do-i-need">Which route do I need?</h2>
+<p>There are three, and the right one depends on what the platform publishes. Check in this order:</p>
+
+<ol>
+  <li><b>Does the platform publish a <i>remote</i> MCP server?</b> Then add it in
+    <b>TOOLSETS &amp; CONNECTORS &rarr; MCP CONNECTORS</b>, or find it already sitting in <b>CATALOG</b>.
+    You get ready-made tools, and it is the least work. Notion, Linear, Stripe, GitHub and Sentry are here.</li>
+  <li><b>Does it publish only a local stdio MCP server?</b> Put an agent on the <b>SAFE CELL</b> execution
+    profile, choose <b>STDIO (Safe Cell)</b> in MCP CONNECTORS, and enter the command and exact arguments.
+    StarNet runs it inside that agent's persistent Docker environment, never as an interactive host child.</li>
+  <li><b>Otherwise it has a plain REST API.</b> Paste its key in <b>KEYS</b> and your agent calls the API
+    directly with <code>web_request</code>. This is the route for most of the long tail — including every
+    print-on-demand and marketplace service we checked.</li>
+</ol>
+
+<div class="callout">Print-on-demand and marketplace platforms are route 2 today. As of July 2026 there is no
+remote MCP server for Printify, Printful, Etsy or WooCommerce — the only Printify MCP that exists is a
+<i>local</i> <code>npx</code> server. StarNet can run that server in a Safe Cell; the REST-key route remains
+the lighter option when you do not want to maintain a container command.</div>
+
+<h2 id="route-1-a-remote-mcp-server">Route 1 — a remote MCP server</h2>
+<p>Open <b>TOOLSETS &amp; CONNECTORS</b> (dock: <b>&#8644; TOOLSETS</b>).</p>
+<ul>
+  <li><b>CATALOG</b> — browse vetted servers. <b>&#9656; no setup</b> connects instantly, <b>API key</b> takes a
+    pasted token, <b>OAUTH</b> opens a browser sign-in. One click and its tools are live.</li>
+  <li><b>MCP CONNECTORS</b> — for anything not in the catalog. Give it a short id, paste the server's
+    <b>Streamable-HTTP endpoint</b> (usually ending <code>/mcp</code>), and a bearer token if it needs one.</li>
+</ul>
+<p>A local <code>stdio</code> command (<code>npx …</code>, <code>uvx …</code>) requires a named agent on the
+<b>SAFE CELL</b> profile and a working Docker runtime. Its command uses exact argv with no shell. If Docker is
+unavailable, the connector stays honestly disconnected; StarNet never falls back to spawning it on the
+interactive host.</p>
+
+<h2 id="route-2-an-api-key-web-request">Route 2 — an API key + <code>web_request</code></h2>
+
+<h3 id="paste-the-key">1. Paste the key</h3>
+<p><b>TOOLSETS &amp; CONNECTORS &rarr; KEYS &rarr; PICK A PLATFORM</b>. Choose your platform (or type any name),
+paste your key, and save. StarNet stores it locally and shows only the last four characters, ever.</p>
+<p>Each key becomes a named environment variable — <code>Printify</code> becomes
+<code>PRINTIFY_API_KEY</code>. Adding the platform's <b>API docs URL</b> is worth the ten seconds: it rides
+into the agent's prompt, so it can look up the right endpoint instead of guessing.</p>
+
+<h3 id="give-the-agent-a-dish">2. Give the agent a dish</h3>
+<p>A key on its own does nothing. Tools come from <a href="station.html">placed props</a>: the
+<b>dish</b> grants the web toolset, which is what contains <code>web_request</code>. Place one in the agent's
+bay from the build menu. (If you want the agent to use the key from a terminal instead, that is the
+<b>workbench</b> prop — but for calling an API you do not need it.)</p>
+
+<h3 id="ask-for-the-thing-you-want">3. Ask for the thing you want</h3>
+<p>&ldquo;List my Printify shops and tell me which products are unpublished.&rdquo; The agent calls the API,
+you approve the call, and it reports back.</p>
+
+<h2 id="your-key-is-never-shown-to-the-model">Your key is never shown to the model</h2>
+<p>This is the part worth understanding, because it is unusual. The agent never receives your key. It writes
+a <b>placeholder</b> naming the key, and StarNet substitutes the real value at the moment the request leaves
+your machine:</p>
+<pre><code>web_request
+  url:     https://api.printify.com/v1/shops.json
+  headers: { "Authorization": "Bearer ${PRINTIFY_API_KEY}" }</code></pre>
+<p>The model sees only the name. A leaked transcript, a log, or a model provider never sees the value, and
+the response comes back with any echoed secret scrubbed. Placeholders work in <b>headers only</b> — StarNet
+refuses to send a URL the model wrote containing a secret, because URLs leak into browser history, proxy logs
+and <code>Referer</code> headers.</p>
+<p>Some APIs will not take a header and want the key as a query parameter instead. That still works, and the
+rule is unchanged: the agent names the key and the slot, and <b>StarNet attaches the value itself</b>, after
+the agent has finished composing the request.</p>
+<pre><code>web_request
+  url:  https://api.example.com/v1/items
+  auth: { "key": "SOME_API_KEY", "in": "query", "name": "api_key" }</code></pre>
+<p>The agent still never handles the value, and it is attached only to the first request — if the server
+redirects somewhere else, the credential is not carried along.</p>
+
+<h2 id="uploading-files-mockups-images-print-files">Uploading files — mockups, images, print files</h2>
+<p>Upload endpoints take file <b>bytes</b>, and the same substitution idea covers them. The agent never
+pastes file contents into a request; it writes a <b>reference</b> to a file in its workspace, and StarNet
+reads and encodes the bytes at the moment the request is sent. Printify's image upload, for example:</p>
+<pre><code>web_request
+  url:    https://api.printify.com/v1/uploads/images.json
+  method: POST
+  headers: { "Authorization": "Bearer ${PRINTIFY_API_KEY}" }
+  body:   {"file_name":"mockup.png","contents":"${file:mockups/mockup.png}"}</code></pre>
+<p>For APIs that want a classic form upload (<code>multipart/form-data</code>) there is a
+<code>multipart</code> parameter that attaches workspace files as form fields the same way. Either route:
+the file must live in the agent's own workspace (it can never reach outside it), the bytes never pass
+through the model, and the limit is 20MB per file / 25MB per request.</p>
+
+<h2 id="letting-it-run-while-you-are-away">Letting it run while you are away</h2>
+<p>By default a key is usable only in <b>watched sessions</b> — you are at the station and approve the call.
+Scheduled routines, Night Shift, and agents messaged over Telegram cannot spend it.</p>
+<p>To change that for one platform, tick <b>&ldquo;usable in scheduled &amp; messaged runs&rdquo;</b> on that key's row in
+KEYS. It is per key, off by default, and revocable at any time — the next tool call sees the change
+immediately. Nothing else about unattended runs widens: they still cannot run shell commands, and they still
+cannot spend any key you have not ticked.</p>
+
+<h2 id="when-it-does-not-work">When it does not work</h2>
+<table>
+  <tr><th>What you see</th><th>What it means</th></tr>
+  <tr><td>&ldquo;no enabled service key provides X_API_KEY&rdquo;</td>
+      <td>The placeholder name does not match a key you saved, or that key is switched off. Check the exact
+          env-var name shown on the key's row in KEYS.</td></tr>
+  <tr><td>&ldquo;this run is unattended and &lsquo;X&rsquo; is not approved for unattended use&rdquo;</td>
+      <td>A scheduled or messaged run tried to spend a watched-only key. Tick the unattended box on that key,
+          or run the task while you are at the station.</td></tr>
+  <tr><td>The agent has no <code>web_request</code></td>
+      <td>No <b>dish</b> is placed in that agent's bay, or the <b>web</b> toolset is switched off in TOOLSETS.</td></tr>
+  <tr><td>HTTP 401 / 403 from the platform</td>
+      <td>The key reached the platform and the platform rejected it — wrong key, wrong scope, or the wrong
+          header name. Check the platform's docs for the header it expects.</td></tr>
+  <tr><td>A connector sits red on &ldquo;stdio&rdquo;</td>
+      <td>The selected owner is no longer on <b>SAFE CELL</b>, Docker is unavailable, or the command failed
+          inside the container. Restore that profile/runtime and reload; StarNet will not run it on the host.</td></tr>
+  <tr><td>&ldquo;refusing private/loopback/intranet host&rdquo;</td>
+      <td>Working as intended: agents cannot reach your local network or cloud metadata endpoints.</td></tr>
+  <tr><td>&ldquo;the page did not finish loading within 30s&rdquo; (browser)</td>
+      <td>The site stalled the agent's browser — often a slow origin or a bot challenge. The load is
+          cancelled so the browser stays usable; try <code>browser.get_text</code> to see what did load. For a
+          platform you have a key for, its API via <code>web_request</code> is the more reliable route than
+          reading its web pages.</td></tr>
+  <tr><td>A public page returns 403 to the agent</td>
+      <td>Some sites (Etsy among them) refuse automated browsers and direct fetches outright. StarNet does not
+          disguise its requests to get around that. Use the platform's API instead.</td></tr>
+</table>
+
+<h2 id="what-starnet-will-not-do">What StarNet will not do</h2>
+<ul>
+  <li>Show your key to the model, write it to a file, or send it anywhere except the platform you named.</li>
+  <li>Forward your credential across a redirect to a different host.</li>
+  <li>Spawn a local MCP child directly in your interactive host session; stdio is Safe-Cell-only.</li>
+  <li>Spend a key in an unattended run you did not explicitly approve for that.</li>
+</ul>
+
+<nav class="doc-pager" aria-label="More in Connect your tools"><span></span><a class="pg next" href="guides/channels.html"><span class="pg-k">NEXT &rarr;</span><span class="pg-t">Messaging channels</span></a></nav>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer-line">STARNET &middot; a living station of AI agents, doing real work in the dark</div>
+  <div class="footer-links">
+    <a href="../index.html">HOME</a>
+    <a href="https://github.com/androoAGI/starnet" target="_blank" rel="noopener">GITHUB</a>
+    <a href="https://github.com/androoAGI/starnet-releases/releases/latest" target="_blank" rel="noopener">RELEASES</a>
+    <a href="../pricing.html" data-pricing-link>PRICING</a>
+    <a href="index.html">DOCS</a>
+    <a href="help.html">HELP</a>
+    <a href="https://github.com/androoAGI/starnet/issues" target="_blank" rel="noopener">COMMUNITY</a>
+    <a href="../legal/privacy.html">PRIVACY</a>
+    <a href="../legal/terms.html">TERMS</a>
+    <a href="mailto:androo.agi@gmail.com">CONTACT</a>
+  </div>
+  <div class="footer-fine">MIT license &middot; &copy; <span id="year">2026</span> StarNet &middot; no telemetry, no tracking &mdash; <a href="../legal/privacy.html">we collect nothing</a></div>
+</footer>
+
+<script src="search-index.js?v=20260913-brand-nav"></script>
+<script src="search.js?v=20260913-brand-nav"></script>
+<script src="docs.js?v=20260913-brand-nav"></script>
+</body>
+</html>

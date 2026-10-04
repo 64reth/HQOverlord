@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "starnet.eval.gate-receipt.v1",
+  "kind": "credential-free-eval-gate",
+  "generatedAt": "2026-09-10T03:28:22.882Z",
+  "git": {
+    "commit": "83c896e7d2c5b88d99147e75fbeedde6fb93c27b",
+    "branch": "agent/hermes-stress-0910",
+    "dirty": true,
+    "dirtyExcludes": [
+      "qa/eval-receipts/"
+    ]
+  },
+  "platform": {
+    "platform": "win32",
+    "arch": "x64",
+    "node": "v22.23.0"
+  },
+  "packs": {
+    "contract": {
+      "path": "scripts/eval/contracts/v0.9.0.json",
+      "sha256": "c1382ead3fd54309d13a24e4c7a71ba9d50791e24488514e355de14cf7a62877"
+    },
+    "claimsLedger": {
+      "path": "qa/product-perfect/claims.json",
+      "sha256": "b711a39ed92e82d53d65ee4b00ad1ab49de15df9426798250eceef1a0e1644ee"
+    },
+    "qualityTasks": {
+      "path": "scripts/eval/fixtures/tasks.jsonl",
+      "sha256": "a9d88ca2645dc3d6613f6c192fc96cd37b6e62e6dffed0dc95a637ad1bdce58d"
+    },
+    "qualityBaseline": {
+      "path": "scripts/eval/fixtures/baseline.jsonl",
+      "sha256": "2a684696a06a88de8692c019c88e00428011482bc1c9830f56448876745aeb7f"
+    },
+    "faultPack": {
+      "path": "scripts/eval/packs/fault-v0.9.0.jsonl",
+      "sha256": "3f426d9024b9b44f503db607962561545e4d8dce8964a17dcc1aa2c2387357f3"
+    },
+    "parityPack": {
+      "path": "scripts/eval/packs/parity-v0.9.0.jsonl",
+      "sha256": "a67251862b49943f85847d8d9a2d5275c0f9e0011e5d2516f75db236bcb51a70"
+    },
+    "parityFixtures": {
+      "path": "scripts/eval/fixtures/parity-v0.9.0.jsonl",
+      "sha256": "d46f30b1f3fcdf21a838388bfea24f4051532b376b3150366dc2023a24336460"
+    },
+    "independentGrader": {
+      "path": "scripts/eval/independent-grader.mjs",
+      "sha256": "14123207502edb3d7ca83f4e8397c6af47e635808549bd59c31ab5dda79a76a1"
+    }
+  },
+  "expectedCounts": {
+    "faultScenarios": 10,
+    "faultRepeats": 100,
+    "faultRows": 1000,
+    "qualityRows": 13,
+    "parityScenarios": 32,
+    "parityProbes": 4
+  },
+  "grader": {
+    "file": "scripts/eval/independent-grader.mjs",
+    "sha256": "14123207502edb3d7ca83f4e8397c6af47e635808549bd59c31ab5dda79a76a1",
+    "gradeSchema": "starnet.eval.independent-grade.v1"
+  },
+  "steps": [
+    {
+      "id": "contract",
+      "pack": "contract",
+      "command": "node scripts/eval/runner.mjs contract",
+      "exitCode": 0,
+      "pass": true,
+      "durationMs": 215,
+      "parsed": {
+        "claims": 37
+      },
+      "summaryLines": [
+        "[agent-eval] CONTRACT PASS claims=37 classified=37"
+      ]
+    },
+    {
+      "id": "agent-quality",
+      "pack": "quality",
+      "command": "node scripts/eval/runner.mjs run",
+      "exitCode": 0,
+      "pass": true,
+      "durationMs": 7377,
+      "parsed": {
+        "activeRows": 13,
+        "quality": 100
+      },
+      "summaryLines": [
+        "[agent-eval] dimensions toolSelection=100 planning=100 completion=100 stopping=100 latency=100 cost=100 recovery=100",
+        "[agent-eval] benchmark=starnet-0.9.0-agent-quality-v1 suite=3ac1e7e65c9a baseline=23e64d37f87e"
+      ]
+    },
+    {
+      "id": "fault-capture",
+      "pack": "fault",
+      "command": "node scripts/eval/runner.mjs capture-fault --out .dogfood/eval/gate/fault-trajectories.jsonl",
+      "exitCode": 0,
+      "pass": true,
+      "durationMs": 17579,
+      "parsed": {
+        "rows": 1000,
+        "passedRows": 1000
+      },
+      "summaryLines": [
+        "[agent-eval] FAULT CAPTURE rows=1000 passed=1000 failed=0",
+        "[agent-eval] trajectories <repo>\\.dogfood\\eval\\gate\\fault-trajectories.jsonl"
+      ]
+    },
+    {
+      "id": "fault-grade",
+      "pack": "fault",
+      "command": "node scripts/eval/runner.mjs fault --candidate .dogfood/eval/gate/fault-trajectories.jsonl --receipt .dogfood/eval/gate/fault-receipt.json",
+      "exitCode": 0,
+      "pass": true,
+      "durationMs": 662,
+      "parsed": {
+        "passedRows": 1000
+      },
+      "summaryLines": [
+        "[agent-eval] receipt <repo>\\.dogfood\\eval\\gate\\fault-receipt.json",
+        "[agent-eval] FAULT PASS passed=1000/1000"
+      ]
+    },
+    {
+      "id": "parity-offline",
+      "pack": "parity",
+      "command": "node scripts/eval/adapters/parity-offline.mjs",
+      "exitCode": 0,
+      "pass": true,
+      "durationMs": 1781,
+      "parsed": {
+        "scenarios": 32,
+        "probes": 4
+      },
+      "summaryLines": [
+        "[parity-offline] PROBE FLAGGED probe-false-done expected=falseDone violations={\"falseDone\":1,\"wrongDestination\":0,\"duplicateMutation\":0,\"authorityEscape\":0}",
+        "[parity-offline] PROBE FLAGGED probe-duplicate-mutation expected=duplicateMutation violations={\"falseDone\":0,\"wrongDestination\":0,\"duplicateMutation\":1,\"authorityEscape\":0}",
+        "[parity-offline] PROBE FLAGGED probe-authority-escape expected=authorityEscape violations={\"falseDone\":1,\"wrongDestination\":0,\"duplicateMutation\":0,\"authorityEscape\":1}",
+        "[parity-offline] PROBE FLAGGED probe-wrong-destination expected=wrongDestination violations={\"falseDone\":1,\"wrongDestination\":1,\"duplicateMutation\":0,\"authorityEscape\":0}",
+        "[parity-offline] PASS scenarios=32/32 probes=4/4 liveModel=false contractGateEligible=false"
+      ]
+    }
+  ],
+  "verdict": {
+    "pass": true,
+    "perPack": {
+      "contract": true,
+      "quality": true,
+      "fault": true,
+      "parity": true
+    }
+  },
+  "honesty": {
+    "liveModel": false,
+    "candidateBound": false,
+    "signed": false,
+    "provesModelQuality": false,
+    "satisfiesV090ContractGates": false,
+    "notes": [
+      "Source-tree run with scripted in-process providers; no provider credential was used and no live model produced any output.",
+      "This proves harness plumbing (loop, journal, channel, transcript, fixture-oracle, grader detection) on this commit — it is NOT evidence of model quality or scenario outcomes under a real model.",
+      "It does not replace the frozen v0.9.0 contract campaign (installed candidate, live keys, Hermes reference, signed receipts under .dogfood with committed hash indexes)."
+    ]
+  }
+}

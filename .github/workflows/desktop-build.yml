@@ -1,0 +1,365 @@
+# Desktop installer builds — Windows (NSIS) + Linux (deb/AppImage) + macOS (DMG).
+#
+# Tauri cannot cross-compile across OSes, so each platform builds on its own runner.
+# macOS builds BOTH arches from the arm64 runner (same OS/SDK, only the Rust target
+# differs); the Intel leg exists because old MacBook Airs are exactly the beginner
+# hardware this product targets.
+#
+# Signing is tiered and every tier degrades gracefully — never a red build over keys:
+#   TAURI_SIGNING_PRIVATE_KEY(+_PASSWORD)  -> updater artifacts (.sig); absent = skip them
+#   APPLE_CERTIFICATE(+_PASSWORD) + APPLE_SIGNING_IDENTITY -> codesign the .app
+#   APPLE_ID + APPLE_PASSWORD + APPLE_TEAM_ID -> notarize (kills the Gatekeeper wall)
+#   AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET -> Authenticode-sign the
+#     Windows exe + NSIS installer via Azure Artifact Signing. The bundled Node runtime
+#     retains its valid upstream OpenJS signature. (Account starnet-signing / eastus;
+#     absent = unsigned StarNet exe/installer, still installable for internal testing.)
+# With no Apple secrets the DMG is unsigned: fine for internal testing (System
+# Settings -> Privacy & Security -> Open Anyway), not for public distribution.
+# Operator setup for both signing tiers: docs/CODE_SIGNING.md.
+#
+# publish-test=true additionally publishes everything as a public PRE-release on
+# starnet-releases (needs RELEASES_TOKEN, same secret release.yml uses) — a shareable
+# no-login download link whose release notes ARE the per-OS install instructions.
+# Pre-releases never become the repo's "latest", so the Windows updater feed
+# (releases/latest/download/latest.json) cannot be disturbed by a test publish.
+name: desktop-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish-test:
+        description: "Publish a public test pre-release to starnet-releases (shareable download link)"
+        required: false
+        default: "false"
+      google_early_access:
+        description: "Google early access: open every Google service before Google verification (unverified-app warning, 100-user cap). Internal/beta builds only."
+        required: false
+        default: "false"
+      require_signed_mac:
+        description: "Fail unless Intel installed-app acceptance uses a notarized Developer ID build"
+        required: false
+        default: "false"
+  # No tag trigger: v* tags run release-train.yml (the shipping path). This workflow is for
+  # manual test builds / shareable pre-releases only.
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win-x64
+            bundles: nsis
+          - os: ubuntu-22.04
+            target: linux-x64
+            bundles: deb,appimage
+          # app,dmg — NOT dmg alone: the mac updater artifact (.app.tar.gz + .sig) only exists
+          # when the `app` target builds. dmg-only silently produces no updater feed artifacts
+          # (Tauri warns and moves on), which is how the v0.8.0 mac cut lost its tarballs twice.
+          # This matches release-train.yml's mac legs exactly.
+          - os: macos-latest
+            target: darwin-arm64
+            bundles: app,dmg
+            rust-target: aarch64-apple-darwin
+          # Run the Intel artifact on Intel hardware too; an ARM cross-build cannot prove x64
+          # app-data and upgrade behavior. GitHub supports this label until macOS 15 retires.
+          - os: macos-15-intel
+            target: darwin-x64
+            bundles: app,dmg
+            rust-target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Linux system deps (webkit + tauri build chain + dbus for keyring)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - run: npm ci
+
+      - name: Verify v0.8.5 station recovery on Intel macOS
+        if: runner.os == 'macOS' && matrix.target == 'darwin-x64'
+        shell: bash
+        run: |
+          test "$(uname -m)" = "x86_64"
+          node test/upgrade-085-090.test.js
+
+      # Hydrate the exact x64 Sharp packages pinned by the lockfile before the production
+      # dependency closure is staged; this also fails closed if the host install changes.
+      - name: Hydrate Intel Sharp runtime for macOS target
+        if: runner.os == 'macOS' && matrix.target == 'darwin-x64'
+        shell: bash
+        run: bash scripts/hydrate-sharp-macos-x64.sh
+
+      - name: Stage StarNet Google sign-in registration
+        env:
+          STARNET_GOOGLE_DESKTOP_CLIENT_JSON: ${{ secrets.STARNET_GOOGLE_DESKTOP_CLIENT_JSON }}
+          STARNET_GOOGLE_EARLY_ACCESS: ${{ inputs.google_early_access == 'true' && '1' || '' }}
+        run: node scripts/stage-google-client.mjs --optional
+
+      - name: Stage bundled Node sidecar runtime
+        run: |
+          node scripts/prepare-node.mjs ${{ matrix.target }}
+          node scripts/stage-voice-deps.mjs --target ${{ matrix.target }}
+          node scripts/stage-frontend-dist.mjs
+
+      # Manual builds may intentionally be unsigned, but a build that has Apple signing
+      # credentials must prepare the same nested native closure as the public train. A
+      # partial credential set is an error; an entirely absent set remains an explicit
+      # internal-test build and does not claim Developer ID or notarization evidence.
+      - name: Prepare bundled macOS native dependencies for signing
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          present=0
+          missing=0
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY; do
+            if [ -n "${!v:-}" ]; then present=$((present+1)); else missing=$((missing+1)); fi
+          done
+          if [ "$present" -eq 0 ]; then
+            echo "::warning::no Apple signing credentials — nested native dependencies remain unsigned (internal testing only)"
+            exit 0
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::partial Apple signing credentials — refusing to build a mixed-trust app"
+            exit 1
+          fi
+          bash scripts/sign-macos-native-deps.sh
+
+      - name: Build desktop bundles
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          RUST_TARGET: ${{ matrix.rust-target }}
+        run: |
+          # Absent secrets arrive as EMPTY strings, and Tauri treats a present-but-empty
+          # APPLE_* var as "cert provided" — it then runs `security import` on zero bytes and
+          # the build dies (SecKeychainItemImport: not valid). Same empty-env-!=-absent family
+          # as the Windows updater-signing stall. Unset every empty one so absence is absence.
+          # Apple account credentials are deliberately NOT exposed to this step. Tauri's
+          # built-in notarizer blocks inside `notarytool --wait`; Apple's queue can outlive
+          # GitHub's six-hour runner limit and destroy the otherwise-good signed build. A
+          # later step submits the completed DMG asynchronously instead.
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET; do
+            if [ -z "${!v}" ]; then unset "$v"; fi
+          done
+          if [ "$RUNNER_OS" = "macOS" ] && [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::warning::no Apple signing cert in secrets — DMG will be UNSIGNED (internal testing only)"
+          fi
+          # Windows Authenticode tier: with the AZURE_* service-principal secrets present,
+          # inject a signCommand pointing at Azure Artifact Signing. Tauri signs the app exe,
+          # NSIS components, and installer; the checksum-verified Node externalBin retains its
+          # upstream OpenJS Foundation Authenticode signature. Config is injected via --config
+          # so local/keyless builds never try to reach Azure.
+          SIGN_CFG=""
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            if [ -n "${AZURE_CLIENT_SECRET:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZURE_TENANT_ID:-}" ]; then
+              cargo install trusted-signing-cli --locked
+              SIGN_CFG='{"bundle":{"windows":{"signCommand":"trusted-signing-cli -e https://eus.codesigning.azure.net -a starnet-signing -c starnet-public %1"}}}'
+              echo "::notice::Windows Authenticode signing ENABLED (Azure Artifact Signing: starnet-signing/starnet-public)"
+            else
+              echo "::warning::no Azure Trusted Signing secrets — Windows exe/installer will be UNSIGNED (SmartScreen warning for users)"
+            fi
+          fi
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::notice::no updater signing key in secrets — building installers without updater artifacts"
+            npm run tauri -- build --verbose --bundles ${{ matrix.bundles }} ${RUST_TARGET:+--target $RUST_TARGET} --config '{"bundle":{"createUpdaterArtifacts":false}}' ${SIGN_CFG:+--config "$SIGN_CFG"}
+          else
+            npm run tauri -- build --verbose --bundles ${{ matrix.bundles }} ${RUST_TARGET:+--target $RUST_TARGET} ${SIGN_CFG:+--config "$SIGN_CFG"}
+          fi
+
+      - name: Submit macOS DMG for asynchronous notarization
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          dmg=$(find src-tauri/target -type f -name '*.dmg' -path '*/release/bundle/dmg/*' | head -1)
+          [ -n "${dmg:-}" ] || { echo "::error::no macOS DMG found to submit"; exit 1; }
+          bash scripts/notarize-macos-submit.sh "$dmg" notary-submission.json
+
+      # Preserve the exact submitted bytes and Apple submission id before waiting. If
+      # Apple's queue takes longer than a runner lifetime, only the finalizer below needs
+      # a retry; the app is never rebuilt or submitted again.
+      - name: Upload macOS notarization input
+        if: runner.os == 'macOS' && hashFiles('notary-submission.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-input-${{ matrix.target }}
+          if-no-files-found: error
+          # The updater tarball + .sig ride along: this artifact REPLACES the distributable
+          # upload for a signed mac build, and without them every signed run threw away the
+          # only copy of the mac updater-feed artifacts (found cutting v0.8.0).
+          path: |
+            notary-submission.json
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz.sig
+
+      - name: Upload distributable artifacts
+        if: runner.os != 'macOS' || hashFiles('notary-submission.json') == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: starnet-${{ matrix.target }}
+          if-no-files-found: error
+          # ** matches zero segments: covers target/release (host builds) AND
+          # target/<triple>/release (mac legs built with an explicit --target)
+          path: |
+            src-tauri/target/**/release/bundle/nsis/*.exe
+            src-tauri/target/**/release/bundle/nsis/*.sig
+            src-tauri/target/**/release/bundle/deb/*.deb
+            src-tauri/target/**/release/bundle/appimage/*.AppImage
+            src-tauri/target/**/release/bundle/appimage/*.sig
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz.sig
+
+  notarize-macos:
+    needs: build
+    # The linux leg is not shipped (release-platforms law) and fails independently; its
+    # failure must not skip mac stapling. Run whenever the run wasn't cancelled — the
+    # steps already no-op cleanly when a leg produced no notarization input.
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [darwin-arm64, darwin-x64]
+    runs-on: macos-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      # Missing input means this was an intentionally unsigned internal build. The
+      # download is allowed to fail and the remaining steps skip cleanly.
+      - name: Download submitted DMG
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: notarization-input-${{ matrix.target }}
+          path: notarization-input
+
+      - name: Resume notarization, staple, and prove Gatekeeper verdict
+        if: hashFiles('notarization-input/notary-submission.json') != ''
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          dmg=$(find notarization-input -type f -name '*.dmg' | head -1)
+          bash scripts/notarize-macos-finalize.sh notarization-input/notary-submission.json "$dmg"
+
+      - name: Upload notarized distributable
+        if: hashFiles('notarization-input/notary-submission.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: starnet-${{ matrix.target }}
+          if-no-files-found: error
+          path: notarization-input/**/*.dmg
+
+  # Build/finalize prove bytes and trust. This proves the user journey on Intel hardware:
+  # install the DMG, ask Finder to open it, recover a v0.9.0 manual-sidecar station,
+  # quit, relaunch, and read the same station again.
+  intel-macos-installed-acceptance:
+    needs: [build, notarize-macos]
+    if: ${{ !cancelled() }}
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Intel macOS distributable
+        uses: actions/download-artifact@v4
+        with:
+          name: starnet-darwin-x64
+          path: intel-distributable
+
+      - name: Install, Finder-launch, and recover v0.9.0 station
+        shell: bash
+        env:
+          STARNET_REQUIRE_NOTARIZED: ${{ inputs.require_signed_mac }}
+        run: |
+          dmg=$(find intel-distributable -type f -name '*_x64.dmg' -print -quit)
+          test -n "${dmg:-}"
+          bash scripts/verify-macos-intel-installed.sh "$dmg" intel-macos-installed-acceptance.json
+
+      - name: Upload Intel installed-app receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-macos-installed-acceptance
+          if-no-files-found: error
+          path: intel-macos-installed-acceptance.json
+
+  publish-test:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish-test == 'true'
+    needs: [build, notarize-macos, intel-macos-installed-acceptance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: starnet-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish public test pre-release (the notes ARE the install guide)
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+          TAG="test-v${VERSION}-r${{ github.run_number }}"
+          cat > notes.md <<'NOTES'
+          Test build — not a public release. Pick your platform:
+
+          ## macOS
+          1. Download **`arm64`** for Apple Silicon (M1/M2/M3/M4) or **`x64`** for an Intel Mac.
+          2. Open it and drag **StarNet** onto the **Applications** folder.
+          3. Launch it from Applications. The Developer ID signature and stapled Apple notarization ticket should open without the old unidentified/developer-risk wall.
+
+          ## Windows
+          Run the `-setup.exe`. If SmartScreen objects: **More info → Run anyway**.
+          NOTES
+          find dist -type f
+          # Windows + mac only on the public page (release-platforms law: Linux installers are untested, never published)
+          ASSETS=$(find dist -type f \( -name '*.dmg' -o -name '*-setup.exe' \))
+          gh release create "$TAG" \
+            --repo androoAGI/starnet-releases \
+            --title "StarNet ${VERSION} test build (r${{ github.run_number }})" \
+            --notes-file notes.md \
+            --prerelease \
+            $ASSETS
+          echo "::notice::shareable download page: https://github.com/androoAGI/starnet-releases/releases/tag/$TAG"

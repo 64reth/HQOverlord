@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starnet.local/schemas/eval-receipt-v1.json",
+  "title": "StarNet candidate-bound evaluation receipt v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "kind", "generatedAt", "contract", "subject", "candidateBound", "result", "evidence", "limitations"],
+  "properties": {
+    "schemaVersion": { "const": "starnet.eval.receipt.v1" },
+    "kind": { "enum": ["fault", "parity", "performance"] },
+    "generatedAt": { "type": "string" },
+    "candidateBound": { "type": "boolean" },
+    "referenceBound": { "type": ["boolean", "null"] },
+    "contract": {
+      "type": "object",
+      "required": ["release", "schemaVersion", "sha256"]
+    },
+    "subject": {
+      "type": "object",
+      "required": ["name", "version", "commit", "sourceTree", "executable", "platform", "dirty"]
+    },
+    "reference": { "type": ["object", "null"] },
+    "result": { "type": "object" },
+    "evidence": { "type": "object" },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "keyId", "payloadSha256", "publicKey", "value"]
+    }
+  }
+}

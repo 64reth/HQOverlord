@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — StarNet</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../docs/docs.css?v=20260913-brand-nav">
+</head>
+<body>
+
+<div class="crt-scan" aria-hidden="true"></div>
+<div class="crt-vignette" aria-hidden="true"></div>
+
+<header class="topbar" id="topbar">
+  <a class="brand" href="../index.html" aria-label="StarNet home"><img src="../assets/starnet-logo-small.png" alt="StarNet" width="355" height="60"></a>
+  <nav class="topnav" aria-label="Site">
+    <a href="../index.html#station">Product</a>
+    <a href="../docs/index.html">Docs</a>
+    <a href="../pricing.html" data-pricing-link>Pricing</a>
+    <a href="https://github.com/androoAGI/starnet" target="_blank" rel="noopener">GitHub<svg class="nav-external" aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="12" height="12"><path d="M3 13 13 3M4 3h9v9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></a>
+  </nav>
+  <span class="topbar-right">
+    <a href="../docs/help.html">Help</a>
+    <a class="nav-download" href="../index.html#download">Download &darr;</a>
+  </span>
+</header>
+
+<div class="docs-shell" style="grid-template-columns:1fr; max-width:860px;">
+  <main class="docs-main">
+<h1>StarNet Privacy</h1>
+<p><em>Google connector disclosure reviewed: 2026-09-06, against the 0.11.0 candidate. Other sections last reviewed: 2026-07-25.</em></p>
+<p>StarNet is a <strong>local-first desktop app</strong>. It runs a small server (the "sidecar") on your own
+machine (<code>localhost</code>) and does the agent work there. Out of the box there is <strong>no StarNet
+account and nothing of yours on a StarNet server</strong> — the app talks only to the providers you
+choose, with your own keys. There is exactly one opt-in exception: if you choose to buy
+<strong>StarNet Credits</strong>, that creates an account on our billing service. It is described in full
+under <em>StarNet Credits</em> below. Optional connections to services such as Google have their own
+data flows, described below, whether you use your own model key or StarNet Credits.
+This document is written in plain English and is grounded in an audit of the actual code —
+not aspirations.</p>
+<p>Support questions: androo.agi@gmail.com.</p>
+<h2>The short version</h2>
+<ul>
+<li><strong>The app does not track you.</strong> There is no telemetry, no analytics, no crash reporting, or ad
+  SDK. We verified this by searching the whole codebase for the
+  usual suspects (Sentry, PostHog, Mixpanel, Segment, Google Analytics, Amplitude, Datadog):
+  none are present. The desktop app does make the automatic update-manifest request described
+  below; that request carries no user data or app identifier. This stays true whether or not you
+  buy credits — buying credits adds a billing account, not tracking.</li>
+<li><strong>Your saved station data lives on your machine</strong>, under your OS user's app-data directory.
+  Content used in agent work can also be sent to your selected model provider and connected services,
+  as described below. Local storage paths are —
+  Windows: <code>%APPDATA%\ai.skynet.harness\workspaces\</code>; macOS:
+  <code>~/Library/Application Support/ai.skynet.harness/workspaces/</code>; Linux:
+  <code>~/.local/share/ai.skynet.harness/workspaces/</code>. (The developer-mode sidecar uses
+  <code>%LOCALAPPDATA%\StarNet\</code> on Windows.) The <code>ai.skynet.harness</code> folder name is an intentional
+  back-compatibility alias kept from before the app was renamed to StarNet on 2026-06-22 — it
+  holds your StarNet data.</li>
+<li>The app talks to the network for the configured or requested work described below, plus the
+  desktop app's automatic update-manifest check. These are the only outbound cases.</li>
+</ul>
+<h2>What leaves your machine — and only these</h2>
+<p>StarNet makes outbound network requests in exactly these situations. Nothing else.</p>
+<h3>1. Your chosen AI model provider (using your key)</h3>
+<p>When an agent runs, StarNet calls the model provider <strong>you</strong> configured, authenticated with
+<strong>your</strong> API key (or your ChatGPT sign-in). Your prompts, conversation, and any content the
+agent works with are sent to that provider so it can generate a response — the same as any app
+that uses that provider. StarNet is a pass-through here; it does not sit in the middle.</p>
+<p>Depending on what you set up, that provider is one of:</p>
+<ul>
+<li>OpenRouter (<code>openrouter.ai</code>)</li>
+<li>OpenAI (<code>api.openai.com</code>)</li>
+<li>Anthropic (<code>api.anthropic.com</code>)</li>
+<li>Google Gemini (<code>generativelanguage.googleapis.com</code>)</li>
+<li>ChatGPT via sign-in (<code>chatgpt.com</code> / <code>auth.openai.com</code>)</li>
+<li>or another OpenAI-compatible provider you point it at (xAI, Groq, Mistral, DeepSeek,
+  Together, Fireworks, Perplexity, Cerebras).</li>
+</ul>
+<p><strong>Your key, your data, your account.</strong> StarNet never sees a StarNet-owned copy — the key is
+yours and the request goes straight to the provider you picked.</p>
+<h3>2. Chat channels — only if you connect them</h3>
+<p>If you connect a chat channel, StarNet talks to that platform to send and receive messages on the
+channel you set up, authenticated with the token (or endpoint) <strong>you</strong> provide. Nothing is
+contacted unless you connect it:</p>
+<ul>
+<li><strong>Discord / Telegram</strong> — StarNet calls that platform's API (<code>discord.com</code>, <code>api.telegram.org</code>)
+  with your bot token.</li>
+<li><strong>Slack</strong> — StarNet calls the Slack API (<code>slack.com</code>) with your bot token.</li>
+<li><strong>Matrix</strong> — StarNet talks to <strong>the homeserver you point it at</strong> — whatever URL you configure,
+  whether <code>matrix.org</code> or a server you run yourself — using your access token. StarNet does not
+  pick a server; you do.</li>
+<li><strong>Signal</strong> — StarNet talks to <strong>the signal-cli REST endpoint you run</strong> (the URL you configure for
+  your own signal-cli bridge), using the account you registered there.</li>
+</ul>
+<p>If you never connect a channel, StarNet never contacts any of these services.</p>
+<h3>3. Spotify — only if you enable it</h3>
+<p>If you enable the Spotify integration and authorize it, StarNet calls the Spotify API
+(<code>api.spotify.com</code>, <code>accounts.spotify.com</code>) to read what's playing and control playback, using
+the token you granted. If you don't enable Spotify, no Spotify requests are made.</p>
+<h3>4. Web search / web fetch — only when an agent uses that tool</h3>
+<p>If an agent uses its web tools, StarNet fetches results through independent, keyless services
+— web search via Mojeek (<code>mojeek.com</code>, with DuckDuckGo as a fallback) and page reading via
+Jina Reader (<code>r.jina.ai</code>) — or, if you have an OpenRouter key, OpenRouter's web plugin. If the
+Jina reader is unavailable or rate-limits, the page is fetched <strong>directly from its own host</strong>
+as a fallback, so the site you asked to read may see the request come from your machine. Only
+your search query or the URL you asked to read is sent, and only when an agent actually runs a
+web search or fetch. (The fetch tool also refuses to reach private/internal network addresses,
+as an anti-abuse guard.)</p>
+<h3>5. Voice — two different paths, and they behave differently</h3>
+<p><strong>Spoken agent lines</strong> use local Kokoro when the built-in voice engine is available. Other
+spoken lines use your configured model provider (OpenRouter, OpenAI, or Gemini), or ElevenLabs when
+you configure an ElevenLabs voice, so the line of text is sent to that service. If those paths are
+unavailable, StarNet can use Microsoft's keyless Edge Read Aloud service, which sends the line of text
+to Microsoft. Voices off means no TTS requests at all.</p>
+<p><strong>Hands-free Live Voice does not use a vendor realtime-voice session.</strong> Listening runs on local
+Whisper when installed; on Windows, offline System.Speech dictation can serve as the fallback. On those
+paths, <strong>your recorded audio never leaves your machine</strong>. The open Whisper and Kokoro weights may
+be fetched from <code>huggingface.co</code> on first use and cached in your user profile; that download carries
+no audio or transcript. Once cached, listening is offline. Speaking is also offline while Kokoro is
+available; if it is not, the Edge Read Aloud fallback described above may send only the answer text
+(not your recorded audio) to Microsoft.</p>
+<h3>6. A version check for updates (no personal data)</h3>
+<p>Automatic update checks are on by default. On first run and at the configured interval, the
+desktop app fetches a single public manifest file from GitHub Releases:</p>
+<pre><code>https://github.com/androoAGI/starnet-releases/releases/latest/download/latest.json
+</code></pre>
+<p>This is a plain <code>GET</code> for a static file. <strong>No user data, no identifier, and no telemetry are
+sent</strong> — it's the same request your browser would make to view that file. Each update's
+integrity is cryptographically verified against a key baked into the app before anything is
+installed. You can stop automatic checks by turning off <strong>AUTO-CHECK FOR UPDATES</strong> in
+<strong>SYSTEM &gt; SETTINGS &gt; UPDATES</strong>; the Update Center still lets you check manually.</p>
+<h3 id="google-workspace" style="scroll-margin-top:5rem;">7. Google Workspace — only when you connect an account</h3>
+<p>StarNet's local connector calls the Google services you authorize, using the permissions you
+approve in Google's consent screen. Gmail, Drive, Calendar, Docs and Sheets are connected separately.
+Google also supplies the account identity shown with a connected service.</p>
+<ul>
+<li><strong>Gmail:</strong> search and read messages, threads and attachments; create drafts and send drafts.</li>
+<li><strong>Drive:</strong> search files, read file metadata, export file content, and create or update
+  file metadata within the permissions granted.</li>
+<li><strong>Calendar:</strong> read calendars, events and availability.</li>
+<li><strong>Docs and Sheets:</strong> read, create and edit documents or spreadsheets.</li>
+</ul>
+<p><strong>Use in agent work.</strong> Content returned by these tools can become part of the agent's
+conversation and requests to your chosen model provider. If you use StarNet Credits, those model
+requests also pass through StarNet's credits gateway. Local execution of the Google connector does
+not mean that Google-derived content remains exclusively on your device. The provider you choose
+has its own data-handling terms. Saved conversations, downloaded artifacts and agent memories may
+retain content from this work.</p>
+<p><strong>Credentials and disconnecting.</strong> Google sign-in credentials and connector configuration
+are stored in plaintext JSON under your local StarNet workspace, including recovery copies; these
+connector credentials are not stored in the OS keychain. Removing a connected service verifies removal
+of its saved configuration and credentials from the active state and its recovery copy before reporting
+success. This does not delete prior conversations, artifacts, memories or documents in Google, and it
+does not itself revoke StarNet's authorization in your Google account. Manage or revoke that authorization
+separately through <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener">your Google account's third-party connections</a>.
+Revocation stops future authorized access; it does not erase copies already saved locally or sent to
+a model provider. Delete those separately using the relevant app or provider controls.</p>
+<h2>What StarNet stores on your machine (and how)</h2>
+<p>Everything below lives under your per-user app-data directory (see the paths in "The short
+version" above for Windows/macOS/Linux). It never leaves your machine except as described
+above. Where this document says "OS keychain," that means Windows Credential Manager, the
+macOS Keychain, or the Linux Secret Service (e.g. GNOME Keyring), depending on your platform —
+always under the service name <code>ai.skynet.harness</code>.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Where</th>
+<th>How it's stored</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Conversation transcripts</td>
+<td><code>transcript.jsonl</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Run history + cost ledger</td>
+<td><code>runs.jsonl</code>, <code>ledger.jsonl</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Agent memory / beliefs / to-dos</td>
+<td><code>&lt;agent&gt;.notebook.json</code>, <code>&lt;agent&gt;.todo.json</code>, dossier/goals</td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Voice cache (spoken-line audio)</td>
+<td><code>voice-cache/</code></td>
+<td><strong>Plaintext</strong> audio files on disk</td>
+</tr>
+<tr>
+<td>Discord / Telegram bot tokens</td>
+<td>OS keychain (desktop)</td>
+<td><strong>OS keychain</strong> (Windows Credential Manager); plaintext fallback in bare/dev mode — see below</td>
+</tr>
+<tr>
+<td>Your model-provider API keys</td>
+<td>OS keychain (desktop)</td>
+<td><strong>OS keychain</strong> (Windows Credential Manager); loaded into app memory at launch, never written to disk by the app</td>
+</tr>
+<tr>
+<td>Spotify OAuth token</td>
+<td><code>.secrets/spotify.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Google and other connector configuration, account identity and OAuth credentials</td>
+<td><code>connectors/state.json</code> and its recovery copy</td>
+<td><strong>Plaintext</strong> JSON on disk, including access/refresh tokens; not the OS keychain</td>
+</tr>
+<tr>
+<td>ChatGPT / Codex sign-in token</td>
+<td><code>codex/tokens.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Grok sign-in token</td>
+<td><code>grok/tokens.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Kimi sign-in token</td>
+<td><code>kimi/tokens.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Channel message history (Discord/Telegram chats the bot saw)</td>
+<td><code>channels/*.history.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Agent memory ledgers (accepted/declined memory proposals, dossiers, goals)</td>
+<td>per-agent <code>*.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Station state (widgets, sub-agents, routing, quests, XP)</td>
+<td>various <code>*.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+<tr>
+<td>Settings, roster, permissions, cron, connectors</td>
+<td>various <code>*.json</code></td>
+<td><strong>Plaintext</strong> JSON on disk</td>
+</tr>
+</tbody>
+</table>
+<h3>Secrets: keychain vs. plaintext — the honest picture</h3>
+<p>On the <strong>desktop build</strong>, your provider API keys and your Discord/Telegram bot tokens are held
+in the <strong>OS keychain</strong> (Windows Credential Manager, under service <code>ai.skynet.harness</code>), not in
+a plaintext file. When you upgrade from an older build, any bot token found in the old
+plaintext <code>channels/secrets.json</code> is migrated into the keychain and stripped from that file.</p>
+<p>If you instead run the bare sidecar directly (developer mode / <code>node sidecar/index.js</code> /
+tests), the OS keychain isn't reachable, so those bot tokens <strong>fall back to a plaintext file</strong>
+(<code>channels/secrets.json</code>). This is called out plainly in the code rather than hidden.</p>
+<p>These integration secrets are <strong>plaintext even on desktop</strong> today: the <strong>Spotify</strong> OAuth token
+(<code>.secrets/spotify.json</code>) and the <strong>ChatGPT/Codex</strong>, <strong>Grok</strong>, and <strong>Kimi</strong> sign-in tokens
+(<code>codex/tokens.json</code>, <code>grok/tokens.json</code>, and <code>kimi/tokens.json</code>), plus
+<strong>Google and other connector OAuth credentials</strong> (<code>connectors/state.json</code> and its recovery copy). If that matters to you,
+keep those integrations off. (Transcripts are run through a redaction step at write-time to avoid
+capturing secret-shaped tokens in your chat history, but the transcript file itself is plaintext.)</p>
+<p>Because this data sits in plaintext files under your user profile, anyone with access to your
+Windows user account can read it. Protect your machine account accordingly.</p>
+<h2>What we do NOT do</h2>
+<ul>
+<li>We do <strong>not</strong> run analytics or telemetry of any kind.</li>
+<li>We do <strong>not</strong> collect crash reports.</li>
+<li>We do <strong>not</strong> require a StarNet account. Unless you buy credits, no account exists, and no
+  StarNet backend holds anything of yours.</li>
+<li>We do <strong>not</strong> sell your conversations, keys, or files. The app transmits content and
+  authentication information as needed for the model requests and connected-service operations
+  described above.</li>
+<li>We do <strong>not</strong> store your prompts or your agents' replies on our servers, even on the credits
+  path — see below.</li>
+</ul>
+<h2>StarNet Credits — only if you buy them</h2>
+<p>Credits are optional and off by default. If you never buy them, skip this section: nothing in it
+applies to you, and the app behaves exactly as described above.</p>
+<p>If you do buy credits, you create an account on StarNet's billing service, and these things
+become true:</p>
+<ul>
+<li><strong>What we hold.</strong> Your email address, your credit balance and the ledger of grants and charges
+  behind it, an identifier for each station you link, and the customer/subscription identifiers our
+  payment processor gives us. That's the list.</li>
+<li><strong>Card details never reach us.</strong> Checkout runs on <strong>Stripe</strong>, in your browser. StarNet never
+  sees, receives, or stores a card number — the app has no payment form at all.</li>
+<li><strong>How you sign in.</strong> By emailed one-time link. There is no StarNet password to steal.</li>
+<li><strong>Model runs go through our gateway.</strong> This is the part worth being blunt about: on the credits
+  path your prompts and your agents' replies are relayed through StarNet's servers to the model
+  provider, because that is the only way we can pay for the call on your behalf. We relay them; we
+  do <strong>not</strong> store their contents, and we do <strong>not</strong> train on them. What we keep is the metering —
+  model name, token counts, cost, timestamp — which is what your balance is computed from.
+  <strong>If you use your own key instead, none of this traffic touches us at all.</strong></li>
+<li><strong>Deleting it.</strong> Email androo.agi@gmail.com and we'll delete the account and its data. We keep
+  the minimum transaction records that tax and payment rules require us to keep.</li>
+</ul>
+<h2>Deleting your data</h2>
+<p>Your data is just files. To wipe it, uninstall StarNet and delete the <code>ai.skynet.harness</code>
+app-data folder for your OS — Windows: <code>%APPDATA%\ai.skynet.harness\</code>
+(<code>C:\Users\&lt;you&gt;\AppData\Roaming\ai.skynet.harness\</code>); macOS:
+<code>~/Library/Application Support/ai.skynet.harness/</code>; Linux: <code>~/.local/share/ai.skynet.harness/</code>.
+If you ever ran the developer-mode sidecar on Windows, also delete <code>%LOCALAPPDATA%\StarNet\</code>.
+Provider API keys and channel tokens held in the OS keychain can be removed there too (search
+your credential manager / keychain for <code>ai.skynet.harness</code>).</p>
+<p>Deleting local files or uninstalling StarNet does not revoke permissions granted in a Google
+account or remove data already held by Google or a model provider. For connected Google accounts,
+follow the <a href="#google-workspace">disconnect and revocation steps above</a>. Copies in backups
+you made outside the workspace must also be deleted separately.</p>
+<h2>This website (starnetos.com)</h2>
+<p>The website you're reading is a static site with no accounts, no cookies, no analytics, and no
+tracking scripts. Two things are worth stating plainly:</p>
+<ul>
+<li>It's served through <strong>Cloudflare</strong>, which — like any host/CDN — processes standard
+  request logs (IP address, user agent) to deliver the pages. We add nothing on top.</li>
+<li>The download page makes one anonymous request to <strong>api.github.com</strong> from your browser
+  to look up the latest release version and exact installer links. GitHub sees that request the same
+  way it would if you visited the releases page yourself.</li>
+</ul>
+<p>The "live preview" on the homepage is the real app running entirely in your browser from a
+seeded demo save; anything you do in it stays in your browser's local storage and goes nowhere.</p>
+<h2>Changes</h2>
+<p>If this changes, we'll update this document. Questions: androo.agi@gmail.com.</p>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer-line">STARNET &middot; a living station of AI agents, doing real work in the dark</div>
+  <div class="footer-links">
+    <a href="../index.html">HOME</a>
+    <a href="https://github.com/androoAGI/starnet" target="_blank" rel="noopener">GITHUB</a>
+    <a href="https://github.com/androoAGI/starnet-releases/releases/latest" target="_blank" rel="noopener">RELEASES</a>
+    <a href="../pricing.html" data-pricing-link>PRICING</a>
+    <a href="../docs/index.html">DOCS</a>
+    <a href="../docs/help.html">HELP</a>
+    <a href="https://github.com/androoAGI/starnet/issues" target="_blank" rel="noopener">COMMUNITY</a>
+    <a href="privacy.html">PRIVACY</a>
+    <a href="terms.html">TERMS</a>
+    <a href="mailto:androo.agi@gmail.com">CONTACT</a>
+  </div>
+  <div class="footer-fine">MIT license &middot; &copy; <span id="year">2026</span> StarNet &middot; no telemetry, no tracking &mdash; <a href="privacy.html">we collect nothing</a></div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>prop shoot</title>
+<style>html,body{margin:0;background:#0a0d10}canvas{display:block;image-rendering:pixelated}</style>
+<canvas id="c"></canvas>
+<script src="../frontend/js/util.js"></script>
+<script src="../frontend/app/propsprites.js"></script>
+<script>
+/* Render a row of props on a REAL-ish deck at the game's own camera scale (CAM=2), then magnify.
+   ⛔ A preview that does not render at the game's camera scale is not evidence.
+   Query: ?ids=arcade,arcade2&zoom=8&work=1&guides=1  — ids may repeat.
+   ?before=<url to another propsprites.js> renders that build's art in the SAME image, left of the
+   new one, so a change is judged against what shipped instead of against memory. That file is eval'd
+   in a fresh scope with a `module` shim because it declares `const PropSprites` at top level —
+   loading it with a second <script> tag would be a redeclaration error. */
+const Q = new URLSearchParams(location.search);
+const IDS = (Q.get('ids') || 'arcade').split(',').filter(Boolean);
+const ZOOM = +(Q.get('zoom') || 8);
+const WORK = Q.get('work') !== '0';
+const BEFORE = Q.get('before') || '';
+const CAM = 2, TILE = 12;
+const PAD_T = 5, PAD_B = 2, GAP = 2;          // tiles
+
+let cols = 0; const specs = IDS.map(id => {
+  const s = PropSprites.CATALOG.find(p => p.id === id) || { id, w: 1, h: 1 };
+  const at = cols; cols += (s.w || 1) + GAP; return { s, at };
+});
+const HALF = cols + GAP;                       // tile width of ONE build's row
+const TW = BEFORE ? HALF * 2 : HALF, TH = PAD_T + 4 + PAD_B;
+
+const base = document.createElement('canvas');
+base.width = TW * TILE; base.height = TH * TILE;
+const g = base.getContext('2d');
+g.imageSmoothingEnabled = false;
+
+/* ---- a plausible deck: dark plates + grout, and a wall to read a tall prop against ---- */
+g.fillStyle = '#0c1013'; g.fillRect(0, 0, base.width, base.height);
+for (let ty = 0; ty < TH; ty++) for (let tx = 0; tx < TW; tx++) {
+  const v = ((tx * 7 + ty * 13) % 5);
+  g.fillStyle = ['#20272c', '#1e252a', '#222a2f', '#1d2429', '#212930'][v];
+  g.fillRect(tx * TILE, ty * TILE, TILE - 1, TILE - 1);
+  g.fillStyle = '#141a1e';
+  g.fillRect(tx * TILE, ty * TILE + TILE - 1, TILE, 1);
+  g.fillRect(tx * TILE + TILE - 1, ty * TILE, 1, TILE);
+}
+g.fillStyle = '#161d22'; g.fillRect(0, 0, base.width, PAD_T * TILE - TILE);
+g.fillStyle = '#232c33'; g.fillRect(0, PAD_T * TILE - TILE - 3, base.width, 3);
+
+const FLOOR_TY = PAD_T + 2;                    // every prop's footprint BOTTOM sits on this line
+function paint(PS, offTiles) {
+  PS.setCtx(g); PS.setNow(3400);
+  for (const { s, at } of specs) {
+    const w = s.w || 1, h = s.h || 1;
+    PS.draw({ t: s.id, x: at + 1 + offTiles, y: FLOOR_TY - h, w, h }, WORK, null);
+  }
+}
+
+async function loadBefore(url) {
+  const src = await (await fetch(url)).text();
+  const shim = { exports: {} };
+  new Function('module', 'U', src)(shim, U);
+  return shim.exports;
+}
+
+function finish() {
+  /* ---- lightmap-ish pool, so nothing is judged in flat full light ---- */
+  const lm = g.createRadialGradient(base.width / 2, PAD_T * TILE, TILE, base.width / 2, PAD_T * TILE, base.width * 0.7);
+  lm.addColorStop(0, 'rgba(255,244,220,0.10)'); lm.addColorStop(1, 'rgba(0,0,0,0.34)');
+  if (Q.get('nolight') !== '1') { g.fillStyle = lm; g.fillRect(0, 0, base.width, base.height); }
+
+  /* ---- footprint guides: the tile box each prop is ALLOWED to occupy ---- */
+  if (Q.get('guides') === '1') {
+    g.strokeStyle = 'rgba(0,255,255,0.55)'; g.lineWidth = 1;
+    for (const off of (BEFORE ? [0, HALF] : [0])) for (const { s, at } of specs) {
+      const w = s.w || 1, h = s.h || 1;
+      g.strokeRect((at + 1 + off) * TILE + 0.5, (FLOOR_TY - h) * TILE + 0.5, w * TILE - 1, h * TILE - 1);
+    }
+  }
+  if (BEFORE) {
+    g.fillStyle = 'rgba(255,255,255,0.22)'; g.fillRect(HALF * TILE, 0, 1, base.height);
+  }
+
+  /* ---- present: camera scale 2, then magnify. ?crop=1 trims the empty deck away so a tall zoom
+         still fits in a reviewable image — the props keep their real scale, nothing is resampled. ---- */
+  const CROP = Q.get('crop') === '1'; const SCALE = +(Q.get('scale')||0);
+  const sy = CROP ? (PAD_T - 3) * TILE : 0, sh = CROP ? 8 * TILE : base.height;
+  const c = document.getElementById('c');
+  c.width = SCALE ? base.width*SCALE : base.width * CAM * ZOOM / 2; c.height = SCALE ? sh*SCALE : sh * CAM * ZOOM / 2;
+  const o = c.getContext('2d'); o.imageSmoothingEnabled = false;
+  o.drawImage(base, 0, sy, base.width, sh, 0, 0, c.width, c.height);
+
+  if (BEFORE) {                                 // label each half, drawn at presentation scale
+    o.font = `${Math.max(11, ZOOM * 2)}px monospace`; o.textBaseline = 'top';
+    o.fillStyle = 'rgba(255,255,255,0.70)';
+    o.fillText('SHIPPED', 8, 8);
+    o.fillText('NEW', c.width / 2 + 8, 8);
+  }
+  document.title = 'ready';
+}
+
+(async () => {
+  try {
+    if (BEFORE) { paint(await loadBefore(BEFORE), 0); paint(PropSprites, HALF); }
+    else paint(PropSprites, 0);
+    finish();
+  } catch (e) {
+    // surface it in the title — the shooter only ever sees the title, so a silent throw
+    // otherwise reads as an inscrutable "page never signalled ready".
+    document.title = 'ERR ' + (e && e.stack ? e.stack : e);
+  }
+})();
+</script>

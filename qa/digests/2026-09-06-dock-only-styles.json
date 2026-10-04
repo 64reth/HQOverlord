@@ -1,0 +1,665 @@
+{
+  "checks": [
+    {
+      "name": "COMMS controls original",
+      "controls": 12
+    },
+    {
+      "name": "COMMS hover original",
+      "controls": 12
+    },
+    {
+      "name": "Channels ▪OVERVIEW amber",
+      "controls": 13
+    },
+    {
+      "name": "Channels hover ▪OVERVIEW amber",
+      "controls": 13
+    },
+    {
+      "name": "Channels ▪TELEGRAM● amber",
+      "controls": 11
+    },
+    {
+      "name": "Channels hover ▪TELEGRAM● amber",
+      "controls": 10
+    },
+    {
+      "name": "Channels ▪DISCORD● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪DISCORD● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SLACK● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SLACK● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪MATRIX● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪MATRIX● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SIGNAL● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SIGNAL● amber",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪OVERVIEW blue",
+      "controls": 13
+    },
+    {
+      "name": "Channels hover ▪OVERVIEW blue",
+      "controls": 13
+    },
+    {
+      "name": "Channels ▪TELEGRAM● blue",
+      "controls": 11
+    },
+    {
+      "name": "Channels hover ▪TELEGRAM● blue",
+      "controls": 10
+    },
+    {
+      "name": "Channels ▪DISCORD● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪DISCORD● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SLACK● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SLACK● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪MATRIX● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪MATRIX● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SIGNAL● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SIGNAL● blue",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪OVERVIEW green",
+      "controls": 13
+    },
+    {
+      "name": "Channels hover ▪OVERVIEW green",
+      "controls": 13
+    },
+    {
+      "name": "Channels ▪TELEGRAM● green",
+      "controls": 11
+    },
+    {
+      "name": "Channels hover ▪TELEGRAM● green",
+      "controls": 10
+    },
+    {
+      "name": "Channels ▪DISCORD● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪DISCORD● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SLACK● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SLACK● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪MATRIX● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪MATRIX● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SIGNAL● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SIGNAL● green",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪OVERVIEW purple",
+      "controls": 13
+    },
+    {
+      "name": "Channels hover ▪OVERVIEW purple",
+      "controls": 13
+    },
+    {
+      "name": "Channels ▪TELEGRAM● purple",
+      "controls": 11
+    },
+    {
+      "name": "Channels hover ▪TELEGRAM● purple",
+      "controls": 10
+    },
+    {
+      "name": "Channels ▪DISCORD● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪DISCORD● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SLACK● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SLACK● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪MATRIX● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪MATRIX● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SIGNAL● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SIGNAL● purple",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪OVERVIEW red",
+      "controls": 13
+    },
+    {
+      "name": "Channels hover ▪OVERVIEW red",
+      "controls": 13
+    },
+    {
+      "name": "Channels ▪TELEGRAM● red",
+      "controls": 11
+    },
+    {
+      "name": "Channels hover ▪TELEGRAM● red",
+      "controls": 10
+    },
+    {
+      "name": "Channels ▪DISCORD● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪DISCORD● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SLACK● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SLACK● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪MATRIX● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪MATRIX● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SIGNAL● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SIGNAL● red",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪OVERVIEW white",
+      "controls": 13
+    },
+    {
+      "name": "Channels hover ▪OVERVIEW white",
+      "controls": 13
+    },
+    {
+      "name": "Channels ▪TELEGRAM● white",
+      "controls": 11
+    },
+    {
+      "name": "Channels hover ▪TELEGRAM● white",
+      "controls": 10
+    },
+    {
+      "name": "Channels ▪DISCORD● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪DISCORD● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SLACK● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SLACK● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪MATRIX● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪MATRIX● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels ▪SIGNAL● white",
+      "controls": 9
+    },
+    {
+      "name": "Channels hover ▪SIGNAL● white",
+      "controls": 9
+    },
+    {
+      "name": "Settings ⌁PROVIDERS",
+      "controls": 49
+    },
+    {
+      "name": "Settings ◈AUTONOMY",
+      "controls": 25
+    },
+    {
+      "name": "Settings ☾NIGHT SHIFT",
+      "controls": 14
+    },
+    {
+      "name": "Settings ⊘PERMISSIONS",
+      "controls": 31
+    },
+    {
+      "name": "Settings $BUDGET",
+      "controls": 13
+    },
+    {
+      "name": "Settings ⇄MODELS",
+      "controls": 13
+    },
+    {
+      "name": "Settings ◍LIVE VOICE",
+      "controls": 31
+    },
+    {
+      "name": "Settings ☀APPEARANCE",
+      "controls": 40
+    },
+    {
+      "name": "Settings ◔ALERTS",
+      "controls": 14
+    },
+    {
+      "name": "Settings ⚙RUNTIME",
+      "controls": 20
+    },
+    {
+      "name": "Original navigation hint",
+      "controls": 2
+    },
+    {
+      "name": "Original non-dock tooltip",
+      "controls": 1
+    },
+    {
+      "name": "Approved crew menu amber",
+      "controls": 5
+    },
+    {
+      "name": "Approved crew menu hover amber",
+      "controls": 3
+    },
+    {
+      "name": "Approved work menu amber",
+      "controls": 7
+    },
+    {
+      "name": "Approved work menu hover amber",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu amber",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu hover amber",
+      "controls": 3
+    },
+    {
+      "name": "Approved system menu amber",
+      "controls": 6
+    },
+    {
+      "name": "Approved system menu hover amber",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock triggers amber",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock tooltip amber",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock tooltip arrow amber",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock glossary amber",
+      "controls": 1
+    },
+    {
+      "name": "Original outside glossary amber",
+      "controls": 1
+    },
+    {
+      "name": "Approved crew menu blue",
+      "controls": 5
+    },
+    {
+      "name": "Approved crew menu hover blue",
+      "controls": 3
+    },
+    {
+      "name": "Approved work menu blue",
+      "controls": 7
+    },
+    {
+      "name": "Approved work menu hover blue",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu blue",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu hover blue",
+      "controls": 3
+    },
+    {
+      "name": "Approved system menu blue",
+      "controls": 6
+    },
+    {
+      "name": "Approved system menu hover blue",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock triggers blue",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock tooltip blue",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock tooltip arrow blue",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock glossary blue",
+      "controls": 1
+    },
+    {
+      "name": "Original outside glossary blue",
+      "controls": 1
+    },
+    {
+      "name": "Approved crew menu green",
+      "controls": 5
+    },
+    {
+      "name": "Approved crew menu hover green",
+      "controls": 3
+    },
+    {
+      "name": "Approved work menu green",
+      "controls": 7
+    },
+    {
+      "name": "Approved work menu hover green",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu green",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu hover green",
+      "controls": 3
+    },
+    {
+      "name": "Approved system menu green",
+      "controls": 6
+    },
+    {
+      "name": "Approved system menu hover green",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock triggers green",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock tooltip green",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock tooltip arrow green",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock glossary green",
+      "controls": 1
+    },
+    {
+      "name": "Original outside glossary green",
+      "controls": 1
+    },
+    {
+      "name": "Approved crew menu purple",
+      "controls": 5
+    },
+    {
+      "name": "Approved crew menu hover purple",
+      "controls": 3
+    },
+    {
+      "name": "Approved work menu purple",
+      "controls": 7
+    },
+    {
+      "name": "Approved work menu hover purple",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu purple",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu hover purple",
+      "controls": 3
+    },
+    {
+      "name": "Approved system menu purple",
+      "controls": 6
+    },
+    {
+      "name": "Approved system menu hover purple",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock triggers purple",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock tooltip purple",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock tooltip arrow purple",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock glossary purple",
+      "controls": 1
+    },
+    {
+      "name": "Original outside glossary purple",
+      "controls": 1
+    },
+    {
+      "name": "Approved crew menu red",
+      "controls": 5
+    },
+    {
+      "name": "Approved crew menu hover red",
+      "controls": 3
+    },
+    {
+      "name": "Approved work menu red",
+      "controls": 7
+    },
+    {
+      "name": "Approved work menu hover red",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu red",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu hover red",
+      "controls": 3
+    },
+    {
+      "name": "Approved system menu red",
+      "controls": 6
+    },
+    {
+      "name": "Approved system menu hover red",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock triggers red",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock tooltip red",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock tooltip arrow red",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock glossary red",
+      "controls": 1
+    },
+    {
+      "name": "Original outside glossary red",
+      "controls": 1
+    },
+    {
+      "name": "Approved crew menu white",
+      "controls": 5
+    },
+    {
+      "name": "Approved crew menu hover white",
+      "controls": 3
+    },
+    {
+      "name": "Approved work menu white",
+      "controls": 7
+    },
+    {
+      "name": "Approved work menu hover white",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu white",
+      "controls": 5
+    },
+    {
+      "name": "Approved build menu hover white",
+      "controls": 3
+    },
+    {
+      "name": "Approved system menu white",
+      "controls": 6
+    },
+    {
+      "name": "Approved system menu hover white",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock triggers white",
+      "controls": 4
+    },
+    {
+      "name": "Approved dock tooltip white",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock tooltip arrow white",
+      "controls": 1
+    },
+    {
+      "name": "Approved dock glossary white",
+      "controls": 1
+    },
+    {
+      "name": "Original outside glossary white",
+      "controls": 1
+    }
+  ],
+  "differences": [],
+  "diagnostics": {
+    "consoleMsgs": [],
+    "exceptions": []
+  }
+}

@@ -1,0 +1,37 @@
+---
+fingerprint: 4962c3ad
+slug: after-e-stop-the-routines-panel-still-renders-sc
+title: After E-STOP the ROUTINES panel still renders "● scheduler armed — routines fire automatically" plus a live countdown; GET /api/cron's `halted` field has zero c
+surface: autonomy
+severity: P0
+status: fixed
+found: 2026-07-28
+lane: sweep/autonomy
+fix: b7e18ce8
+---
+
+# After E-STOP the ROUTINES panel still renders "● scheduler armed — routines fire automatically" plus a live countdown; GET /api/cron's `halted` field has zero c
+
+## Symptom
+
+The Commander presses E-STOP (topbar ⏹ or Alt+H). The routines scheduler is durably stood down — cronHalted is persisted, disarmCron() clears the interval, and nothing fires again until an explicit resume. The ROUTINES window keeps rendering the gold banner "● scheduler armed — routines fire automatically." with a "⏸ DISABLE SCHEDULING" button, and every row keeps rendering "next in 12m". Nothing anywhere tells the user routines are stopped, and the E-STOP toast only says "HALT — stopped N runs". The same lie repeats in the ROUTINES widget ("armed"), in /cron ("scheduler on"), in AutoJobStore's create-confirm, and in the routine.manage tool's run_now note ("the scheduler fires this routine on its next tick (within ~1 minute)").
+
+## Repro
+
+1. Boot the sidecar with SKYNET_CRON_ENABLED=1 and create one recurring routine (e.g. `every 30m`). 2. Confirm ROUTINES shows the gold armed banner and a next-run countdown. 3. Press the topbar ⏹ E-STOP (or Alt+H) — this POSTs /api/halt. 4. `curl localhost:8787/api/cron` returns `{"enabled":true,"halted":true,…}` and the sidecar log prints "cron tick DISARMED". 5. Re-open ROUTINES: the banner still reads "● scheduler armed — routines fire automatically" and the row still counts down "next in …". Wait past two tick windows — no `[cron] cron.tick` line ever appears (test/lifecycle-armed.http.test.js:123-127 already asserts the timer is genuinely down). The countdown reaches zero and nothing happens; restarting the app does not help, because the halt is durable. Also: ask the agent to `routine.manage {action:'run_now'}` in that state — it answers "queued — the scheduler fires this routine on its next tick (within ~1 minute)".
+
+## Evidence
+
+`frontend/app/windows/routines.js:198`
+
+**Mechanism (read from the code):** sidecar/index.js:12176 stamps the halt on E-STOP — `try { if (cronArmed && !cronHalted) { cronHalted = true; saveCronHalted(true); disarmCron(); } } catch (_) {}` — and deliberately leaves the arm INTENT: cronArmed stays true. handleCronList (index.js:7533) therefore returns `{ jobs, enabled: cronArmed /*true*/, halted: cronHalted /*true*/, ... }`. The `halted` field was added for exactly this — the comment at index.js:7517 in test/lifecycle-armed.http.test.js:119 reads "GET /api/cron reports halted:true (the panel can say 'paused')". But every consumer keys on `.enabled` alone: windows/routines.js:189 `schedulerArmed = !!(j && j.enabled);` and :198 `gateEl.innerHTML = j && j.enabled ? '<span style="color:var(--gold)">● scheduler armed</span> …' : '…SCHEDULING IS OFF…'`, plus :152 `const next = on && j.nextRunAt ? esc(fmtRel(j.nextRunAt)) : '—';`. Same omission at frontend/app/widgets.js:178 (`sub: cron.enabled ? 'armed' : 'disarmed'`), frontend/app/chat.js:5201 (`'Routines: scheduler ' + (j && j.enabled ? 'on' : 'off')`), frontend/app/autojobstore.js:50 (`return j && typeof j.enabled === 'boolean' ? j.enabled : undefined;` feeding AutoJobs.armStateLine/doneLine), and sidecar/index.js:10232 (`schedulerState: () => cronArmed`) feeding sidecar/tools/builtin/routines.js:380-388. The tickHealthLine helper only runs when `cron.enabled` and, with cronTimer null, degrades to " · waiting for first tick…" beside the armed banner. The sibling LOOPS window in the same lane does it correctly — frontend/app/windows/loops.js:276 `if (j && j.halted) { … '✕ LOOPS ARE STOPPED (E-STOP)' … '▶ RESUME LOOPS' … }` — so the pattern and the one-click resume already exist; routines simply never consumed the field. This is the classic 'stamped verdict with zero consumers' shape: the backend proves it, nothing renders it.
+
+**Existing test coverage:** test/lifecycle-armed.http.test.js — proves the BACKEND half exactly (line 118-119: `enabled:true` + `halted:true` after E-STOP; line 127: no further ticks) but asserts nothing about any UI or tool consumer, so it passes while every renderer ignores the field. test/autojobs.test.js:130 `A.eq(J.armStateLine(true), null, …)` passes vacuously — the pure function is correct; the bug is in autojobstore.js's caller, which never reads `.halted`. No test exercises windows/routines.js's gate banner.
+
+**Adversarial verdict (survived refutation):** Verified end to end. sidecar/index.js:12176 stamps `cronHalted = true; saveCronHalted(true); disarmCron()` on E-STOP while deliberately leaving cronArmed true; sidecar/index.js:7533 returns `{ jobs, enabled: cronArmed, halted: cronHalted, ... }` and the comment at 7531-7532 states the field exists "so the panel can say 'paused by E-STOP' instead of a false 'armed'". No consumer reads it: `grep -rn halted frontend/app/` returns ZERO hits in frontend/app/windows/routines.js, and routines.js:189/198 key only on `j.enabled` (`schedulerArmed = !!(j && j.enabled)` and the gold '● scheduler armed — routines fire automatically.' branch), routines.js:152 renders the countdown off `on && j.nextRunAt`. Same omission confirmed at frontend/app/widgets.js:288 (`sub: cron.enabled ? 'armed' : 'disarmed'`), frontend/app/chat.js:5200 (`'Routines: scheduler ' + (j && j.enabled ? 'on' : 'off')`), frontend/app/autojobstore.js:50 (`return j && typeof j.enabled === 'boolean' ? j.enabled : undefined`) and sidecar/index.js:10232 (`schedulerState: () => cronArmed`) feeding sidecar/tools/builtin/routines.js:386-388's run_now note. tickHealthLine (routines.js:125-139) does not rescue it: with cronTimer null and no tick error it degrades to ' · waiting for first tick…' beside the armed banner. The sibling does it right — frontend/app/windows/loops.js:276-284 renders '✕ LOOPS ARE STOPPED (E-STOP)' + '▶ RESUME LOOPS' off `j.halted` — proving the pattern exists and routines simply never consumed the field. Tests: test/lifecycle-armed.http.test.js:118-127 asserts only the backend (`enabled:true`, `halted:true`, no further ticks); the only test touching the ROUTINES window (test/autojobs-ui.test.js) regex-matches the AutoJobStore refresh line and asserts nothing about the gate banner. Not deliberate — the backend comment explicitly commissions the panel copy that was never written. Truthful-telemetry break: the UI asserts unattended work will happen that the backend has provably stood down.
+
+_Found by the `sweep/autonomy` lane, 2026-07-28. Finder confidence: high. Severity claimed P0, after refutation P0._
+
+## Verdict
+
+Confirmed and fixed. Every routine surface now derives runnable state from `enabled && !halted`: the panel renders the E-STOP banner and suppresses its countdown, the widget says `stopped · E-STOP`, `/cron` names the stop and resume command, AutoJobStore does not claim the job is armed, and the model-facing list/run note names the halt. The closing live sweep also found that AutonomyStore's boot posture mirror could lift the halt after reload; `b7e18ce8` requires explicit `resumeHalt:true` from a real dial writer, while boot/beliefs mirrors preserve both E-STOPs. Focused UI/tool tests and restart-level HTTP regressions pass; seeded Chromium proved the stopped state survives reload.

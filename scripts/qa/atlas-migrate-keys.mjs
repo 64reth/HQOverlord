@@ -1,0 +1,238 @@
+#!/usr/bin/env node
+/* scripts/qa/atlas-migrate-keys.mjs - ONE-TIME judgment migration for the ENUM_PROBE key fix.
+ *
+ * WHY THIS EXISTS: the Cartographer's in-page fallback used to key an unlabeled element as
+ * 'txt:'+tag+':'+txt+':'+n where n was a GLOBAL per-tag counter - a purely positional id. Any DOM
+ * insertion shifted every subsequent unlabeled key, so a routine sweep orphaned hundreds of
+ * session-judged registry entries (purpose/promise/wiring/coverage/status/auditedAt/findings/notes)
+ * all at once. cartographer.mjs now anchors the fallback key to the nearest id-bearing ancestor and
+ * scopes the ordinal per (tag, anc, txt) bucket, so the ids are stable - but every ALREADY-judged
+ * txt-keyed entry sits under the OLD id. This script carries that human judgment forward onto the NEW
+ * ids ONCE, so a full sweep doesn't mark them missing and mint fresh blank skeletons.
+ *
+ * HOW: it re-runs the real harvest through the cartographer's OWN machinery (via
+ * `cartographer.mjs --dump-harvest`, which enumerates statically + live exactly like --sweep but
+ * writes the raw element list and touches nothing), then for every registry entry with an old-style
+ * txt id the new harvest no longer produces, it matches to a NEW-key harvest element by
+ * (area, name, ui state) and carries ALL session-owned fields onto the new id, dropping the old entry.
+ * Matching is two-tier and SAFE: (1) a unique 1:1 (area,name,state) match; (2) an equal-count bucket
+ * of identical same-labeled siblings paired by DOM-order ordinal (safe because such siblings are
+ * indistinguishable, so every bijection carries equivalent judgment). Ambiguous (unequal) or
+ * targetless old entries are left to become honestly missing on the next sweep (and are listed in the
+ * report). It reuses the cartographer's pure core (skeleton/validateEntry/sortEntries) - it does not
+ * duplicate the enumeration logic.
+ *
+ * USAGE:
+ *   node scripts/qa/atlas-migrate-keys.mjs                 # dump a fresh LIVE harvest, then migrate
+ *   node scripts/qa/atlas-migrate-keys.mjs --dry-run       # report only; write nothing
+ *   node scripts/qa/atlas-migrate-keys.mjs --use-existing-harvest   # reuse .uiatlas/harvest.json
+ *   node scripts/qa/atlas-migrate-keys.mjs --static-only   # dump without the browser half (no ui keys)
+ * Exit 0 on success; 2 if the harvest dump was BLOCKED.
+ */
+
+import { fileURLToPath } from 'node:url';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { makeCartographer, AREAS } from './cartographer.mjs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO = path.resolve(__dirname, '..', '..');
+const AREAS_DIR = path.join(REPO, 'qa', 'atlas', 'areas');
+const OUT_DIR = path.join(REPO, '.uiatlas');
+const HARVEST_DUMP = path.join(OUT_DIR, 'harvest.json');
+const CARTO_CLI = path.join(REPO, 'scripts', 'qa', 'cartographer.mjs');
+
+const argv = process.argv.slice(2);
+const DRY = argv.includes('--dry-run');
+const USE_EXISTING = argv.includes('--use-existing-harvest');
+const STATIC_ONLY = argv.includes('--static-only');
+
+const log = (...a) => console.log('[atlas-migrate]', ...a);
+const str = (v) => (v == null ? '' : String(v));
+const norm = (s) => str(s).toLowerCase().replace(/\s+/g, ' ').trim();
+
+// pure core: skeleton/validateEntry/validateShardSet/sortEntries. git is never called on these paths,
+// so a no-op logSince is safe.
+const carto = makeCartographer({ clock: { now: () => Date.now() }, git: { logSince: () => '' } });
+const sortEntries = carto._internals.sortEntries;
+// fields the SCRIPT owns (come from the fresh harvest element, NOT carried from the old ghost). Every
+// other field on an entry is session-owned judgment and rides across to the new id.
+const SCRIPT_FIELDS = new Set(['id', 'kind', 'area', 'name', 'selector', 'state', 'lastSeen', 'missing']);
+
+function readShards() {
+  const shards = {};
+  for (const n of fs.readdirSync(AREAS_DIR)) {
+    if (!n.endsWith('.json')) continue;
+    const area = n.replace(/\.json$/, '');
+    const shard = JSON.parse(fs.readFileSync(path.join(AREAS_DIR, n), 'utf8'));
+    if (str(shard.area) !== area) throw new Error('shard area mismatch: ' + n);
+    shards[area] = { area, updatedAt: str(shard.updatedAt), entries: Array.isArray(shard.entries) ? shard.entries : [] };
+  }
+  return shards;
+}
+
+function writeShards(shards, touched) {
+  for (const area of touched) {
+    const shard = shards[area];
+    if (!shard) continue;
+    shard.entries = sortEntries(shard.entries);
+    fs.writeFileSync(path.join(AREAS_DIR, area + '.json'),
+      JSON.stringify({ area: shard.area, updatedAt: new Date().toISOString(), entries: shard.entries }, null, 2) + '\n', 'utf8');
+  }
+}
+
+function ensureHarvest() {
+  if (USE_EXISTING) {
+    if (!fs.existsSync(HARVEST_DUMP)) throw new Error('--use-existing-harvest set but ' + HARVEST_DUMP + ' is absent');
+    log('reusing existing harvest: ' + path.relative(REPO, HARVEST_DUMP).replace(/\\/g, '/'));
+    return;
+  }
+  const args = [CARTO_CLI, '--dump-harvest'];
+  if (STATIC_ONLY) args.push('--static-only');
+  log('running LIVE harvest dump (this boots the seeded sidecar + Chrome)...');
+  const r = spawnSync(process.execPath, args, { cwd: REPO, encoding: 'utf8', stdio: 'inherit', windowsHide: true });
+  if (r.status !== 0) throw new Error('harvest dump exited ' + r.status + ' (BLOCKED - cannot migrate against an incomplete harvest)');
+}
+
+// group a list into a Map keyed by fn(item).
+function groupBy(list, keyFn) {
+  const m = new Map();
+  for (const it of list) { const k = keyFn(it); const bucket = m.get(k) || m.set(k, []).get(k); bucket.push(it); }
+  return m;
+}
+
+function main() {
+  ensureHarvest();
+  const dump = JSON.parse(fs.readFileSync(HARVEST_DUMP, 'utf8'));
+  const harvest = Array.isArray(dump.elements) ? dump.elements : [];
+  const sweptUi = Array.isArray(dump.sweptKinds) && dump.sweptKinds.includes('ui');
+  if (!sweptUi) log('WARNING: harvest has no ui kind (static-only?) - only ui entries can migrate, so this will be a no-op for ui.');
+
+  const shards = readShards();
+
+  // index every existing entry id. `liveIds` tracks the ids present as the migration mutates shards so
+  // we never mint a duplicate (distinct probe keys can slug to the same atlas id for a few long/edge
+  // labels; the sweep tolerates that via its byId update path, but a raw push here would duplicate).
+  const existingIds = new Set();
+  for (const area of Object.keys(shards)) for (const e of shards[area].entries) existingIds.add(str(e.id));
+  const liveIds = new Set(existingIds);
+
+  // matchKey groups an element by the three session-visible discriminators.
+  const matchKey = (e) => str(e.area) + '\u0000' + norm(e.name) + '\u0000' + norm(e.state);
+
+  // migration TARGET pool = harvest ui elements whose id is NOT yet in the registry (the new-key
+  // skeletons a sweep would freshly create). Bucket them by matchKey.
+  const harvestIds = new Set(harvest.map((e) => str(e.id)));
+  const targetsByKey = groupBy(
+    harvest.filter((e) => str(e.kind) === 'ui' && !existingIds.has(str(e.id))),
+    matchKey
+  );
+
+  // old ghosts = ui entries with an old-style txt id the new harvest no longer produces.
+  const OLD_TXT = /^ui\/[^/]+\/txt-/;
+  const ghosts = [];
+  for (const area of Object.keys(shards)) {
+    for (const e of shards[area].entries) {
+      if (str(e.kind) !== 'ui') continue;
+      if (!OLD_TXT.test(str(e.id))) continue;
+      if (harvestIds.has(str(e.id))) continue;   // the new harvest still produces this exact id - nothing to do
+      ghosts.push(e);
+    }
+  }
+  const ghostsByKey = groupBy(ghosts, matchKey);
+
+  const migrated = [];
+  const unmatched = [];
+  const touched = new Set();
+
+  // trailing '-<n>' ordinal of an atlas id (old key: global per-tag counter; new key: per-bucket
+  // ordinal). Within one matchKey bucket BOTH increase in DOM order, so ascending-ordinal order is DOM
+  // order on both sides - the discriminator that makes an equal-count sibling pairing safe.
+  const trailingOrd = (id) => { const m = /-(\d+)$/.exec(str(id)); return m ? Number(m[1]) : Number.POSITIVE_INFINITY; };
+  const byOrd = (a, b) => (trailingOrd(a.id) - trailingOrd(b.id)) || str(a.id).localeCompare(str(b.id));
+
+  function migratePair(ghost, target, tier) {
+    // fresh skeleton for the NEW harvest element, then overlay every session-owned field from the
+    // ghost (all non-script fields), preserving the honest original firstSeen.
+    const fresh = carto.skeleton(target);
+    // collision guard: if this target's atlas id already exists (another element slugs to it), we
+    // cannot mint it twice — leave the ghost unmatched so it becomes honestly missing.
+    if (liveIds.has(str(fresh.id))) {
+      unmatched.push({ id: ghost.id, status: ghost.status, reason: 'target atlas id already in use (slug collision): ' + fresh.id });
+      return;
+    }
+    for (const key of Object.keys(ghost)) {
+      if (SCRIPT_FIELDS.has(key)) continue;
+      fresh[key] = ghost[key];
+    }
+    fresh.firstSeen = str(ghost.firstSeen) || fresh.firstSeen;
+    fresh.missing = false;
+    carto.validateEntry(fresh, 'migrate->' + fresh.id);
+
+    const gArea = str(ghost.area);
+    shards[gArea].entries = shards[gArea].entries.filter((e) => str(e.id) !== str(ghost.id));
+    liveIds.delete(str(ghost.id));
+    const tArea = str(target.area);
+    (shards[tArea] || (shards[tArea] = { area: tArea, updatedAt: '', entries: [] })).entries.push(fresh);
+    liveIds.add(str(fresh.id));
+    touched.add(gArea); touched.add(tArea);
+    migrated.push({ from: ghost.id, to: fresh.id, status: ghost.status, tier });
+  }
+
+  // Match per matchKey bucket, in two safe tiers:
+  //   tier 1 UNIQUE   - exactly one ghost and one target: an unambiguous 1:1 rename.
+  //   tier 2 SIBLING  - N ghosts and N targets (identical same-labeled siblings): pair by ascending
+  //                     DOM-order ordinal. Safe precisely BECAUSE the siblings are indistinguishable by
+  //                     (area,name,state) - every bijection carries equivalent judgment, and DOM order
+  //                     is the same discriminator the new key's ordinal uses.
+  // Everything else (no target, or an UNEQUAL bucket where the sibling set changed size) is left to
+  // become honestly missing on the next sweep.
+  for (const [k, gs] of ghostsByKey) {
+    const cand = (targetsByKey.get(k) || []).slice();
+    if (cand.length === 0) {
+      for (const g of gs) unmatched.push({ id: g.id, status: g.status, reason: 'no new-key element with matching (area,name,state)' });
+    } else if (gs.length === 1 && cand.length === 1) {
+      migratePair(gs[0], cand[0], 'unique');
+    } else if (gs.length === cand.length) {
+      const go = gs.slice().sort(byOrd);
+      const to = cand.slice().sort(byOrd);
+      for (let i = 0; i < go.length; i++) migratePair(go[i], to[i], 'sibling');
+    } else {
+      for (const g of gs) unmatched.push({ id: g.id, status: g.status, reason: 'ambiguous unequal bucket (' + gs.length + ' ghosts / ' + cand.length + ' targets)' });
+    }
+  }
+
+  // ---- report ----
+  const tier1 = migrated.filter((m) => m.tier === 'unique').length;
+  const tier2 = migrated.filter((m) => m.tier === 'sibling').length;
+  log('harvest elements: ' + harvest.length + ' (ui swept: ' + sweptUi + ')');
+  log('old txt-keyed ui ghosts the new harvest no longer produces: ' + ghosts.length);
+  log('MIGRATED ' + migrated.length + ' (unique ' + tier1 + ' / sibling ' + tier2 + ')  UNMATCHED ' + unmatched.length);
+  const judged = migrated.filter((m) => m.status && m.status !== 'unmapped').length;
+  log('  of migrated, ' + judged + ' carried real judgment (status != unmapped); ' + (migrated.length - judged) + ' were blank skeletons');
+  if (migrated.length) {
+    log('  migrated (from -> to [status] {tier}):');
+    for (const m of migrated) log('    ' + m.from + '  ->  ' + m.to + '  [' + (m.status || 'unmapped') + '] {' + m.tier + '}');
+  }
+  if (unmatched.length) {
+    const byReason = groupBy(unmatched, (u) => u.reason);
+    log('  unmatched (left to become honestly missing):');
+    for (const [reason, us] of byReason) {
+      log('    [' + us.length + '] ' + reason);
+      for (const u of us) log('        ' + u.id + '  [' + (u.status || 'unmapped') + ']');
+    }
+  }
+
+  if (DRY) { log('--dry-run: no shards written.'); return 0; }
+  if (!touched.size) { log('nothing to write.'); return 0; }
+
+  // validate the whole set before persisting (never write a set that would fail the CLI load guard).
+  carto.validateShardSet(shards, AREAS);
+  writeShards(shards, touched);
+  log('wrote ' + touched.size + ' shard(s): ' + [...touched].sort().join(', '));
+  return 0;
+}
+
+try { process.exit(main()); }
+catch (e) { console.error('[atlas-migrate] FATAL: ' + (e && e.stack || e)); process.exit(2); }

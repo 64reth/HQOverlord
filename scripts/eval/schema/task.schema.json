@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starnet.local/schemas/eval-task-v1.json",
+  "title": "StarNet agent evaluation task v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "id", "status"],
+  "properties": {
+    "schemaVersion": { "const": "starnet.eval.task.v1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "status": { "enum": ["active", "pending"] },
+    "description": { "type": "string" },
+    "adapter": { "type": "string" },
+    "note": { "type": "string" },
+    "graders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "enum": ["final_contains", "final_equals", "event_count", "event_data_equals", "event_data_min", "event_data_sequence", "tool_sequence", "metric_max", "run_reason", "artifact_hash", "verification_fresh", "outcome_pass", "safety_invariants", "route_match", "fault_recovery"] },
+          "dimension": { "enum": ["planning", "toolSelection", "recovery", "stopping", "completion", "latency", "cost"] }
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "properties": {
+        "minCorrectness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maxTurnsIncrease": { "type": "number", "minimum": 0 },
+        "maxToolCallsIncrease": { "type": "number", "minimum": 0 },
+        "maxRetriesIncrease": { "type": "number", "minimum": 0 },
+        "maxTokensIncreasePct": { "type": "number", "minimum": 0 },
+        "maxCostIncreasePct": { "type": "number", "minimum": 0 },
+        "maxDurationIncreasePct": { "type": "number", "minimum": 0 },
+        "maxCostUsd": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+# fast-gate — the release train's gate job, run on every trunk push and PR.
+#
+# Before this workflow, `npm run test:fast` ran in CI ONLY inside release-train.yml, so a red
+# trunk was discovered at tag time (v0.2.0/v0.2.1, v0.10.10). eval-gates.yml stays as the 44s
+# credential-free eval slice; this is the full 690+ step manifest gate (~4 min on ubuntu).
+#
+# The Chrome resolution + warm-up steps are copied verbatim from release-train.yml's gate job —
+# the CDP e2e tests need a wrapper binary with --no-sandbox and a proven <10s cold start.
+# Keep the two in sync; the train job remains the authority at tag time.
+name: fast-gate
+
+on:
+  pull_request:
+  push:
+    branches: [feat/harness-backend]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fast-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # fetch-depth: 0 — the claims-authority test resolves the release-surface manifest's
+      # sourceCommit against the object store; a shallow checkout reads BLOCKED on a green trunk.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Resolve Chrome binary for e2e gate tests
+        run: |
+          set -euo pipefail
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || true)
+          if [ -z "$CHROME" ]; then
+            echo "::error::no Chrome/Chromium binary on this runner — the e2e gate tests cannot run. Install one or set SKYNET_CHROME."
+            exit 1
+          fi
+          WRAP=/usr/local/bin/starnet-ci-chrome
+          printf '#!/bin/sh\nexec %s --no-sandbox --disable-dev-shm-usage "$@"\n' "$CHROME" | sudo tee "$WRAP" > /dev/null
+          sudo chmod +x "$WRAP"
+          echo "SKYNET_CHROME=$WRAP" >> "$GITHUB_ENV"
+          echo "::notice::e2e gate tests will use $WRAP -> $CHROME (+ --no-sandbox --disable-dev-shm-usage)"
+
+      - name: Warm Chrome, then prove CDP comes up inside the tests' 10s window
+        run: |
+          set -euo pipefail
+          "$SKYNET_CHROME" --headless=new --no-first-run --remote-debugging-port=9332 \
+            --user-data-dir="$RUNNER_TEMP/chrome-cold-warmup" about:blank > "$RUNNER_TEMP/chrome-cold-warmup.log" 2>&1 &
+          CPID=$!
+          ok=""
+          for i in $(seq 1 240); do
+            if curl -fsS http://127.0.0.1:9332/json/list > /dev/null 2>&1; then ok=1; break; fi
+            if ! kill -0 "$CPID" 2>/dev/null; then break; fi
+            sleep 0.25
+          done
+          if [ -z "$ok" ]; then
+            echo "::error::Chrome's bounded cold warmup did not answer within 60s. Chrome output follows."
+            cat "$RUNNER_TEMP/chrome-cold-warmup.log" || true
+            exit 1
+          fi
+          kill "$CPID" 2>/dev/null || true
+          wait "$CPID" 2>/dev/null || true
+
+          "$SKYNET_CHROME" --headless=new --no-first-run --remote-debugging-port=9333 \
+            --user-data-dir="$RUNNER_TEMP/chrome-cdp-proof" about:blank > "$RUNNER_TEMP/chrome-cdp-proof.log" 2>&1 &
+          CPID=$!
+          ok=""
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:9333/json/list > /dev/null 2>&1; then ok=1; break; fi
+            if ! kill -0 "$CPID" 2>/dev/null; then break; fi
+            sleep 0.25
+          done
+          if [ -z "$ok" ]; then
+            echo "::error::Warm Chrome CDP did not answer within the tests' 10s budget. Chrome output follows."
+            cat "$RUNNER_TEMP/chrome-cdp-proof.log" || true
+            exit 1
+          fi
+          kill "$CPID" 2>/dev/null || true
+          wait "$CPID" 2>/dev/null || true
+          echo "::notice::Warm Chrome CDP answered within the tests' 10s budget."
+
+      - name: Fast test gate
+        run: npm run test:fast
+
+      - name: Customer journey regression gate
+        run: npm run qa:customer-journeys

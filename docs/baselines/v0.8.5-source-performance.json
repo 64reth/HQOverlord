@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "starnet.eval.receipt.v1",
+  "kind": "performance",
+  "generatedAt": "2026-08-03T04:16:16.488Z",
+  "contract": {
+    "release": "0.9.0",
+    "schemaVersion": "starnet.eval.comparison-contract.v1",
+    "sha256": "916196fc2d5fa46a76ecf2332870fc6451df5c43f6f25be3c9e727674fa4b15f"
+  },
+  "subject": {
+    "name": "StarNet",
+    "version": "0.8.5",
+    "commit": "fc7f594c60fb4d59a32daf844b858116d7e47575",
+    "sourceTree": {
+      "algorithm": "git-tree",
+      "value": "ea4bfd382a2ba9f27810bcf1dc5d07ade4794fd0"
+    },
+    "executable": null,
+    "platform": {
+      "platform": "win32",
+      "arch": "x64",
+      "node": "v22.23.0"
+    },
+    "dirty": false
+  },
+  "reference": null,
+  "candidateBound": false,
+  "result": {
+    "schemaVersion": "starnet.eval.performance-baseline.v1",
+    "pass": true,
+    "scope": "dependency-free source harness",
+    "samples": 15,
+    "measurements": {
+      "bridgeAdapterPackMs": {
+        "unit": "ms",
+        "samples": 15,
+        "min": 4962.993,
+        "median": 5439.7,
+        "p95": 6811.975,
+        "max": 6811.975,
+        "values": [
+          4962.993,
+          5040.536,
+          5238.979,
+          5283.119,
+          5391.086,
+          5395.223,
+          5411.315,
+          5439.7,
+          5802.918,
+          5941.67,
+          5960.023,
+          6217.778,
+          6450.298,
+          6798.314,
+          6811.975
+        ]
+      },
+      "evaluationPackMs": {
+        "unit": "ms",
+        "samples": 15,
+        "min": 0.268,
+        "median": 0.37,
+        "p95": 0.465,
+        "max": 0.465,
+        "values": [
+          0.268,
+          0.295,
+          0.299,
+          0.307,
+          0.311,
+          0.353,
+          0.357,
+          0.37,
+          0.38,
+          0.403,
+          0.406,
+          0.41,
+          0.426,
+          0.434,
+          0.465
+        ]
+      },
+      "nodeStartupMs": {
+        "unit": "ms",
+        "samples": 15,
+        "min": 54.545,
+        "median": 60.822,
+        "p95": 117.142,
+        "max": 117.142,
+        "values": [
+          54.545,
+          57.357,
+          57.967,
+          57.973,
+          58.437,
+          59.966,
+          60.528,
+          60.822,
+          61.778,
+          64.908,
+          67.058,
+          75.2,
+          88.585,
+          105.08,
+          117.142
+        ]
+      },
+      "processRssBytes": {
+        "unit": "bytes",
+        "start": 52310016,
+        "end": 95744000,
+        "delta": 43433984
+      }
+    },
+    "regressionGate": {
+      "medianIncreasePct": 10
+    },
+    "pendingInstalledMeasurements": [
+      "cold boot to interactive station",
+      "send to first visible token",
+      "send to first tool activity",
+      "send to verified useful artifact",
+      "final token to durable visible delivery",
+      "session switching at 100/1000/10000 turns",
+      "48-hour idle and active CPU/memory"
+    ]
+  },
+  "evidence": {
+    "scope": "dependency-free source harness; no provider or installed desktop"
+  },
+  "limitations": [
+    "source-run receipt is not installed-candidate proof",
+    "first-token, useful-artifact, installed cold-boot, and 48-hour resource measurements remain pending"
+  ]
+}

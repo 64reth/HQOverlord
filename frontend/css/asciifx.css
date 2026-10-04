@@ -1,0 +1,95 @@
+/* STARNET — asciifx.css : styling for the ASCII-MOTION KIT (asciifx.js).
+
+   Loads AFTER motion.css so it builds on the premium-motion token layer (--t-*, --ease-*) and the
+   phosphor vars. Every rule here is phosphor/VT323-native (no hardcoded colour) and touches only
+   transform / opacity / colour / text-shadow — never layout on a hot path (the 60fps canvas runs
+   behind). The JS owns all timing; CSS owns look. A single reduced-motion block at the bottom
+   collapses the idle loops (the JS already resolves each effect instantly under the same setting). */
+
+/* ── SCRAMBLE : while a line is decoding, push the phosphor a touch brighter so the "signal
+   resolving out of noise" reads as ACTIVE, then it settles back to its resting glow on completion
+   (JS removes .afx-scrambling). Colour/text-shadow only — no reflow. ── */
+.afx-scrambling {
+  text-shadow: 0 0 8px var(--ph-glow), 0 0 2px var(--ph-bright);
+  transition: text-shadow var(--t-med) var(--ease-soft);
+}
+
+/* ── DISSOLVE-IN : the ▓▒░ static field the content materializes out of. A pointer-events:none
+   overlay pinned over the host; VT323 block glyphs in dim phosphor, screen-blended so it reads as
+   CRT static sitting on the glass rather than a flat panel. JS churns the text + fades opacity. ── */
+.afx-dissolve {
+  position: absolute; inset: 0; z-index: 8;
+  pointer-events: none; overflow: hidden;
+  margin: 0; padding: 6px 8px;
+  font-family: inherit; font-size: var(--fs-1); line-height: 1.05;
+  letter-spacing: 1px; white-space: pre; word-break: break-all;
+  color: var(--ph-dim);
+  text-shadow: 0 0 6px var(--ph-glow2);
+  background:
+    radial-gradient(ellipse 120% 100% at 50% 0%, var(--ph-glow2), transparent 60%),
+    rgba(5, 3, 1, 0.55);
+  mix-blend-mode: screen;
+  will-change: opacity;
+}
+
+/* ── TYPEWRITER : a steady block cursor trailing the typed text. The cursor lives in ::after so it
+   never becomes part of the element's textContent (the JS rewrites textContent every frame). ── */
+.afx-typing::after {
+  content: '▮';
+  color: var(--ph);
+  margin-left: 1px;
+  text-shadow: 0 0 6px var(--ph-glow);
+  animation: afx-caret 1s steps(1) infinite;
+}
+@keyframes afx-caret { 50% { opacity: 0; } }
+
+/* ── FRAME : a monospace slot for AsciiFX.frame() box-drawing output. Decorative, static. ── */
+.afx-frame {
+  font-family: inherit; white-space: pre; letter-spacing: 1px; line-height: 1.15;
+  color: var(--ph-dim); text-shadow: 0 0 6px var(--ph-glow2);
+}
+
+/* ── ASCII SPINNER : a rotating quadrant-block glyph (▖▘▝▗ — Block Elements, native to VT323, same
+   family as ▮/▓/░ the house already speaks). Pure CSS content-frame animation: zero JS, zero timers,
+   auto-cleans when the element leaves the DOM, and steps(1) keeps it chunky-CRT rather than smooth. ── */
+@keyframes afx-spin {
+  0%   { content: '▖'; }
+  25%  { content: '▘'; }
+  50%  { content: '▝'; }
+  75%  { content: '▗'; }
+}
+
+/* the shared .loading primitive (motion.css §9) — used by every "reading…/loading…" state app-wide
+   (model catalog, memory core, skills, toolsets, routines…). Same glyph slot, colour and glow as the
+   base rule (later-file override touches ONLY the frames), so all ~14 call sites upgrade at once. */
+.loading::before {
+  content: '▖';
+  animation: afx-spin 0.8s steps(1) infinite;
+}
+
+/* COMMS header status — a spinner rides the states that mean "in flight". PURELY decorative over the
+   locked run-status honesty law: the status-* classes are stamped by chat.js from real harness state
+   (connecting only before agent.run.start confirms; thinking/working only while Channels says busy),
+   so the spinner can never claim activity the harness didn't prove. Online/approval states get none. */
+#chat-status.status-thinking::before,
+#chat-status.status-working::before,
+#chat-status.status-connecting::before {
+  content: '▖';
+  animation: afx-spin 0.8s steps(1) infinite;
+  color: var(--ph);
+  margin-right: 5px;
+  text-shadow: 0 0 6px var(--ph-glow2);
+}
+
+/* ── REDUCED MOTION : the JS resolves every effect instantly under this setting; also retire the
+   caret blink, the spinners, and any lingering scramble glow so a motion-averse user gets a static
+   result. (motion.css already collapses .loading::before's animation; the explicit rules here cover
+   the spinner frames + the status spinner.) ── */
+@media (prefers-reduced-motion: reduce) {
+  .afx-typing::after { animation: none !important; }
+  .afx-scrambling { text-shadow: none; transition: none !important; }
+  .loading::before,
+  #chat-status.status-thinking::before,
+  #chat-status.status-working::before,
+  #chat-status.status-connecting::before { animation: none !important; }
+}

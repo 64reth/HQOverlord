@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "starnet.eval.evidence-index.v1",
+  "release": "0.9.0",
+  "kind": "wave-b-source-verdict",
+  "sourceCommit": "1e5abbc60b19e5c0f6d9ab4fbea64ddafb8d37c6",
+  "verified": {
+    "fastGate": "509/509",
+    "faultGauntlet": "1000/1000",
+    "faultReceiptSignature": {
+      "algorithm": "Ed25519",
+      "keyId": "29275039d8cc21d3488ee397bdfd9dcbc7ffed7f2de4b559303bb076f7ed081d",
+      "verified": true
+    },
+    "faultBoundaries": {
+      "defined": 10,
+      "passed": 10,
+      "repeatsPerBoundary": 100,
+      "falseDone": 0,
+      "wrongDestination": 0,
+      "duplicateMutation": 0,
+      "authorityEscape": 0
+    },
+    "independentParityFixtures": {
+      "defined": 32,
+      "covered": 32,
+      "fixturePackSha256": "87a9f84a4d10f26974bdfd04bf6650b41dd66f20d009cb7c5842fc4bad37f8fa",
+      "graderSha256": "adcc07ac08b5174a4231b798ceb398caa63293fb028b2cd9de46e55e58a84aee"
+    },
+    "liveSeed": {
+      "health": 200,
+      "version": "v0.8.5-73-g1e5abbc6",
+      "authenticatedRunRecoveries": 200,
+      "providerRequests": 0,
+      "cleanlyStopped": true
+    }
+  },
+  "localEvidence": [
+    {
+      "path": ".dogfood/eval/starnet-fault-100x-wave-b.jsonl",
+      "bytes": 1254040,
+      "sha256": "f458b6e7b094e4b7f4caf23924318a13b9036ca95a0165b58318e0e7250cadbe"
+    },
+    {
+      "path": ".dogfood/eval/starnet-fault-wave-b-receipt.json",
+      "bytes": 2826769,
+      "sha256": "0c54f7c69bf1adfb4b72f5f5ae7a7d6faa27009b6b3be7298fcfe4b980b6afa4"
+    }
+  ],
+  "limitations": [
+    "The green fault receipt is source-run proof and is not installed-candidate bound.",
+    "The installed StarNet credential envelope still predates the required August 3 rotation; no provider-backed rerun was authorized.",
+    "Three-attempt installed parity, installed performance, and the 48-hour soak have not run.",
+    "The frozen 100% critical / 95% overall / at-most-5-point installed release gates therefore remain unevaluated."
+  ]
+}

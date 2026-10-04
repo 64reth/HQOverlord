@@ -1,0 +1,40 @@
+name: Bug report
+description: Report reproducible incorrect behavior in StarNet
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve StarNet. Do not include secrets or private data.
+  - type: input
+    id: version
+    attributes:
+      label: StarNet version
+      description: Version, commit, or build description shown by the app.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [Windows, macOS Apple Silicon, macOS Intel, Linux, Source checkout]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: Tell us exactly what you did and what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Remove API keys, tokens, personal data, and private paths before pasting logs.

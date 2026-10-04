@@ -1,0 +1,248 @@
+/* STARNET — panelchrome.css : the PANEL CHROME premium pass.
+   One additive layer over the four game-screen chrome panels — #topbar (instrument deck),
+   #left (CREW rail), #chat-panel (COMMS), #bottombar (command deck). Loads AFTER
+   style/app/comms/motion/topbar/widgets (index.html), so every rule here wins by cascade
+   order — no markup changes, no JS. "Premium" is MATERIAL, not new colour: molded phosphor
+   header strips, recessed instrument housings, keycap dock triggers, etched corner marks.
+
+   Rules of this file (same contract as motion.css / topbar.css / comms.css):
+   - Never a hardcoded colour — only the themed phosphor / role tokens (+ white/black rgba
+     strictly as specular/shade lighting, the established house exception), so every theme
+     (amber/green/blue/purple/red/mono/custom) re-tints correctly.
+   - Animate only transform / opacity / colour / border / box-shadow — never layout on a hot
+     path; the 60fps canvas runs behind this chrome.
+   - Composite vars that reference vars live on `body` — none are declared here.
+   - No new motion vocabulary: --t-* / --ease-* tokens only, one reduced-motion block at the end. */
+
+/* Cockpit structure sits below the world and active controls in brightness. */
+#topbar, #left, #chat-panel, #bottombar {
+  box-shadow: 0 0 0 1px rgba(var(--ph-rgb), .48),
+    0 0 0 3px rgba(0,0,0,.9), 0 10px 26px rgba(0,0,0,.65),
+    inset 0 1px 0 rgba(var(--ph-bright-rgb), .08);
+}
+#left h3, #chat-panel h3, #left h3 #crew-hide { color: var(--ph-bright); }
+#left:focus-within, #chat-panel:focus-within {
+  outline: 1px solid rgba(var(--ph-rgb), .72); outline-offset: 1px;
+}
+.ws-title, .refit-propcat { letter-spacing: .4px; }
+.crew-status { font-size: 14px; opacity: .88; line-height: 1.25; }
+.crew-room { font-size: 12px; letter-spacing: .4px; }
+.refit-matname { font-size: 12px; line-height: 1.2; }
+.refit-propcat { font-size: 13px; }
+.refit-selectnote, .refit-searchnote { font-size: 14px; letter-spacing: .4px; line-height: 1.4; }
+#crew-sum { font-size: 13px; }
+#chat-panel .comms-idbar { letter-spacing: .5px; }
+@media (max-width: 1100px) {
+  .ws-head { padding-inline: 5px; gap: 4px; }
+  .ws-head .ws-tab { padding-inline: 3px; letter-spacing: 0; }
+  .ws-head #ws-new { padding-inline: 4px; letter-spacing: 0; }
+}
+
+/* ============================================================
+   1 · ETCHED CORNER MARKS — thin registration ticks in each
+   panel's glass corners, echoing the CAM HUD's ┌ ┐ brackets so
+   the chrome and the feed speak one console language. Drawn as
+   8 tiny no-repeat gradients on a dedicated ::after (the glass
+   overlay owns ::before); pointer-events:none, purely etched.
+   ============================================================ */
+#topbar::after, #left::after, #chat-panel::after, #bottombar::after {
+  content: ''; position: absolute; inset: 5px; pointer-events: none; z-index: 5;
+  opacity: .3;
+  background:
+    linear-gradient(var(--ph-dim), var(--ph-dim)) left    top    / 9px 1px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) left    top    / 1px 9px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) right   top    / 9px 1px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) right   top    / 1px 9px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) left    bottom / 9px 1px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) left    bottom / 1px 9px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) right   bottom / 9px 1px,
+    linear-gradient(var(--ph-dim), var(--ph-dim)) right   bottom / 1px 9px;
+  background-repeat: no-repeat;
+}
+
+/* ============================================================
+   2 · MOLDED HEADER STRIPS — the solid ink-on-phosphor bars
+   (CREW / COMMS / the SESSIONS rail head) become molded keycap
+   strips: bright top light → phosphor body → shaded base, with
+   faint CRT micro-scanlines etched into the plate and a soft
+   under-glow onto the panel below. Text/ids untouched.
+   ============================================================ */
+#left h3, #chat-panel h3 {
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.09) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg,
+      rgba(var(--ph-rgb), .22) 0%,
+      rgba(var(--ph-rgb), .10) 52%,
+      rgba(var(--ph-rgb), .04) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--ph-bright-rgb), .18),
+    inset 0 -1px 0 rgba(0,0,0,.25),
+    0 1px 6px rgba(0,0,0,.4);
+}
+/* the SESSIONS/PROJECTS rail head wears the same molding, one size down */
+.ws-head {
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.09) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--ph-bright) 8%, var(--ph)) 0%,
+      var(--ph) 55%,
+      color-mix(in srgb, #000 10%, var(--ph)) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--ph-bright-rgb), .15),
+    inset 0 -1px 0 rgba(0,0,0,.22),
+    0 1px 5px rgba(0,0,0,.35);
+}
+
+/* ============================================================
+   3 · TOPBAR — the loose instruments dock into ONE recessed
+   cockpit plate (a milled well holding STATION · UPLINK ·
+   ONLINE · save), so the top chrome reads as a gauge cluster,
+   not floating text. The STATION chip keeps its gold identity
+   and gains a proper lamp housing.
+   ============================================================ */
+#topbar .tb-stats {
+  align-self: center; height: auto; padding: 5px 8px; border-radius: 7px;
+  background: linear-gradient(180deg, rgba(0,0,0,.72), rgba(0,0,0,.4) 55%, rgba(0,0,0,.55));
+  box-shadow:
+    inset 0 2px 7px rgba(0,0,0,.9),
+    inset 0 0 0 1px rgba(var(--ph-rgb), .32),
+    inset 0 -1px 0 rgba(var(--ph-bright-rgb), .09),
+    0 1px 0 rgba(var(--ph-bright-rgb), .06),
+    0 0 10px rgba(0,0,0,.6);
+}
+/* the STATION lamp: gold-ringed housing on the recessed plate (border/value stay app.css gold) */
+#topbar .tb-stat.station {
+  border-radius: 4px; padding: 3px 12px;
+  background: linear-gradient(180deg, rgba(var(--gold-rgb), .09), rgba(var(--gold-rgb), .025) 62%, transparent);
+  box-shadow: inset 0 1px 0 rgba(var(--gold-rgb), .22), 0 0 10px rgba(var(--gold-rgb), .10);
+}
+/* the milled groove separator reads deeper against the recessed plate */
+#topbar .tb-sep { height: 30px; opacity: .85; }
+
+/* ============================================================
+   4 · CREW RAIL — roster rows become console cards (recessed
+   fill + status rail on the left edge), the WORKING/IDLE line
+   becomes an engraved counter strip, and the SESSIONS module
+   gets a hairline frame so head + search + rows read as one
+   mounted instrument instead of loose lists.
+   ============================================================ */
+#crew { padding: 1px 0 3px; }
+.crew-row {
+  margin: 3px 6px 0; padding: 5px 8px 6px; border-radius: 4px;
+  border-bottom: 0; border-left: 2px solid var(--ph-faint);
+  background: linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.16));
+  box-shadow: inset 0 1px 0 rgba(var(--ph-bright-rgb), .04);
+}
+/* hover: the status rail lights, no outer bloom (motion.css keeps its -1px lift) */
+.crew-row:hover {
+  background: var(--ph-faint); border-left-color: var(--ph);
+  box-shadow: inset 0 1px 0 rgba(var(--ph-bright-rgb), .05);
+}
+.crew-row:hover .crew-name { color: var(--ph-bright); }
+/* engraved WORKING/IDLE counter strip */
+#crew-sum {
+  margin: 5px 6px 0; padding: 4px 10px; border-radius: 4px; border-top: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.22));
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.7), inset 0 0 0 1px var(--ph-faint);
+  letter-spacing: 2px;
+}
+/* the SESSIONS module: one framed, recessed instrument */
+#ws-wrap {
+  margin: 10px 6px 6px; border-radius: 7px;
+  background: rgba(0,0,0,.2);
+  box-shadow: inset 0 0 0 1px var(--ph-faint), inset 0 9px 14px -11px rgba(0,0,0,.95);
+}
+.ws-head { border-radius: 6px 6px 0 0; }
+#ws-wrap .ws-rail-search { padding: 6px 6px 0; }
+#workstreams, #projects { padding: 6px 6px 4px; }
+.ws-row { border-radius: 0 3px 3px 0; }
+
+/* ============================================================
+   5 · COMMS — the AGENT LINE bar sits on an under-header plate
+   and the composer becomes a recessed console desk that lights
+   while you type. Transcript internals stay comms.css's.
+   ============================================================ */
+#chat-panel .comms-idbar {
+  margin: 0 0 4px; padding: 7px 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,.32), rgba(0,0,0,.04));
+}
+#chat-inputrow {
+  background: linear-gradient(180deg, rgba(0,0,0,.36), rgba(0,0,0,.2));
+  box-shadow: inset 0 3px 8px -4px rgba(0,0,0,.8);
+}
+/* the desk marks focus with the brightened seam only — no outer glow wash */
+#chat-inputrow:focus-within {
+  border-top-color: var(--ph);
+  box-shadow: inset 0 3px 8px -4px rgba(0,0,0,.8);
+}
+
+/* ============================================================
+   6 · BOTTOMBAR — the four dock triggers become molded keycaps
+   (top light, shaded base, contact shadow; pressed = sunk), the
+   flyout menu gets a fast pop-in, and the CTX gauge gets the
+   same recessed housing as the topbar cluster.
+   ============================================================ */
+.bb-grp {
+  border: 1px solid var(--ph-dim); border-radius: 5px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ph) 5%, var(--panel2)) 0%,
+    var(--panel2) 58%,
+    color-mix(in srgb, #000 22%, var(--panel2)) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--ph-rgb), .07),
+    inset 0 -2px 0 rgba(0,0,0,.3),
+    0 1px 2px rgba(0,0,0,.45);
+}
+.bb-grp:hover {
+  color: var(--ph-bright); border-color: var(--ph);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ph) 8%, var(--panel2)) 0%,
+    var(--panel2) 62%,
+    color-mix(in srgb, #000 18%, var(--panel2)) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--ph-rgb), .09),
+    inset 0 -2px 0 rgba(0,0,0,.3),
+    0 1px 2px rgba(0,0,0,.45);
+}
+/* open = the key is DOWN: inverted phosphor (app.css) + sunk seat */
+.bb-group.open .bb-grp {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.35);
+}
+/* "a panel from this group is open" keeps its gold engraving ON the keycap material */
+.bb-group.has-active .bb-grp {
+  box-shadow:
+    inset 0 -3px 0 var(--gold),
+    inset 0 1px 0 rgba(var(--ph-rgb), .07),
+    0 1px 2px rgba(0,0,0,.45),
+    0 0 8px rgba(var(--gold-rgb), .15);
+}
+.bb-group.open.has-active .bb-grp {
+  transform: translateY(1px);
+  box-shadow: inset 0 -3px 0 var(--ink), inset 0 2px 4px rgba(0,0,0,.4);
+}
+/* flyout pop-in — fast, upward, in the house motion tokens */
+.bb-group.open .bb-menu {
+  transform-origin: 14% 100%;
+  animation: pc-menu-in var(--t-fast, 120ms) var(--ease-out, ease-out);
+}
+@keyframes pc-menu-in {
+  from { opacity: 0; transform: translateY(5px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+.bb-menu .bb { border-radius: 4px; }
+.bb-menu .bb:hover .bb-i { color: var(--ph-bright); }
+/* CTX gauge: recessed housing (matches the topbar cluster's milled well) */
+#bottombar .ctx-gauge {
+  padding: 4px 11px; border-radius: 6px;
+  background: linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.26));
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.8), inset 0 0 0 1px var(--ph-faint);
+}
+
+/* ============================================================
+   7 · REDUCED MOTION — collapse this layer's added motion.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .bb-group.open .bb-menu { animation: none; }
+  .bb-group.open .bb-grp, .bb-group.open.has-active .bb-grp { transform: none; }
+}

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS hardened-runtime entitlements. Notarization REQUIRES hardened runtime, and hardened
+  runtime kills JIT-compiling processes unless they are entitled for it. StarNet ships two:
+  the Tauri shell (WKWebView) and the bundled Node sidecar (V8). Without these the app
+  codesigns and notarizes fine and then dies on launch — the failure lands at runtime, not
+  at build time, so it is easy to ship broken.
+
+  ⛔ CHANGED 2026-07-30: THE SIDECAR IS NO LONGER PURE JS. The bundle now carries the offline
+  voice engine (onnxruntime-node), which loads third-party native `.node` binaries we do not
+  sign. Under hardened runtime, library validation refuses to load exactly that, so
+  `disable-library-validation` became REQUIRED — the app would otherwise notarize cleanly and
+  then fail the moment Local Live warms a model. The previous note here asserted "zero native
+  .node addons (verified 2026-07-24)" and said to add this key only if that ever changed; this
+  is that change, recorded rather than quietly flipped.
+
+  What it costs: the process may load native code signed by someone other than us. That is a
+  real reduction in guarantee, accepted because the alternative is shipping an offline voice
+  feature that cannot start on macOS. If the bundled engine is ever removed, REMOVE THIS KEY
+  with it — an entitlement kept "just in case" is a permanent weakening for a temporary reason.
+
+  Deliberately still NOT included:
+    App Sandbox keys — Developer ID (non-App-Store) distribution is not sandboxed, so the
+      sidecar's 127.0.0.1 listener and outbound HTTPS need no network entitlement.
+-->
+<plist version="1.0">
+<dict>
+  <!-- WKWebView microphone capture also needs hardened-runtime resource access.
+       NSMicrophoneUsageDescription alone cannot authorize a signed desktop build. -->
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+
+  <!-- V8 and WKWebView both generate and execute code at runtime. -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+
+  <!-- Node's V8 maps executable pages it wrote itself; allow-jit alone does not always
+       cover that path. Both are what Electron/Node-embedding apps ship. -->
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+
+  <!-- onnxruntime-node's native binaries are third-party and unsigned by us; hardened runtime
+       will not dlopen them without this. Required by the bundled offline voice engine. -->
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>

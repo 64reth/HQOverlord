@@ -1,0 +1,14 @@
+'use strict';
+const A = require('./_assert.js');
+const { makeSkillMetrics } = require('../sidecar/skills/metrics.js');
+let durable = null;
+const metrics = makeSkillMetrics({ load: () => durable, save: value => { durable = JSON.parse(JSON.stringify(value)); }, now: () => 50 });
+metrics.record('install', 'success', { guardAction: 'ask', fileCount: 3, bytes: 100, sourceUrl: 'SECRET', body: 'SECRET' });
+metrics.record('rollback', 'failed', { error: 'source timed out at https://private.example' });
+const summary = metrics.summary([{ sourceFetchedAt: 100, lastUsedAt: 350 }]);
+A.eq(summary.counters['install.success'], 1, 'success count is local and durable');
+A.eq(summary.recent[1].reason, 'source-unreachable', 'failures use content-free reason classes');
+A.ok(!JSON.stringify(summary).includes('SECRET') && !JSON.stringify(summary).includes('private.example'), 'metrics retain no content or URL');
+A.eq(summary.timeToFirstUse.medianMs, 250, 'time-to-first-use derives from owned skill timestamps');
+A.eq(makeSkillMetrics({ load: () => durable }).summary([]).counters['install.success'], 1, 'metrics survive restart');
+A.report('skill-metrics.test.js');

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Tauri merges this file into the generated macOS application Info.plist.
+
+  Local Live and push-to-talk both open the microphone through WKWebView getUserMedia.
+  macOS refuses that capture unless the application bundle declares a purpose string.
+  This is bundle metadata, not a hardened-runtime entitlement; keep it here rather than
+  in entitlements.plist.
+-->
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>StarNet uses the microphone for push-to-talk and hands-free voice conversations with your selected agent.</string>
+</dict>
+</plist>

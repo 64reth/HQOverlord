@@ -1,0 +1,1001 @@
+# Release train — the ONE path from a version tag to a staged draft release.
+#
+# This workflow replaces release.yml's publish role. It NEVER publishes: it produces a
+# DRAFT release on androoAGI/starnet-releases with every supported platform's signed
+# installer + updater artifact + a multi-platform latest.json attached. The only publish is a
+# human clicking "Publish" on GitHub after reviewing the verify summary. Until that click,
+# zero users can receive anything.
+#
+# Flow: tag push (v*) → gate (test:fast) → build (3 supported legs, updater signing REQUIRED) →
+#       assemble (one multi-platform latest.json + local verify) → stage-draft (draft only).
+#
+# Required repo secrets:
+#   TAURI_SIGNING_PRIVATE_KEY          — contents of ~/.tauri/starnet-updater.key (whole file).
+#                                        UNLIKE desktop-build, this is REQUIRED: the build fails
+#                                        fast if absent. There is NO createUpdaterArtifacts:false
+#                                        fallback here — an unsigned release train is not a thing.
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — empty string (key encrypted with an empty password).
+#   RELEASES_TOKEN                     — fine-grained PAT with Contents:write on
+#                                        androoAGI/starnet-releases.
+#   APPLE_* (required for macOS)       — codesign/notarize the mac DMG. The release train
+#                                        fails closed when any Apple credential is absent;
+#                                        public releases must never stage an unsigned Mac build.
+#   AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET (required for Windows) —
+#                                        Authenticode-sign the Windows exe + NSIS installer via
+#                                        Azure Artifact Signing (account starnet-signing / eastus).
+#                                        The bundled Node runtime retains its valid upstream
+#                                        OpenJS signature. Missing/invalid trust fails the train.
+#                                        Operator setup for both signing tiers: docs/CODE_SIGNING.md.
+name: release-train
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build, e.g. v0.2.0 (must equal v<version> from tauri.conf.json)"
+        required: true
+  push:
+    tags: ['v*']
+
+jobs:
+  # -------------------------------------------------------------------------------------------
+  # Job 1 — gate: nothing builds unless the fast test suite is green.
+  # -------------------------------------------------------------------------------------------
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 — the claims-authority test resolves the release-surface manifest's
+      # sourceCommit against the object store; a shallow checkout lacks that commit and the
+      # planning authority reads BLOCKED ("source commit unreadable"), failing the gate on a
+      # green trunk (proven on the v0.6.3 train, runs 29787452203/29788984615). Same reason
+      # the build job already fetches full history for its provenance gate.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # A manual recovery run executes the repaired workflow from trunk, but every
+          # release assertion and build input must still come from the immutable tag.
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      # The CDP e2e tests (scripts/lib/cdp.mjs) locate Chrome via SKYNET_CHROME or hardcoded
+      # Windows paths only — on a Linux runner the fallback list is empty and the gate dies at
+      # the first e2e step (proven on the v0.10.0 train, run 31536973575: crt-context-loss).
+      # Second failure mode (run 31543047777): the raw binary resolves but CDP never comes up —
+      # Chrome's sandbox crashes under Ubuntu 24's unprivileged-userns restrictions and the
+      # tests' fixed 10s connect window has no margin for a cold first launch. SKYNET_CHROME is
+      # a PATH, not a flag list, so install a wrapper that injects the CI-required flags. Warm
+      # the binary once with a bounded cold-start budget, then PROVE a fresh-profile launch
+      # answers within the tests' own 10s budget before letting the gate run.
+      - name: Resolve Chrome binary for e2e gate tests
+        run: |
+          set -euo pipefail
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || true)
+          if [ -z "$CHROME" ]; then
+            echo "::error::no Chrome/Chromium binary on this runner — the e2e gate tests cannot run. Install one or set SKYNET_CHROME."
+            exit 1
+          fi
+          WRAP=/usr/local/bin/starnet-ci-chrome
+          printf '#!/bin/sh\nexec %s --no-sandbox --disable-dev-shm-usage "$@"\n' "$CHROME" | sudo tee "$WRAP" > /dev/null
+          sudo chmod +x "$WRAP"
+          echo "SKYNET_CHROME=$WRAP" >> "$GITHUB_ENV"
+          echo "::notice::e2e gate tests will use $WRAP -> $CHROME (+ --no-sandbox --disable-dev-shm-usage)"
+
+      - name: Warm Chrome, then prove CDP comes up inside the tests' 10s window
+        run: |
+          set -euo pipefail
+
+          # Hosted runner images can spend more than 10 seconds on Chrome's first process startup
+          # (shared-library paging, crashpad and DBus discovery). That says nothing about the warm
+          # launches made by the gate tests. Give exactly one cold launch a bounded 60s budget.
+          "$SKYNET_CHROME" --headless=new --no-first-run --remote-debugging-port=9332 \
+            --user-data-dir="$RUNNER_TEMP/chrome-cold-warmup" about:blank > "$RUNNER_TEMP/chrome-cold-warmup.log" 2>&1 &
+          CPID=$!
+          ok=""
+          for i in $(seq 1 240); do
+            if curl -fsS http://127.0.0.1:9332/json/list > /dev/null 2>&1; then ok=1; break; fi
+            if ! kill -0 "$CPID" 2>/dev/null; then break; fi
+            sleep 0.25
+          done
+          if [ -z "$ok" ]; then
+            echo "::error::Chrome's bounded cold warmup did not answer within 60s. Chrome output follows."
+            cat "$RUNNER_TEMP/chrome-cold-warmup.log" || true
+            exit 1
+          fi
+          kill "$CPID" 2>/dev/null || true
+          wait "$CPID" 2>/dev/null || true
+
+          # The warmup is not the proof. A second launch gets a fresh user-data directory and must
+          # satisfy the same 10-second CDP budget used by scripts/lib/cdp.mjs.
+          "$SKYNET_CHROME" --headless=new --no-first-run --remote-debugging-port=9333 \
+            --user-data-dir="$RUNNER_TEMP/chrome-cdp-proof" about:blank > "$RUNNER_TEMP/chrome-cdp-proof.log" 2>&1 &
+          CPID=$!
+          ok=""
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:9333/json/list > /dev/null 2>&1; then ok=1; break; fi
+            if ! kill -0 "$CPID" 2>/dev/null; then break; fi
+            sleep 0.25
+          done
+          if [ -z "$ok" ]; then
+            echo "::error::Warm Chrome CDP did not answer within the tests' 10s budget. Chrome output follows."
+            cat "$RUNNER_TEMP/chrome-cdp-proof.log" || true
+            exit 1
+          fi
+          kill "$CPID" 2>/dev/null || true
+          wait "$CPID" 2>/dev/null || true
+          echo "::notice::Warm Chrome CDP answered within the tests' 10s budget."
+
+      - name: Fast test gate (red = the whole train stops)
+        run: npm run test:fast
+
+      - name: Customer journey regression gate (red = the whole train stops)
+        run: npm run qa:customer-journeys
+
+  # -------------------------------------------------------------------------------------------
+  # Job 2 — build: the Windows + macOS release matrix, with updater signing REQUIRED and
+  # a post-build check that each leg actually produced its updater artifact + .sig.
+  # -------------------------------------------------------------------------------------------
+  build:
+    needs: gate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win-x64
+            bundles: nsis
+          # mac legs bundle "app,dmg": the .app.tar.gz updater artifact is generated by the
+          # `app` bundle target — dmg alone ships an installer but NO updater feed artifact
+          # (proven live on the v0.2.2 train, 2026-07-06).
+          - os: macos-latest
+            target: darwin-arm64
+            bundles: app,dmg
+            rust-target: aarch64-apple-darwin
+          # The x64 release is built and upgrade-tested on actual Intel hardware. An ARM
+          # cross-build alone cannot prove the installed Intel station path.
+          - os: macos-15-intel
+            target: darwin-x64
+            bundles: app,dmg
+            rust-target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      # fetch-depth: 0 = full history + ALL tags. REQUIRED here: the provenance gate below (and build.rs's
+      # STARNET_BUILD_DESCRIBE stamp) run `git describe --tags`, which needs the tag ref present locally. The
+      # default shallow checkout (fetch-depth 1, no tags) makes describe fall back to the bare short SHA, so the
+      # gate's `describe == tag` check fails and the train produces ZERO artifacts (what stalled v0.4.0). Do NOT
+      # shrink this back to a shallow checkout — it feeds the gate real git data, it does not weaken the gate.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - run: npm ci
+
+      - name: Verify v0.8.5 station recovery on Intel macOS
+        if: runner.os == 'macOS' && matrix.target == 'darwin-x64'
+        shell: bash
+        run: |
+          test "$(uname -m)" = "x86_64"
+          node test/upgrade-085-090.test.js
+
+      # Hydrate the exact Sharp x64 packages pinned in package-lock before stage-voice-deps
+      # copies the production closure; the signing step fails closed unless they are present.
+      - name: Hydrate Intel Sharp runtime for macOS target
+        if: runner.os == 'macOS' && matrix.target == 'darwin-x64'
+        shell: bash
+        run: bash scripts/hydrate-sharp-macos-x64.sh
+
+      - name: Stage StarNet Google sign-in registration
+        env:
+          STARNET_GOOGLE_DESKTOP_CLIENT_JSON: ${{ secrets.STARNET_GOOGLE_DESKTOP_CLIENT_JSON }}
+        run: node scripts/stage-google-client.mjs
+
+      - name: Stage bundled Node sidecar runtime
+        run: |
+          node scripts/prepare-node.mjs ${{ matrix.target }}
+          node scripts/stage-voice-deps.mjs --target ${{ matrix.target }}
+          node scripts/stage-frontend-dist.mjs
+
+      # Fail fast BEFORE the expensive build if the updater key is missing. Unlike
+      # desktop-build, the release train never produces an unsigned build — every installed
+      # user's updater feed depends on these .sig files, so a keyless run is a hard error.
+      - name: Require updater signing key
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY secret is empty. The release train REQUIRES updater signing — refusing to build unsigned artifacts. Set the secret (contents of ~/.tauri/starnet-updater.key) and re-run."
+            exit 1
+          fi
+
+      # Validate the key's SHAPE in ~seconds so a bad/swapped secret fails here instead of
+      # 8 minutes into a Rust compile. The Tauri updater private key is a single-line base64
+      # blob (base64 of the minisign secret-key file, starts with "dW50") — it must be pure
+      # base64: no dashes, no spaces, no "BEGIN". This step prints NO key material.
+      - name: Validate signing key shape (fast fail)
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          KEY="$TAURI_SIGNING_PRIVATE_KEY"
+          echo "key length: ${#KEY}"
+          if printf '%s' "$KEY" | grep -q '[- ]'; then
+            echo "::error::signing key contains a dash or space — that is NOT a Tauri updater key (looks like a PEM/SSH key or a swapped secret). It must be the pure-base64 contents of ~/.tauri/starnet-updater.key (starts with dW50)."
+            exit 1
+          fi
+          if ! printf '%s' "$KEY" | base64 -d >/dev/null 2>&1; then
+            echo "::error::signing key is not valid base64 — re-copy the exact contents of ~/.tauri/starnet-updater.key into the secret."
+            exit 1
+          fi
+          if ! printf '%s' "$KEY" | base64 -d 2>/dev/null | grep -qi 'rsign\|minisign'; then
+            echo "::error::signing key decoded but is not a minisign/rsign secret key — wrong key in the secret."
+            exit 1
+          fi
+          echo "::notice::signing key shape looks valid (pure base64, decodes to a minisign secret key)."
+
+      # Public Mac artifacts are no longer allowed to degrade to unsigned builds. Once a
+      # Developer ID identity is in use, a missing/renamed secret must stop the train before
+      # the expensive Rust compile rather than quietly restoring the Gatekeeper wall.
+      - name: Require complete Apple signing credentials
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          missing=""
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!v:-}" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::macOS release signing is incomplete. Missing GitHub Actions secrets:$missing"
+            echo "::error::Create/export the Developer ID Application certificate and follow docs/CODE_SIGNING.md. The public release train will not stage an unsigned Mac build."
+            exit 1
+          fi
+          case "$APPLE_SIGNING_IDENTITY" in
+            "Developer ID Application:"*) ;;
+            *)
+              echo "::error::APPLE_SIGNING_IDENTITY must be a 'Developer ID Application: …' identity for outside-the-App-Store distribution."
+              exit 1
+              ;;
+          esac
+          echo "::notice::complete Developer ID signing + notarization credential set present."
+
+      # Public Windows artifacts must never silently fall back to an unknown publisher.
+      # Check the complete service-principal credential set before compiling so a renamed or
+      # expired secret cannot produce a green-but-unsigned installer.
+      - name: Require complete Azure Artifact Signing credentials
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          missing=""
+          for v in AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET; do
+            if [ -z "${!v:-}" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Windows release signing is incomplete. Missing GitHub Actions secrets:$missing"
+            echo "::error::Follow docs/CODE_SIGNING.md. The public release train will not stage an unsigned Windows installer."
+            exit 1
+          fi
+          echo "::notice::complete Azure Artifact Signing credential set present."
+
+      # Tauri signs the app shell and external Node sidecar, but native Mach-O files carried
+      # inside bundle.resources are opaque resources to the bundler. Apple still treats every
+      # .node/.dylib in the app as nested code and rejects the DMG if any are unsigned, ad-hoc,
+      # untimestamped, or for the wrong architecture. Import the same Developer ID identity,
+      # prune Sharp's foreign optional packages, and sign the complete staged native closure
+      # before Tauri copies it into the app and creates the updater archive/DMG.
+      - name: Prepare and sign bundled macOS native dependencies
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          TARGET: ${{ matrix.target }}
+        run: bash scripts/sign-macos-native-deps.sh
+
+      - name: Build desktop bundles (signed updater artifacts required)
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          RUST_TARGET: ${{ matrix.rust-target }}
+        run: |
+          # Apple account credentials are intentionally scoped to the later submission
+          # step. Exposing them here makes Tauri block inside notarytool --wait, which can
+          # outlive GitHub's six-hour runner limit and discard a valid signed build.
+          # Windows Authenticode tier: the credential gate above makes Azure Artifact Signing
+          # mandatory for public releases. Tauri signs StarNet.exe, NSIS components, and the
+          # final installer. The bundled official Node runtime already carries a valid OpenJS
+          # Foundation Authenticode signature; the post-build trust proof checks all three.
+          # Injected via --config so keyless/local builds never try to reach Azure.
+          SIGN_CFG=""
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cargo install trusted-signing-cli --locked
+            SIGN_CFG='{"bundle":{"windows":{"signCommand":"trusted-signing-cli -e https://eus.codesigning.azure.net -a starnet-signing -c starnet-public %1"}}}'
+            echo "::notice::Windows Authenticode signing ENABLED (Azure Artifact Signing: starnet-signing/starnet-public)"
+          fi
+          npm run tauri -- build --bundles ${{ matrix.bundles }} ${RUST_TARGET:+--target $RUST_TARGET} ${SIGN_CFG:+--config "$SIGN_CFG"}
+
+      # P1.5 build provenance assertion — prove the binary this leg produced was built from a CLEAN checkout at the
+      # tagged commit, and that build.rs actually embedded that commit into the exe. Two independent checks:
+      #   1. the CHECKOUT is clean (no dirty working tree) AND `git describe --tags` == the tag being built. A dirty
+      #      CI tree would embed "<commit>-dirty" and ship an unreproducible binary — exactly the P1.5 hazard.
+      #   2. the built binary CONTAINS the expected short commit string. The env!() string build.rs stamped lives in
+      #      the binary's read-only string data (survives `strip = true`, which only drops debug symbols), so a plain
+      #      byte-scan finds it. If it's absent, build.rs didn't run or the stamp was lost — fail the leg.
+      - name: Assert build provenance stamp (clean tree + commit embedded in binary)
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          # (1a) the working tree must be clean — a dirty tree ⇒ an unreproducible "-dirty" binary.
+          # BYTE-EXACT check, independent of every eol/filter config: the Windows runner flags
+          # src-tauri/Cargo.toml "modified" with an EMPTY diff after the tauri CLI rewrites it
+          # in place (proven twice: v0.6.4 runs 29861857183 + 29863754025 — status M, zero diff,
+          # under both autocrlf views). git-status bookkeeping cannot be trusted here, so compare
+          # the raw worktree bytes (`git hash-object --no-filters`) against the committed blob:
+          #   identical bytes            -> clean (status artifact), continue
+          #   differs ONLY by \r (eol)   -> toolchain eol rewrite, warn + continue
+          #   any real content change    -> fail the leg
+          real_dirt=0
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            # porcelain v1: fixed two-char XY status, space, path — e.g. " M src-tauri/Cargo.toml"
+            st="${line:0:2}"; f="${line:3}"
+            case "$st" in
+              ' M'|'M '|'MM') ;;
+              *)
+                echo "::error::[$TARGET] unexpected working-tree state '$line' at build time."
+                real_dirt=1; continue ;;
+            esac
+            wt=$(git hash-object --no-filters -- "$f")
+            idx=$(git rev-parse ":$f")
+            if [ "$wt" = "$idx" ]; then
+              echo "::notice::[$TARGET] '$f' flagged modified but bytes are IDENTICAL to the commit (git status eol artifact) — clean."
+              git checkout -- "$f"   # reset the stat/eol bookkeeping so `git describe --dirty` below stays clean
+              continue
+            fi
+            wt_lf=$(tr -d '\r' < "$f" | git hash-object --stdin)
+            idx_lf=$(git cat-file blob ":$f" | tr -d '\r' | git hash-object --stdin)
+            if [ "$wt_lf" = "$idx_lf" ]; then
+              echo "::warning::[$TARGET] '$f' was rewritten with different LINE ENDINGS only (content identical) — toolchain eol rewrite, restoring committed copy."
+              git checkout -- "$f"   # build is already done; restore so describe --dirty stays clean
+              continue
+            fi
+            echo "::error::[$TARGET] '$f' has REAL content changes at build time — a released binary must come from a clean, tagged checkout."
+            git -c core.autocrlf=false diff -- "$f" | head -80
+            real_dirt=1
+          done < <(git -c core.autocrlf=false status --porcelain)
+          if [ "$real_dirt" -ne 0 ]; then exit 1; fi
+          # (1b) git describe must resolve to the tag we're building (guards a detached build off the wrong commit).
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_INPUT='${{ github.event.inputs.tag }}'
+          else
+            TAG_INPUT="${GITHUB_REF#refs/tags/}"
+          fi
+          DESCRIBE=$(git describe --tags --always --dirty)
+          if [ "$DESCRIBE" != "$TAG_INPUT" ]; then
+            echo "::error::[$TARGET] git describe '$DESCRIBE' != tag '$TAG_INPUT' — the checkout is not exactly the tagged commit (or is dirty). Refusing to ship an unreproducible binary."
+            exit 1
+          fi
+          # the short commit build.rs stamps (git rev-parse --short HEAD) — the string that MUST be in the binary.
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "::notice::[$TARGET] provenance: describe=$DESCRIBE commit=$COMMIT (clean tree)"
+          # (2) locate the built executable for this platform and byte-scan it for the commit string.
+          case "$RUNNER_OS" in
+            Windows) bin=$(find src-tauri/target -type f -path '*/release/*' -name 'skynet-desktop.exe' | head -1) ;;
+            *)       bin=$(find src-tauri/target -type f -path '*/release/*' -name 'skynet-desktop' -perm -u+x ! -name '*.d' | head -1) ;;
+          esac
+          if [ -z "${bin:-}" ] || [ ! -f "$bin" ]; then
+            echo "::error::[$TARGET] could not locate the built skynet-desktop binary to verify the provenance stamp."
+            exit 1
+          fi
+          echo "  scanning binary: $bin"
+          # grep -a treats the binary as text; the env!() literal is uncompressed in .rodata so a plain match finds it.
+          if ! grep -aq -- "$COMMIT" "$bin"; then
+            echo "::error::[$TARGET] the built binary does NOT contain the expected build commit '$COMMIT' — build.rs did not stamp it. The exe is not provenance-tagged; refusing to stage."
+            exit 1
+          fi
+          echo "::notice::[$TARGET] build binary contains commit stamp '$COMMIT' ✓"
+
+      # Prove the leg produced its updater artifact + .sig. If updater signing silently no-op'd
+      # (bad key, tauri config drift), the .sig would be missing and the whole feed would be
+      # broken — catch it here on the leg that built it, not three jobs downstream.
+      - name: Verify updater artifact + signature exist
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          # find-based (no globstar): macOS runners ship bash 3.2, where `shopt -s globstar`
+          # is a hard error. Runner workspace paths never contain spaces, so word-splitting
+          # the find output is safe here.
+          set -euo pipefail
+          root="src-tauri/target"
+          case "$RUNNER_OS" in
+            Windows) pairs="nsis:*-setup.exe" ;;
+            macOS)   pairs="macos:*.app.tar.gz" ;;
+            *) echo "::error::unknown RUNNER_OS=$RUNNER_OS"; exit 1 ;;
+          esac
+          for pair in $pairs; do
+            dir="${pair%%:*}"; art_pat="${pair#*:}"; kind="$dir $art_pat"
+            arts=$(find "$root" -type f -path "*/release/bundle/$dir/*" -name "$art_pat")
+            sigs=$(find "$root" -type f -path "*/release/bundle/$dir/*" -name "$art_pat.sig")
+            if [ -z "$arts" ]; then
+              echo "::error::[$TARGET] no updater artifact found ($kind). Build produced no installer — cannot stage this platform."
+              exit 1
+            fi
+            if [ -z "$sigs" ]; then
+              echo "::error::[$TARGET] updater artifact present but NO .sig ($kind.sig). Signing did not run — refusing to ship an unsigned platform into the feed."
+              exit 1
+            fi
+            for s in $sigs; do
+              if [ ! -s "$s" ]; then
+                echo "::error::[$TARGET] signature file is empty: $s"
+                exit 1
+              fi
+            done
+            echo "::notice::[$TARGET] updater artifact + signature verified ($kind):"
+            for a in $arts; do echo "  art: $a"; done
+            for s in $sigs; do echo "  sig: $s"; done
+          done
+
+      # Windows' equivalent of the macOS Gatekeeper proof. A successful signing command is
+      # not sufficient: validate the embedded Authenticode chain and timestamp on the exact
+      # files that will execute on a user's machine.
+      - name: Verify Windows Authenticode signing + timestamp
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          function Assert-Authenticode {
+            param(
+              [Parameter(Mandatory = $true)][string]$Label,
+              [Parameter(Mandatory = $true)][string]$Path,
+              [Parameter(Mandatory = $true)][string]$PublisherPattern
+            )
+
+            if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+              throw "[$env:TARGET] $Label is missing: $Path"
+            }
+            $signature = Get-AuthenticodeSignature -LiteralPath $Path
+            if ($signature.Status -ne 'Valid') {
+              throw "[$env:TARGET] $Label Authenticode status is '$($signature.Status)': $($signature.StatusMessage)"
+            }
+            if ($null -eq $signature.SignerCertificate -or
+                $signature.SignerCertificate.Subject -notmatch $PublisherPattern) {
+              throw "[$env:TARGET] $Label has the wrong publisher: $($signature.SignerCertificate.Subject)"
+            }
+            if ($null -eq $signature.TimeStamperCertificate) {
+              throw "[$env:TARGET] $Label has no trusted timestamp; its signing certificate would strand users after expiry."
+            }
+            Write-Host "::notice::[$env:TARGET] $Label Authenticode valid + timestamped: $($signature.SignerCertificate.Subject)"
+          }
+
+          $installer = Get-ChildItem -Path 'src-tauri/target' -Recurse -File -Filter '*-setup.exe' |
+            Where-Object { $_.FullName -match '[\\/]bundle[\\/]nsis[\\/]' } |
+            Select-Object -First 1
+
+          if ($null -eq $installer) { throw "[$env:TARGET] could not locate the NSIS setup executable" }
+
+          # Tauri temporarily patches + signs target/release/skynet-desktop.exe for NSIS,
+          # embeds those signed bytes, then restores the raw build output. Verifying that
+          # restored file produces a false NotSigned verdict. Install the exact candidate
+          # silently into the ephemeral runner and verify what users will actually execute.
+          $installRoot = Join-Path $env:RUNNER_TEMP 'starnet-authenticode-install'
+          if (Test-Path -LiteralPath $installRoot) {
+            $resolvedTemp = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\\') + '\\'
+            $resolvedInstall = [IO.Path]::GetFullPath($installRoot).TrimEnd('\\') + '\\'
+            if (-not $resolvedInstall.StartsWith($resolvedTemp, [StringComparison]::OrdinalIgnoreCase)) {
+              throw "[$env:TARGET] refusing to clean install proof outside RUNNER_TEMP: $resolvedInstall"
+            }
+            Remove-Item -LiteralPath $installRoot -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $installRoot | Out-Null
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList '/S', "/D=$installRoot" -PassThru -Wait
+          if ($install.ExitCode -ne 0) {
+            throw "[$env:TARGET] NSIS verification install exited $($install.ExitCode)"
+          }
+
+          $app = Get-ChildItem -LiteralPath $installRoot -Recurse -File -Filter 'skynet-desktop.exe' |
+            Select-Object -First 1
+          $node = Get-ChildItem -LiteralPath $installRoot -Recurse -File -Filter 'node.exe' |
+            Select-Object -First 1
+          $uninstaller = Get-ChildItem -LiteralPath $installRoot -Recurse -File -Filter 'uninstall.exe' |
+            Select-Object -First 1
+          if ($null -eq $app) { throw "[$env:TARGET] installed payload has no skynet-desktop.exe" }
+          if ($null -eq $node) { throw "[$env:TARGET] installed payload has no bundled node.exe" }
+          if ($null -eq $uninstaller) { throw "[$env:TARGET] installed payload has no uninstall.exe" }
+
+          Assert-Authenticode -Label 'NSIS installer' -Path $installer.FullName -PublisherPattern 'CN=Andrew Sims(?:,|$)'
+          Assert-Authenticode -Label 'installed StarNet executable' -Path $app.FullName -PublisherPattern 'CN=Andrew Sims(?:,|$)'
+          Assert-Authenticode -Label 'installed StarNet uninstaller' -Path $uninstaller.FullName -PublisherPattern 'CN=Andrew Sims(?:,|$)'
+          Assert-Authenticode -Label 'installed bundled Node runtime' -Path $node.FullName -PublisherPattern 'CN=OpenJS Foundation(?:,|$)'
+          $expectedNodeVersion = (& node -e "import('./scripts/prepare-node.mjs').then(m => console.log(m.NODE_VERSION))").Trim()
+          $actualNodeVersion = (& $node.FullName --version).Trim()
+          if ($actualNodeVersion -ne $expectedNodeVersion) {
+            throw "[$env:TARGET] installed bundled Node version is $actualNodeVersion; expected $expectedNodeVersion"
+          }
+
+      # Clean-install/signature proof cannot catch the field failure where an existing
+      # installation's uninstall.exe is missing, blocked, or exits nonzero. Exercise the exact
+      # human path (double-click candidate with no flags) from both latest and N-1 published
+      # Windows releases while the old shell + sidecar are active and uninstall.exe is deleted.
+      # The candidate must switch itself onto /UPDATE, preserve state, relaunch, and then prove
+      # that its own future uninstaller can stop those active processes cleanly.
+      - name: Prove published Windows upgrades survive a broken old uninstaller
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PROOF_HARNESS_COMMIT: ${{ github.workflow_sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # A recovery dispatch may repair the test harness while the application stays
+          # pinned to its immutable tag. Export the harness outside the checkout so the
+          # build's clean source identity remains untouched, and record both identities.
+          if ($env:PROOF_HARNESS_COMMIT -notmatch '^[0-9a-f]{40}$') { throw 'Missing exact workflow source commit' }
+          $proofSource = git show "$($env:PROOF_HARNESS_COMMIT):scripts/ci/windows-published-upgrade-proof.ps1"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the workflow-pinned upgrade harness' }
+          $proofScript = Join-Path $env:RUNNER_TEMP 'windows-published-upgrade-proof.ps1'
+          $proofSource | Set-Content -LiteralPath $proofScript -Encoding utf8
+          $installer = Get-ChildItem -Path 'src-tauri/target' -Recurse -File -Filter '*-setup.exe' |
+            Where-Object { $_.FullName -match '[\\/]bundle[\\/]nsis[\\/]' } |
+            Select-Object -First 1
+          if ($null -eq $installer) { throw 'could not locate candidate NSIS installer for upgrade proof' }
+          $version = (Get-Content 'src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).version
+          & $proofScript `
+            -CandidateInstaller $installer.FullName `
+            -CandidateVersion $version `
+            -HarnessCommit $env:PROOF_HARNESS_COMMIT `
+            -Output 'windows-published-upgrade-proof.json'
+
+      - name: Upload Windows published-upgrade receipt
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-published-upgrade-proof-${{ matrix.target }}
+          path: windows-published-upgrade-proof.json
+          if-no-files-found: error
+          retention-days: 30
+
+      # macOS pre-notarization trust proof. Signing can fail SILENTLY GREEN in three ways,
+      # each of which ships
+      # a build that looks fine in CI and is broken in the user's hands:
+      #   1. cert present but the bundler fell back to an ad-hoc signature -> Apple Silicon
+      #      users still get the false "damaged, move to Trash" dialog with NO override.
+      #   2. hardened runtime off -> Apple refuses to notarize, quietly.
+      #   3. the bundled node sidecar signed WITHOUT the JIT entitlement -> the app opens and
+      #      the sidecar is killed on V8's first codegen. Nothing in the build log says why.
+      # Notarization itself is submitted asynchronously after these cheap local checks. That
+      # preserves the exact signed DMG and submission id before waiting on Apple's queue.
+      - name: Verify macOS Developer ID signing before notarization
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          T="$RUNNER_TEMP"
+          app=$(find src-tauri/target -type d -name '*.app' -path '*/release/bundle/macos/*' | head -1)
+          dmg=$(find src-tauri/target -type f -name '*.dmg' -path '*/release/bundle/dmg/*' | head -1)
+          [ -n "${app:-}" ] && [ -d "$app" ] || { echo "::error::[$TARGET] no .app bundle found to verify."; exit 1; }
+          [ -n "${dmg:-}" ] && [ -f "$dmg" ] || { echo "::error::[$TARGET] no .dmg found to staple."; exit 1; }
+          echo "  app: $app"
+          echo "  dmg: $dmg"
+
+          # (1) real Developer ID authority, not ad-hoc — this is the actual bug being fixed.
+          codesign -dvvv "$app" > "$T/cs.txt" 2>&1 || true
+          if ! grep -q 'Authority=Developer ID Application' "$T/cs.txt"; then
+            echo "::error::[$TARGET] .app is NOT Developer ID signed — signing fell back silently. Silicon users would still see 'damaged'."
+            sed -n '1,25p' "$T/cs.txt"
+            exit 1
+          fi
+          # (2) hardened runtime — notarization is refused without it.
+          if ! grep -qi 'flags=.*runtime' "$T/cs.txt"; then
+            echo "::error::[$TARGET] hardened runtime NOT enabled on the .app (bundle.macOS.hardenedRuntime)."
+            grep -i '^CodeDirectory' "$T/cs.txt" || true
+            exit 1
+          fi
+          echo "::notice::[$TARGET] .app: Developer ID + hardened runtime ✓"
+
+          # Verify the SHIPPED microphone permissions, not just the source plist.
+          codesign -d --entitlements :- "$app" > "$T/app-entitlements.plist" 2> "$T/app-entitlements.log"
+          [ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' "$T/app-entitlements.plist")" = "true" ] || {
+            echo "::error::[$TARGET] signed app lacks the microphone audio-input entitlement."; exit 1;
+          }
+          [ -n "$(/usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist")" ] || {
+            echo "::error::[$TARGET] app lacks its microphone purpose string."; exit 1;
+          }
+
+          # (3) the bundled Node sidecar must carry allow-jit, or V8 dies at runtime.
+          side=$(find "$app/Contents" -type f -perm -u+x -name 'node*' | head -1)
+          if [ -z "${side:-}" ]; then
+            echo "::error::[$TARGET] bundled node sidecar not found inside the .app — externalBin did not land."
+            find "$app/Contents" -maxdepth 3 -type f -perm -u+x | head -20
+            exit 1
+          fi
+          echo "  sidecar: $side"
+          codesign -d --entitlements :- "$side" > "$T/ent.txt" 2>&1 || true
+          if ! grep -q 'allow-jit' "$T/ent.txt"; then
+            echo "::error::[$TARGET] sidecar has NO com.apple.security.cs.allow-jit entitlement — it will be killed under hardened runtime. Entitlements did not propagate to externalBin; sign the sidecar explicitly before bundling."
+            cat "$T/ent.txt"
+            exit 1
+          fi
+          echo "::notice::[$TARGET] sidecar signed with allow-jit ✓"
+
+          # (4) Apple's notary validates every nested Mach-O, even files Tauri treats as
+          # ordinary resources. Prove the entire bundled voice dependency closure has the
+          # Developer ID authority and a secure timestamp before uploading a DMG to Apple.
+          nested=0
+          while IFS= read -r -d '' native; do
+            if file -b "$native" | grep -q 'Mach-O'; then
+              codesign --verify --strict --verbose=2 "$native"
+              codesign -dvvv "$native" > "$T/nested-cs.txt" 2>&1 || true
+              if ! grep -q 'Authority=Developer ID Application' "$T/nested-cs.txt"; then
+                echo "::error::[$TARGET] nested native dependency is not Developer ID signed: $native"
+                exit 1
+              fi
+              if ! grep -q '^Timestamp=' "$T/nested-cs.txt"; then
+                echo "::error::[$TARGET] nested native dependency has no secure timestamp: $native"
+                exit 1
+              fi
+              nested=$((nested+1))
+            fi
+          done < <(find "$app/Contents/Resources/node_modules" -type f -print0)
+          if [ "$nested" -eq 0 ]; then
+            echo "::error::[$TARGET] no bundled Mach-O dependencies found for nested trust proof."
+            exit 1
+          fi
+          echo "::notice::[$TARGET] $nested nested native dependencies: Developer ID + timestamp verified ✓"
+
+          echo "::notice::[$TARGET] local Developer ID checks passed; ready for asynchronous Apple submission ✓"
+
+      # Tauri names the mac updater bundle "<App>.app.tar.gz" with NO arch marker — identical
+      # for both mac legs. Release assets are a flat namespace, so without a rename the two
+      # legs collide into one asset and one arch gets the wrong binary. Rename per-arch here.
+      # The signature signs the tar.gz BYTES, not the filename, so renaming both together is
+      # safe; the assembler pairs them by "<artifact>.sig" and reads the arch from the name.
+      - name: Rename mac updater bundle per-arch (basename collision guard)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          # find-based (no globstar): macOS bash 3.2 — see verify step above.
+          set -euo pipefail
+          renamed=0
+          for f in $(find src-tauri/target -type f -path '*/release/bundle/macos/*' -name '*.app.tar.gz'); do
+            base="${f%.app.tar.gz}"
+            mv "$f" "${base}_${TARGET}.app.tar.gz"
+            mv "$f.sig" "${base}_${TARGET}.app.tar.gz.sig"
+            echo "renamed: ${base}_${TARGET}.app.tar.gz (+.sig)"
+            renamed=$((renamed+1))
+          done
+          if [ "$renamed" -eq 0 ]; then
+            echo "::error::[$TARGET] no .app.tar.gz found to rename — updater bundle missing."
+            exit 1
+          fi
+
+      - name: Submit macOS DMG for asynchronous notarization
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARIZATION_REQUIRED: "true"
+        run: |
+          set -euo pipefail
+          dmg=$(find src-tauri/target -type f -name '*.dmg' -path '*/release/bundle/dmg/*' | head -1)
+          [ -n "${dmg:-}" ] || { echo "::error::no release DMG found to submit"; exit 1; }
+          bash scripts/notarize-macos-submit.sh "$dmg" notary-submission.json
+
+      - name: Upload macOS notarization input
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-input-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            notary-submission.json
+            src-tauri/target/**/release/bundle/dmg/*.dmg
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/**/release/bundle/macos/*.app.tar.gz.sig
+
+      - name: Upload Windows distributable artifacts
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: starnet-${{ matrix.target }}
+          if-no-files-found: error
+          # ** matches zero segments: covers target/release (host builds) AND
+          # target/<triple>/release (mac legs built with an explicit --target)
+          path: |
+            src-tauri/target/**/release/bundle/nsis/*.exe
+            src-tauri/target/**/release/bundle/nsis/*.sig
+
+  # -------------------------------------------------------------------------------------------
+  # Job 3 — finalize the exact submitted Mac bytes. This job is independently retryable:
+  # Apple's queue can exceed one runner lifetime without forcing a rebuild or resubmission.
+  # -------------------------------------------------------------------------------------------
+  notarize-macos:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [darwin-arm64, darwin-x64]
+    runs-on: macos-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: notarization-input-${{ matrix.target }}
+          path: notarization-input
+
+      - name: Resume Apple submission, staple, and prove Gatekeeper verdict
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          dmg=$(find notarization-input -type f -name '*.dmg' | head -1)
+          bash scripts/notarize-macos-finalize.sh notarization-input/notary-submission.json "$dmg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starnet-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            notarization-input/**/*.dmg
+            notarization-input/**/*.app.tar.gz
+            notarization-input/**/*.app.tar.gz.sig
+
+  # Shipping proof, not a compile proxy: run the notarized x64 DMG on a real Intel runner,
+  # launch the installed app through Finder, and exercise the reported v0.9.0 split-workspace
+  # recovery through a full quit/relaunch before the release can be assembled.
+  intel-macos-installed-acceptance:
+    needs: [build, notarize-macos]
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.notarize-macos.result == 'success' }}
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Download notarized Intel macOS distributable
+        uses: actions/download-artifact@v4
+        with:
+          name: starnet-darwin-x64
+          path: intel-distributable
+
+      - name: Install, Finder-launch, and recover v0.9.0 station
+        shell: bash
+        env:
+          STARNET_REQUIRE_NOTARIZED: "true"
+        run: |
+          dmg=$(find intel-distributable -type f -name '*_x64.dmg' -print -quit)
+          test -n "${dmg:-}"
+          bash scripts/verify-macos-intel-installed.sh "$dmg" intel-macos-installed-acceptance.json
+
+      - name: Upload Intel installed-app receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-macos-installed-acceptance
+          if-no-files-found: error
+          path: intel-macos-installed-acceptance.json
+
+  # -------------------------------------------------------------------------------------------
+  # Job 4 — assemble: one multi-platform latest.json from all artifacts, verified locally.
+  # -------------------------------------------------------------------------------------------
+  assemble:
+    needs: [build, notarize-macos, intel-macos-installed-acceptance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve + verify version against the tag
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=$(jq -r .version src-tauri/tauri.conf.json)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_INPUT='${{ github.event.inputs.tag }}'
+          else
+            TAG_INPUT="${GITHUB_REF#refs/tags/}"
+          fi
+          if [ "$TAG_INPUT" != "v$V" ]; then
+            echo "::error::tag/version mismatch: pushed/dispatched tag is '$TAG_INPUT' but tauri.conf.json version is '$V' (expected tag 'v$V'). Bump the version or fix the tag."
+            exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+          echo "::notice::building release train for v$V"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: starnet-*
+          path: dist
+          merge-multiple: true
+
+      - name: List downloaded artifacts
+        run: find dist -type f | sort
+
+      - name: Assemble multi-platform latest.json
+        run: |
+          node scripts/release-assemble-manifest.mjs \
+            --dist dist \
+            --version "${{ steps.ver.outputs.version }}" \
+            --repo androoAGI/starnet-releases \
+            --tag "${{ steps.ver.outputs.tag }}" \
+            --notes-file RELEASE_NOTES.md \
+            --allow-missing linux-x86_64,linux-x86_64-deb
+
+      - name: Verify manifest (local, before any publish)
+        run: >-
+          node scripts/verify-update-host.mjs --manifest release/latest.json
+          --require-platforms windows-x86_64,darwin-aarch64,darwin-x86_64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest
+          if-no-files-found: error
+          path: release/
+
+  # -------------------------------------------------------------------------------------------
+  # Job 4 — stage-draft: DRAFT release only. Nothing reaches users until a human clicks Publish.
+  # -------------------------------------------------------------------------------------------
+  stage-draft:
+    needs: assemble
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+      REPO: androoAGI/starnet-releases
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          V=$(jq -r .version src-tauri/tauri.conf.json)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: starnet-*
+          path: dist
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-manifest
+          path: release
+
+      - name: Collect assets to attach
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          # All installers + all .sig + the assembled latest.json. Staging FLATTENS paths,
+          # so duplicate basenames would silently overwrite/drop assets — fail loudly instead.
+          dupes=$(find dist -type f \( \
+            -name '*-setup.exe' -o \
+            -name '*.dmg' -o \
+            -name '*.app.tar.gz' -o \
+            -name '*.sig' \
+          \) -printf '%f\n' | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "::error::duplicate asset basename(s) across build legs — staging would drop files: $dupes"
+            exit 1
+          fi
+          mkdir -p staged
+          find dist -type f \( \
+            -name '*-setup.exe' -o \
+            -name '*.dmg' -o \
+            -name '*.app.tar.gz' -o \
+            -name '*.sig' \
+          \) -exec cp {} staged/ \;
+          cp release/latest.json staged/latest.json
+          echo "Assets staged for attachment:"
+          ls -1 staged
+          count=$(ls -1 staged | wc -l)
+          if [ "$count" -lt 2 ]; then
+            echo "::error::only $count asset(s) staged — expected installers + sigs + latest.json. Aborting."
+            exit 1
+          fi
+
+      - name: Create or update DRAFT release (idempotent)
+        shell: bash
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Idempotent for DRAFTS only: if the draft already exists (a re-run), clobber its
+          # assets. But once a release is PUBLISHED its artifacts are live in every installed
+          # app's update feed — they must be IMMUTABLE. A re-run against a published tag is
+          # always a mistake (or a compromise): hard-fail instead of silently replacing
+          # binaries under users' feet. Ship a fix as a NEW version.
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            IS_DRAFT=$(gh release view "$TAG" --repo "$REPO" --json isDraft -q .isDraft)
+            if [ "$IS_DRAFT" != "true" ]; then
+              echo "::error::release $TAG on $REPO is already PUBLISHED — refusing to overwrite live update artifacts. Published releases are immutable; cut a new version instead."
+              exit 1
+            fi
+            echo "::notice::DRAFT release $TAG already exists on $REPO — uploading assets with --clobber (re-run)"
+            gh release upload "$TAG" --repo "$REPO" --clobber staged/*
+          else
+            echo "::notice::creating DRAFT release $TAG on $REPO"
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --draft \
+              --title "StarNet $VERSION" \
+              --notes-file RELEASE_NOTES.md \
+              staged/*
+          fi
+
+      - name: Go / no-go summary
+        shell: bash
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          echo "::notice::DRAFT staged — nothing reaches users until you click Publish on GitHub."
+          echo "Review the draft: https://github.com/$REPO/releases"
+          echo "Draft tag: $TAG"

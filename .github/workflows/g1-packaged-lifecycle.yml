@@ -1,0 +1,192 @@
+# G1 packaged-lifecycle gate — install the real release installer on a FRESH ephemeral Windows VM
+# and drive the INSTALLED Tauri shell through the close / reopen matrix that three consecutive
+# shipped builds (0.10.5, 0.10.6, and before) escaped through: idle close must fully quit (no
+# orphan node sidecar, relaunch works), close-to-tray must stay resident AND be revealable by a
+# second launch, and the updater feed must be pinned to the build under test.
+#
+# WHY CI: the 650+-step sidecar/frontend gates never exercise the shell's real WM_CLOSE branches
+# (the 08-19 fix was even live-proved on the WRONG branch). Only the packaged exe on a clean machine
+# can prove them. Modelled on t0-clean-install-proof.yml (installer acquisition, silent install,
+# evidence artifact); the case logic lives in scripts/qa/packaged-lifecycle.mjs so the same matrix
+# runs locally against an isolated install later.
+#
+# DISPATCH: Actions → g1-packaged-lifecycle → Run workflow → tag = v0.10.7 (or leave blank for the
+# latest PUBLISHED release). Output: artifact `packaged-lifecycle-<tag>` holding
+# packaged-lifecycle-receipt.json (schema starnet.packaged-lifecycle-receipt.v1) + the shell's
+# startup.log. The job FAILS on any case miss.
+name: g1-packaged-lifecycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to prove (draft or published), e.g. v0.10.7. Blank = latest published release."
+        required: false
+        default: ""
+      cases:
+        description: "Comma list of cases to run (default all): idle-close,close-to-tray,updater-smoke"
+        required: false
+        default: "idle-close,close-to-tray,updater-smoke"
+      public_canary:
+        description: "After publication, also prove an older public client installs this release through UPDATE CENTER"
+        type: boolean
+        required: false
+        default: false
+      baseline_tag:
+        description: "Older published release for the optional public updater canary"
+        required: false
+        default: "v0.11.1"
+
+jobs:
+  public-updater-canary:
+    if: inputs.public_canary
+    runs-on: windows-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+      RELEASE_REPO: androoAGI/starnet-releases
+      TARGET_TAG: ${{ inputs.tag }}
+      BASELINE_TAG: ${{ inputs.baseline_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Acquire the exact public baseline and current installers
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:TARGET_TAG -notmatch '^v\d+\.\d+\.\d+$' -or $env:BASELINE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'Explicit version tags are required' }
+          $latest = gh release view --repo $env:RELEASE_REPO --json tagName,isDraft,isPrerelease | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $latest.tagName -ne $env:TARGET_TAG -or $latest.isDraft -or $latest.isPrerelease) { throw 'Target must be the public latest stable release' }
+          $targetVersion = $env:TARGET_TAG.Substring(1)
+          $baselineVersion = $env:BASELINE_TAG.Substring(1)
+          if ([version]$baselineVersion -ge [version]$targetVersion) { throw 'Baseline must be older' }
+          foreach ($item in @(@{tag=$env:BASELINE_TAG;name='baseline';variable='BASELINE_INSTALLER'},@{tag=$env:TARGET_TAG;name='target';variable='INSTALLER'})) {
+            $release = gh release view $item.tag --repo $env:RELEASE_REPO --json isDraft,isPrerelease | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or $release.isDraft -or $release.isPrerelease) { throw 'Both installers must be published stable releases' }
+            $dir = Join-Path $env:RUNNER_TEMP $item.name
+            gh release download $item.tag --repo $env:RELEASE_REPO --pattern '*-setup.exe' --dir $dir
+            if ($LASTEXITCODE -ne 0) { throw 'Installer download failed' }
+            $files = @(Get-ChildItem -LiteralPath $dir -Filter '*-setup.exe')
+            if ($files.Count -ne 1 -or (Get-AuthenticodeSignature -LiteralPath $files[0].FullName).Status -ne 'Valid') { throw 'Expected one valid signed installer' }
+            "$($item.variable)=$($files[0].FullName)" >> $env:GITHUB_ENV
+          }
+          $source = git rev-list -n 1 $env:TARGET_TAG
+          if ($LASTEXITCODE -ne 0 -or $source -notmatch '^[a-f0-9]{40}$') { throw 'Immutable target source tag is required' }
+          "CANDIDATE_SOURCE=$source" >> $env:GITHUB_ENV
+          "TARGET_VERSION=$targetVersion" >> $env:GITHUB_ENV
+          "BASELINE_VERSION=$baselineVersion" >> $env:GITHUB_ENV
+          "EXE=$env:LOCALAPPDATA\StarNet\skynet-desktop.exe" >> $env:GITHUB_ENV
+      - name: Prove public check, install, automatic restart and populated state continuity
+        shell: pwsh
+        env:
+          PROOF_AUTOMATIC_UPDATE: "true"
+        run: node scripts/qa/public-upgrade-continuity.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-updater-canary
+          if-no-files-found: error
+          path: |
+            public-upgrade-continuity.json
+            qa/installed/**
+  lifecycle:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+      REPO: androoAGI/starnet-releases
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve tag (blank = latest published) and whether it IS the published latest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $latest = gh release view --repo $env:REPO --json tagName -q .tagName
+          $tag = '${{ inputs.tag }}'.Trim()
+          if (-not $tag) { $tag = $latest }
+          if (-not $tag) { throw "could not resolve a release tag" }
+          "TAG=$tag" >> $env:GITHUB_ENV
+          "LATEST_PUBLISHED=$latest" >> $env:GITHUB_ENV
+          "FEED_MUST_MATCH=$(if ($tag -eq $latest) { 'true' } else { 'false' })" >> $env:GITHUB_ENV
+          Write-Host "tag under test: $tag (latest published: $latest)"
+
+      - name: Download the installer and the tag's own latest.json
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force dist | Out-Null
+          gh release download $env:TAG --repo $env:REPO --pattern '*-setup.exe' --pattern 'latest.json' --dir dist
+          $installer = Get-ChildItem dist -Filter '*-setup.exe' | Select-Object -First 1
+          if ($null -eq $installer) { throw "no installer asset on $env:TAG" }
+          if (-not (Test-Path dist/latest.json)) { throw "no latest.json asset on $env:TAG" }
+          "INSTALLER=$($installer.FullName)" >> $env:GITHUB_ENV
+          "TAG_FEED=$((Resolve-Path dist/latest.json).Path)" >> $env:GITHUB_ENV
+
+      - name: Install silently (default per-user path) and locate the shell exe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $h = Get-FileHash $env:INSTALLER -Algorithm SHA256
+          $p = Start-Process -FilePath $env:INSTALLER -ArgumentList '/S' -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "installer exited $($p.ExitCode)" }
+          # NSIS /S may return before a post-install auto-launch settles; never let it pollute case 1.
+          Start-Sleep -Seconds 5
+          if (Get-Process skynet-desktop -ErrorAction SilentlyContinue) { taskkill /IM skynet-desktop.exe /T /F | Out-Null }
+          $exe = Get-ChildItem "$env:LOCALAPPDATA" -Recurse -Filter 'skynet-desktop.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'StarNet' } | Select-Object -First 1
+          if ($null -eq $exe) { throw "installed skynet-desktop.exe not found under LOCALAPPDATA" }
+          "EXE=$($exe.FullName)" >> $env:GITHUB_ENV
+          "INSTALL_DIR=$($exe.DirectoryName)" >> $env:GITHUB_ENV
+          "INSTALLER_SHA256=$($h.Hash.ToLower())" >> $env:GITHUB_ENV
+          Write-Host "installed $($exe.FullName) from $(Split-Path $env:INSTALLER -Leaf) sha256=$($h.Hash.ToLower())"
+
+      - name: Run the packaged-lifecycle matrix (fails the job on any case miss)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cli = @(
+            'scripts/qa/packaged-lifecycle.mjs',
+            "--exe=$env:EXE",
+            "--install-dir=$env:INSTALL_DIR",
+            "--tag=$env:TAG",
+            "--tag-feed-path=$env:TAG_FEED",
+            "--cases=${{ inputs.cases }}",
+            '--out=packaged-lifecycle-receipt.json'
+          )
+          if ($env:FEED_MUST_MATCH -eq 'true') { $cli += '--feed-must-match' }
+          node @cli
+
+      - name: Collect evidence (always)
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          if (Test-Path packaged-lifecycle-receipt.json) { Copy-Item packaged-lifecycle-receipt.json evidence/ }
+          $log = "$env:APPDATA\ai.skynet.harness\startup.log"
+          if (Test-Path $log) { Copy-Item $log evidence/startup.log }
+          $prefs = "$env:APPDATA\ai.skynet.harness\lifecycle.json"
+          if (Test-Path $prefs) { Copy-Item $prefs evidence/lifecycle.json }
+          Get-CimInstance Win32_Process -Filter "Name='skynet-desktop.exe' OR Name='node.exe'" |
+            Select-Object ProcessId, Name, ParentProcessId, ExecutablePath |
+            ConvertTo-Json | Out-File evidence/final-process-snapshot.json -Encoding utf8
+          if (Test-Path evidence/packaged-lifecycle-receipt.json) { Get-Content evidence/packaged-lifecycle-receipt.json }
+          # leave the runner clean even on failure (cleanup only — assertions never use taskkill)
+          if (Get-Process skynet-desktop -ErrorAction SilentlyContinue) { taskkill /IM skynet-desktop.exe /T /F | Out-Null }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: packaged-lifecycle-${{ env.TAG }}
+          if-no-files-found: error
+          path: evidence/

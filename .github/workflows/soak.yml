@@ -1,0 +1,147 @@
+# Scripted soak — boot a HERMETIC source sidecar (scratch workspace + scratch app-data profile, free
+# port, in-process MOCK provider: zero provider spend) and drive it unattended for `minutes`:
+# real /api/run conversations, a real shell_exec tool run, a cron routine firing on its own, periodic
+# diagnostics / health / snapshot reads, and stop→boot restart cycles on the same workspace. Every tick
+# samples RSS, health latency, the fail-open (swallowed-error) tally, the diagnostics error ring, and
+# workspace growth. The job FAILS on any rule miss (scripts/qa/soak.mjs RULES: run errors, no routine
+# fire, swallowed-error growth, RSS leak trend, health p95 stall, entity loss across a restart, an
+# unplanned exit or orphaned child, or an incomplete soak).
+#
+# WHY CI: the attended packaged-desktop soak owns the dev box for 15–48h and has no machine verdict
+# (the first v0.10.0 soak failed after ~15h with nothing to read). This runs anywhere, any length, and
+# writes soak-receipt.json (schema starnet.soak-receipt.v1) + SUMMARY.md. It does NOT replace the
+# attended packaged soak (Tauri shell, WebView2, installer, real providers stay out of reach here) —
+# it is the mandatory machine verdict that runs BEFORE the human spends desktop hours.
+#
+# DISPATCH: Actions → soak → Run workflow → minutes = 20 (smoke) … 720 (release soak). ubuntu: the
+# source sidecar is pure node; the graceful SIGTERM stop path is exercised there (Windows would use
+# TerminateProcess, as the desktop shell does — run `npm run qa:soak` locally on Windows for that).
+#
+# SCALE SHAPE (the power-user claim, "30–50 routines a day fire each one"): set routines = 50,
+# max_parallel = 8, outage_seconds = 150 (the `npm run qa:soak:scale` shape, ~10 min). The harness seeds
+# 50 routines with OVERLAPPING schedules, slow/paused/corrupt-schedule routines, holds the first restart
+# down past the misfire grace, and the ACCOUNTING rule proves every owed occurrence of every routine ended
+# as exactly one of fired / already-running / caught-up / collapsed / disabled / unfireable (no loss, no
+# double-fire); the TICK rule bounds the synchronous scheduler tick at p95 ≤ 300 ms with the whole-store
+# verified write per advance. The `scale` job below runs that shape unconditionally alongside the main soak.
+name: soak
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Soak length in minutes (20 = smoke, 720 = release soak). Job timeout = minutes + 30."
+        required: true
+        default: "20"
+      restart_every:
+        description: "Minutes between sidecar restart cycles (clamped to half the soak)."
+        required: false
+        default: "10"
+      routines:
+        description: "Routines seeded for the main soak (1 = the classic heartbeat; 50 = the power-user scale shape)."
+        required: false
+        default: "1"
+      max_parallel:
+        description: "SKYNET_CRON_MAX_PARALLEL for the main soak (0 = uncapped; 8 makes at-capacity deferrals observable)."
+        required: false
+        default: "0"
+      outage_seconds:
+        description: "How long the FIRST restart holds the sidecar down (150 > the 2-min misfire grace exercises the catch-up collapse)."
+        required: false
+        default: "0"
+
+jobs:
+  # Expressions cannot do arithmetic, so a tiny job turns `minutes` into the soak job's timeout
+  # (minutes + 30 of boot/teardown slack). A 20-minute smoke therefore cannot hang for six hours.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      timeout: ${{ steps.calc.outputs.timeout }}
+    steps:
+      - id: calc
+        run: |
+          m='${{ inputs.minutes }}'
+          case "$m" in ''|*[!0-9]*) echo "minutes must be a positive integer, got '$m'"; exit 1;; esac
+          echo "timeout=$(( m + 30 ))" >> "$GITHUB_OUTPUT"
+
+  soak:
+    needs: plan
+    runs-on: ubuntu-latest
+    # GitHub caps a hosted job at 360 min; a soak longer than ~330 min needs a self-hosted runner.
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.timeout) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (runtime deps only; the harness itself is node built-ins)
+        run: npm ci --ignore-scripts
+
+      - name: Run the scripted soak
+        id: soak
+        run: |
+          set +e
+          node scripts/qa/soak.mjs --minutes=${{ inputs.minutes }} --restart-every=${{ inputs.restart_every }} --routines=${{ inputs.routines }} --max-parallel=${{ inputs.max_parallel }} --outage-seconds=${{ inputs.outage_seconds }} --out=soak-out
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f soak-out/SUMMARY.md ]; then cat soak-out/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"; else echo "no receipt written" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soak-receipt-${{ inputs.minutes }}m-${{ github.run_id }}
+          path: |
+            soak-out/soak-receipt.json
+            soak-out/SUMMARY.md
+            soak-out/sidecar.log
+          if-no-files-found: warn
+
+      - name: Verdict
+        run: |
+          test "${{ steps.soak.outputs.exit }}" = "0" || { echo "soak verdict: FAIL (see SUMMARY.md / soak-receipt.json)"; exit 1; }
+
+  # The power-user SCALE soak — always the `npm run qa:soak:scale` shape (10 min, 50 routines, cap 8, 150 s outage),
+  # so every dispatch also earns the routine-accounting verdict regardless of what the main soak was asked to do.
+  scale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (runtime deps only; the harness itself is node built-ins)
+        run: npm ci --ignore-scripts
+
+      - name: Run the scale soak (50 overlapping routines)
+        id: scale
+        run: |
+          set +e
+          npm run qa:soak:scale -- --out=scale-out
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f scale-out/SUMMARY.md ]; then cat scale-out/SUMMARY.md >> "$GITHUB_STEP_SUMMARY"; else echo "no scale receipt written" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soak-scale-receipt-${{ github.run_id }}
+          path: |
+            scale-out/soak-receipt.json
+            scale-out/SUMMARY.md
+            scale-out/sidecar.log
+          if-no-files-found: warn
+
+      - name: Verdict
+        run: |
+          test "${{ steps.scale.outputs.exit }}" = "0" || { echo "scale soak verdict: FAIL (see SUMMARY.md / soak-receipt.json — the Routine accounting table names the routine)"; exit 1; }

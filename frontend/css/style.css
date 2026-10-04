@@ -1,0 +1,1658 @@
+/* STARNET — style.css : RAW Fallout / New Vegas pip-boy terminal aesthetic.
+   Design language: monochrome phosphor on black glass. 2px hard lines.
+   Inverted blocks for headers & selection. Segmented bars. Heavy bloom.
+   No rounded corners, no gradients-as-decoration, no "web app" softness. */
+
+/* ============================================================
+   VT323 — the house typeface, shipped LOCALLY so the locked CRT
+   look survives an offline / air-gapped first boot (the local-first
+   pitch invites exactly that). Without this, no-network boot silently
+   drops VT323 → DOM falls back to Courier and the canvas to default
+   monospace, degrading the whole phosphor grade.
+
+   This @font-face is the ONLY source, and it is zero-network: the woff2
+   lives in the bundle at frontend/assets/fonts/vt323.woff2 (SIL OFL, see
+   NOTICE.md) and covers U+0-10FFFF. index.html carries NO remote font
+   link — the Google Fonts one was removed because it registered three
+   MORE 'VT323' faces whose unicode-ranges covered Latin, so the browser
+   preferred a network face over this local one for ordinary station text.
+
+   font-display is `block`, NOT `swap`, and that is the whole point.
+   `swap` means "paint the fallback NOW, swap the real face in later" —
+   it is a licence to render Courier, which is exactly the bug this file
+   exists to prevent. `block` renders nothing until the face is ready,
+   so a glyph is either VT323 or it is not painted yet. Loading a 17KB
+   file off local disk, that window is imperceptible.
+
+   font-family MUST be exactly 'VT323' (unquoted matches too) so every
+   existing `font-family: 'VT323', monospace` rule and the canvas
+   `ctx.font = "...px VT323"` calls resolve to this local face first.
+   ============================================================ */
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  /* path is relative to this file (css/style.css) → up one to frontend/ */
+  src: url('../assets/fonts/vt323.woff2') format('woff2');
+}
+
+:root {
+  /* NV pip-boy amber (reference build) — dark interiors, the glow lives on borders */
+  --ph: #ffaa33;
+  --ph-bright: #ffd9a3;
+  --ph-dim: #b9791c;          /* structural lines */
+  --ph-faint: #1e1404;        /* recessed fills */
+  --ink: #190f02;             /* text on inverted blocks */
+  --ph-glow: rgba(255, 170, 51, 0.5);
+  --ph-glow2: rgba(255, 170, 51, 0.14);
+  --bg: #030201;
+  --panel: rgba(5, 3, 1, 0.95);
+  --panel2: #0c0704;
+  --warn: #ffe97a;
+  --bad: #ff5c4d;
+  --gold: #ffd34a;
+  --text: #eec88f;
+  /* RGB TRIPLETS for the translucent fills (rgba(var(--x-rgb), a)). Every rgba() that used to bake
+     the amber/gold literals routes through these, so beat cards / chips / insets re-tint with the
+     theme instead of leaking amber onto a green/blue/purple station. Plain value tokens (no var()
+     inside), so :root is safe — the body.theme-* blocks override them alongside their hex twins. */
+  --ph-rgb: 255, 170, 51;
+  --ph-bright-rgb: 255, 228, 180;
+  --gold-rgb: 255, 211, 74;
+  --ok: #7bc88a;              /* the "online / success" status green — CRT-muted (not neon) so it reads as good without breaking the amber-phosphor grade; tokenized so every surface themes through it */
+  --ok-rgb: 123, 200, 138;    /* rgb twin of --ok for translucent success fills (rgba(var(--ok-rgb), a)); constant like --ok — success green does not re-tint per theme */
+  --bad-rgb: 255, 92, 77;     /* rgb twin of --bad for translucent danger glows; constant like --bad (the sole semantic red) */
+  --link-down: #ff6a4c;       /* the "uplink lost / OFFLINE" red-phosphor. Constant across themes (a semantic
+                                 alarm colour, like --bad). MUST stay visually matched to the canvas LINK DOWN
+                                 marker, which hardcodes this same red in world.js by design (canvas can't read
+                                 CSS vars) — change both together. */
+  /* color grade applied to the station feed so the world sits inside the terminal.
+     brightness kept at 1.0 — the darkness now comes from the in-world lightmap (localized,
+     realistic pools) rather than a flat global dim, so lit areas stay bright ("not too dark").
+     2026-09-02: saturate 0.82 -> 1 and sepia 0.12 -> 0.06. The 08-17 chroma measurement found only
+     half the props' authored colour reaching the canvas — and this filter, applied AFTER that
+     canvas, was never in the measurement: it took another ~25% off the top. Measured on a
+     furnished lounge the change alone lifts mean chroma 12 -> 18. The amber tie stays (hue-rotate
+     + a little sepia); it just stops muddying everything. Every theme moved by the same +0.16.
+     brightness 1.06 -> 1.12 is SCANLINE GAIN: the raised-cosine scan at 0.38 removes ~19% of the
+     feed's mean light and nothing gave it back, so the picture under the lines sat a stop under
+     the bake. brightness() is multiplicative — black stays black — so this restores the lit deck
+     without lifting the floor (the thing every "brighter" attempt got wrong). Every theme +0.06. */
+  --cam-grade: saturate(1.06) contrast(1.1) brightness(0.94);
+
+  /* ============================================================
+     DESIGN SYSTEM SCALE — the one scale everything snaps to.
+     (type/letter/space/radius adopted from agent/design-system; the
+      colour roles stay at their richer trunk values on purpose.)
+       type   6 steps, floor 11px so VT323 stays crisp
+       space  4px base unit · radius one family
+     ============================================================ */
+  --fs-0: 11px;  --fs-1: 13px;  --fs-2: 15px;  --fs-3: 18px;  --fs-4: 24px;  --fs-5: 34px;
+  --ls-1: 0.5px; --ls-2: 1px;   --ls-3: 2px;   --ls-4: 4px;
+  --s-1: 4px;    --s-2: 8px;    --s-3: 12px;   --s-4: 16px;   --s-5: 24px;
+  --r-sm: 3px;   --r: 7px;      --r-lg: 11px;
+
+  /* z-scale tokens (F1) — the ONLY sanctioned stacking tiers. Windows live inside #terms
+     (z:50 stacking context); glass/scrim 940; full-bleed overlays (.mkt, dossier splash) 9000;
+     toasts must beat every overlay except the tutorial layer. */
+  --z-window: 50; --z-glass: 940; --z-overlay: 9000; --z-toast: 9600; --z-tutorial: 98999;
+
+  /* NOTE: the composite depth recipes (--bezel/--well/--glass/--raise) are
+     declared on `body`, NOT here. They reference the themeable phosphor tokens
+     (--ph, --ph-glow2, --ph-dim), and a var() inside a custom property resolves
+     against the element where that custom property is DECLARED. The theme is
+     swapped by a `body.theme-*` class, so these recipes MUST be declared at the
+     body level (or below) — otherwise their var(--ph) bakes to the :root amber
+     and the bezel "borders" stay amber no matter which theme is picked. */
+}
+body.theme-amber {
+  --ph: #ffaa33; --ph-bright: #ffd9a3; --ph-dim: #b9791c; --ph-faint: #1e1404;
+  --ink: #190f02; --ph-glow: rgba(255, 170, 51, 0.5); --ph-glow2: rgba(255,170,51,0.14);
+  --bg: #030201; --panel: rgba(5, 3, 1, 0.95); --panel2: #0c0704; --warn: #ffe97a; --text: #eec88f;
+  --gold: #ffd34a; --ph-rgb: 255, 170, 51; --ph-bright-rgb: 255, 228, 180; --gold-rgb: 255, 211, 74;
+  --cam-grade: saturate(1.06) contrast(1.1) brightness(0.94);
+}
+body.theme-green {
+  --ph: #3dff70; --ph-bright: #ccffdb; --ph-dim: #1fae4e; --ph-faint: #0c3a1d;
+  --ink: #021407; --ph-glow: rgba(61, 255, 112, 0.45); --ph-glow2: rgba(61,255,112,0.14);
+  --bg: #010503; --panel: rgba(2, 16, 8, 0.92); --panel2: #041c0d; --warn: #ffb641; --text: #8fe3ac;
+  --gold: #d8f25a; --ph-rgb: 61, 255, 112; --ph-bright-rgb: 204, 255, 219; --gold-rgb: 216, 242, 90;
+  --cam-grade: saturate(0.88) contrast(1.1) brightness(0.94);
+}
+body.theme-blue {
+  --ph: #46c8ff; --ph-bright: #c8efff; --ph-dim: #1e87ba; --ph-faint: #0a2c40;
+  --ink: #021320; --ph-glow: rgba(70, 200, 255, 0.45); --ph-glow2: rgba(70,200,255,0.14);
+  --bg: #010305; --panel: rgba(2, 12, 20, 0.92); --panel2: #051826; --warn: #ffc861; --text: #97d5ee;
+  --gold: #5ce8c8; --ph-rgb: 70, 200, 255; --ph-bright-rgb: 200, 239, 255; --gold-rgb: 92, 232, 200;
+  --cam-grade: saturate(0.88) contrast(1.1) brightness(0.94);
+}
+body.theme-purple {
+  --ph: #b46bff; --ph-bright: #e6d4ff; --ph-dim: #7d3fc4; --ph-faint: #251038;
+  --ink: #120720; --ph-glow: rgba(180, 107, 255, 0.45); --ph-glow2: rgba(180,107,255,0.14);
+  --bg: #040208; --panel: rgba(10, 4, 20, 0.92); --panel2: #150a26; --warn: #ffb84a; --text: #c8a9ee;
+  --gold: #f07ae0; --ph-rgb: 180, 107, 255; --ph-bright-rgb: 230, 212, 255; --gold-rgb: 240, 122, 224;
+  --cam-grade: saturate(0.88) hue-rotate(8deg) contrast(1.1) brightness(0.94);
+}
+body.theme-red {
+  --ph: #ff4136; --ph-bright: #ffc9c2; --ph-dim: #b3271c; --ph-faint: #3a0c08;
+  --ink: #1f0603; --ph-glow: rgba(255, 65, 54, 0.45); --ph-glow2: rgba(255,65,54,0.14);
+  --bg: #080201; --panel: rgba(18, 4, 3, 0.92); --panel2: #1a0705; --warn: #ffd24a; --text: #f0a89f;
+  --gold: #ffab4a; --ph-rgb: 255, 65, 54; --ph-bright-rgb: 255, 201, 194; --gold-rgb: 255, 171, 74;
+  --cam-grade: saturate(0.94) hue-rotate(-12deg) contrast(1.1) brightness(0.94);
+}
+body.theme-white {
+  --ph: #e8f0e8; --ph-bright: #ffffff; --ph-dim: #97a397; --ph-faint: #2c322c;
+  --ink: #0c0f0c; --ph-glow: rgba(232, 240, 232, 0.35); --ph-glow2: rgba(232,240,232,0.10);
+  --bg: #030403; --panel: rgba(10, 12, 10, 0.92); --panel2: #131713; --warn: #ffc247; --text: #d2dcd2;
+  --gold: #ffe9a3; --ph-rgb: 232, 240, 232; --ph-bright-rgb: 255, 255, 255; --gold-rgb: 255, 233, 163;
+  --cam-grade: saturate(0.86) contrast(1.08) brightness(0.98);
+}
+/* body.theme-custom carries NO palette here on purpose: its full token set is derived from the
+   user's hue/sat/glow sliders and written as INLINE custom properties on <body> by
+   stationui.js applySettings() (deriveCustomTheme). Inline-on-body keeps the composite
+   --bezel/--well recipes below resolving against the derived phosphor (the theming trap).
+   If JS ever misses, the :root amber fallback still renders. Semantic status colours
+   (--ok/--bad/--link-down/--warn) are never derived — they stay constant across every theme. */
+
+/* ---- PREMIUM CRT SURFACE: the shared depth recipe (windows + panels) ----
+   A molded-bezel monitor, outside-in: outer phosphor ring → black casing
+   line → bloom → drop shadow → deep inner vignette → top edge highlight.
+   One light source (top-left) so every raised surface agrees.
+   DECLARED ON body (not :root) on purpose — the var(--ph)/var(--ph-glow2)/
+   var(--ph-dim) below resolve against body's themed phosphor tokens, so the
+   bezel "borders" re-tint when a body.theme-* class swaps the palette. Moving
+   these up to :root re-breaks the colour selector (borders stick on amber). */
+body {
+  --bezel:
+    0 0 0 2px var(--ph),
+    0 0 0 3.5px rgba(0, 0, 0, 0.9),
+    0 0 22px var(--ph-glow2),
+    0 12px 34px rgba(0, 0, 0, 0.85),
+    inset 0 0 56px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(var(--ph-bright-rgb), 0.07);
+  /* recessed control well — values glow up out of a dark inset floor */
+  --well:
+    inset 0 2px 7px rgba(0, 0, 0, 0.92),
+    inset 0 0 0 1px var(--ph-dim),
+    inset 0 -1px 0 rgba(var(--ph-bright-rgb), 0.05);
+  /* curved-glass overlay — corner vignette + top-left specular + faint glare */
+  --glass:
+    radial-gradient(ellipse 52% 32% at 25% 9%, rgba(255, 242, 214, 0.07), transparent 60%),
+    radial-gradient(ellipse 108% 96% at 50% 46%, transparent 60%, rgba(0, 0, 0, 0.52) 100%),
+    linear-gradient(115deg, rgba(255, 238, 210, 0.05) 0%, transparent 16%);
+  /* raised tile — a card lifted off the window surface by the one top light:
+     thin top edge highlight + a soft contact shadow below. */
+  --raise: inset 0 1px 0 rgba(var(--ph-bright-rgb), 0.07), 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; overflow: hidden; }
+/* undecorated desktop shell: maximize/fullscreen transitions expose the root for a
+   frame — paint it tube-black so resizes never flash a white sliver */
+html { background: #030201; }
+body {
+  /* THE CABINET MULTIPLIER. TEXT SIZE is a `zoom` on this element (stationui.js applySettings), so
+     every length below it is multiplied by that zoom. --cz turns a DESIGNED px back into a local px
+     for anything that is hardware rather than content — write `calc(<designed>px * var(--cz))` and
+     it renders at the size it was drawn at, at any text size. Inside a block that has already been
+     counter-zoomed whole (app.css's topbar/dock/nameplate rule) the multiplier is 1, so the SAME
+     calc is correct on both sides of that line. Unset = 1 = the shipped numbers untouched. */
+  --cz: var(--sn-unzoom, 1);
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 18px;
+  line-height: 1.22;
+  text-shadow: 0 0 4px var(--ph-glow2);
+  cursor: default;
+  user-select: none;
+}
+
+/* ====== CRT GLASS: scanlines + bezel vignette + slow roll band ====== */
+body::after { /* scanlines + aperture-grille over EVERYTHING */
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 950;
+  /* THE GLASS IS SCREEN-SPACE — it is the tube in front of the picture, not part of the picture.
+     TEXT SIZE zooms <body> (stationui.js applySettings) and that zoom multiplies into this overlay,
+     so every hard-px length below used to scale with the text: the 3px beam pitch rendered at
+     4.35px on HUGE, which stops reading as a beam and reads as venetian blinds. --cz is the exact
+     reciprocal stationui publishes beside the zoom (--sn-unzoom), applied to EVERY stop so the
+     pitch lands back at its authored device size at any text size. Kept as calc'd stops on the
+     repeating gradient rather than a tiled background-size: one continuous rasterisation across the
+     box has no tile seams, which is what keeps fractional-DPI displays free of moiré. Unset (the
+     100% default) resolves to 1, i.e. these are the shipped numbers, untouched. */
+  --cz: var(--sn-unzoom, 1);
+  /* BEAM scanlines: a soft dark trough between bright line-cores (graded stops,
+     not a hard 1px bar) so it reads as an electron beam, not venetian blinds —
+     and the soft edges alias far less on fractional-DPI displays. 3px pitch.
+     The two trough alphas are var()s with the SHIPPED numbers as their fallbacks, so FULL is these
+     exact values and the CRT dial has one place to turn them down (see body.crt-dull below). The
+     geometry — pitch, stop positions, the graded shoulder — is deliberately NOT parameterised:
+     widening the pitch is what turns a beam into venetian blinds, so the dial changes depth only. */
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) calc(1px * var(--cz)),
+      rgba(0,0,0,var(--scan-shoulder, 0.13)) calc(1.5px * var(--cz)),
+      rgba(0,0,0,var(--scan-core, 0.30)) calc(2px * var(--cz)),
+      rgba(0,0,0,var(--scan-shoulder, 0.13)) calc(2.5px * var(--cz)),
+      rgba(0,0,0,0) calc(3px * var(--cz))),
+    repeating-linear-gradient(90deg,
+      rgba(255,80,40,0.03) 0 calc(1px * var(--cz)),
+      rgba(40,180,120,0.02) calc(1px * var(--cz)) calc(2px * var(--cz)),
+      rgba(60,120,255,0.03) calc(2px * var(--cz)) calc(3px * var(--cz)));
+}
+/* hi-DPI: widen the pitch so the line + trough each land on whole device pixels
+   instead of merging into a flat gray haze on dense / scaled displays. */
+@media (min-resolution: 1.75dppx) {
+  body::after {
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) calc(1.5px * var(--cz)),
+        rgba(0,0,0,var(--scan-shoulder, 0.13)) calc(2.2px * var(--cz)),
+        rgba(0,0,0,var(--scan-core-hi, 0.28)) calc(3px * var(--cz)),
+        rgba(0,0,0,var(--scan-shoulder, 0.13)) calc(3.8px * var(--cz)),
+        rgba(0,0,0,0) calc(4.5px * var(--cz))),
+      repeating-linear-gradient(90deg,
+        rgba(255,80,40,0.03) 0 calc(1.5px * var(--cz)),
+        rgba(40,180,120,0.02) calc(1.5px * var(--cz)) calc(3px * var(--cz)),
+        rgba(60,120,255,0.03) calc(3px * var(--cz)) calc(4.5px * var(--cz)));
+  }
+}
+body.no-scan::after { display: none; }
+/* CRT DULLED (Appearance → CRT) — the tube TURNED DOWN, never turned off.
+   A SEPARATE class from `no-scan` on purpose: no-scan is the internal verification flag
+   (scripts/verify-stars2.mjs sets it directly to flatten the feed for star-pixel checks) and must
+   never be driven by, or clobbered by, a user setting.
+
+   There is no level that removes the CRT — the station is a tube, and that is not a preference.
+   What this does is thin the SCREEN-SPACE glass so the text underneath stops fighting it: the
+   trough depth drops to roughly 45% of shipped and the page vignette lightens. The pitch, the stop
+   positions and the graded shoulder are untouched, so it still reads as an electron beam at a
+   glance — it just stops carving ~2.6 troughs of 0.30 alpha through the body of every 14px VT323
+   glyph. (Contrast was never the problem: COMMS copy measures 5.7:1, past AA. The complaint is
+   interference at the glyph's own scale.) The station feed is not touched by any of this at all —
+   its scanlines, curve and aberration are painted IN-CANVAS by world.js drawCRT/drawCurve. */
+body.crt-dull {
+  --scan-shoulder: 0.06;   /* was 0.13 */
+  --scan-core: 0.14;       /* was 0.30 — the trough that was crossing every glyph */
+  --scan-core-hi: 0.13;    /* was 0.28, the hi-DPI variant's deeper core */
+  --page-vignette: 0.24;   /* was 0.42 — corner darkening over the rail and the dock */
+}
+body::before { /* curved-glass vignette + corner darkening */
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 940;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 38%, transparent 55%, rgba(0,0,0,var(--page-vignette, 0.42)) 100%),
+    radial-gradient(ellipse 60% 40% at 50% 0%, var(--ph-glow2), transparent 70%);
+  mix-blend-mode: normal;
+}
+#roll { display: none; }
+@keyframes flick { 0%,100% { opacity: 1; } 96% { opacity: 1; } 97% { opacity: 0.84; } 98% { opacity: 0.95; } }
+body:not(.no-flicker) #app { animation: flick 7s infinite; }
+
+/* ================= LAYOUT ================= */
+#app {
+  display: grid; height: 100vh;
+  grid-template-rows: 64px 1fr 44px;
+  grid-template-columns: 232px 1fr 324px;
+  grid-template-areas: "top top top" "left center right" "bot bot bot";
+  gap: 9px; padding: 11px;
+}
+#topbar { grid-area: top; } #left { grid-area: left; } #center { grid-area: center; }
+#right { grid-area: right; } #bottombar { grid-area: bot; }
+
+/* ====== PANEL BEZELS: each panel is a small CRT monitor ======
+   layers, outside-in: drop shadow → black casing line → glowing phosphor
+   ring → black glass seam → curved near-black glass with deep vignette */
+#topbar, #left, #right, #bottombar, #center {
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.85);
+  /* the bezel is hardware: its corner keeps the radius it was drawn with at every TEXT SIZE
+     (see the --cz note on `body`) — a zoomed 9px reads as 13px and the casing goes blobby. */
+  border-radius: calc(9px * var(--cz));
+  background:
+    radial-gradient(ellipse 130% 100% at 50% 0%, var(--ph-glow2), transparent 42%),
+    var(--panel);
+  box-shadow: var(--bezel);
+}
+/* curved-glass: top-left specular + corner vignette + faint diagonal glare */
+#topbar::before, #left::before, #right::before, #bottombar::before, #center::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  border-radius: inherit;
+  background: var(--glass);
+}
+
+/* panel header: glyph + title, gradient rule, dim auxiliary readout on the right */
+h3 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; letter-spacing: 4px; color: var(--ph);
+  padding: 7px 12px 4px; font-weight: normal;
+  text-shadow: 0 0 10px var(--ph-glow), 0 0 2px var(--ph-glow);
+}
+h3::after { /* engraved double rule */
+  content: ''; flex: 1; order: 1; height: 5px;
+  background:
+    linear-gradient(90deg, var(--ph-dim), rgba(0,0,0,0) 92%) top / 100% 1px no-repeat,
+    linear-gradient(90deg, var(--ph-faint), rgba(0,0,0,0) 70%) bottom / 100% 1px no-repeat;
+}
+.h3-aux { order: 2; color: var(--ph-dim); font-size: 11.5px; letter-spacing: 2px; display: flex; align-items: center; gap: 5px; text-shadow: none; }
+.live-dot { width: 6px; height: 6px; background: var(--ph); box-shadow: 0 0 6px var(--ph-glow); animation: pulse 1.3s infinite; }
+
+.scrolly { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--ph) transparent; }
+.scrolly::-webkit-scrollbar { width: 6px; }
+.scrolly::-webkit-scrollbar-thumb { background: var(--ph); }
+.scrolly::-webkit-scrollbar-track { background: rgba(0,0,0,0.4); }
+
+.pos { color: var(--ok); } .neg, .bad { color: var(--bad); } .warn { color: var(--warn); } .gold { color: var(--gold); }
+.dim { opacity: 1; }   /* was .5 (~2:1 on --bg, WCAG fail); .dim color comes from app.css var(--ph-dim) which is solid >=4.5:1 — only the text opacity is dropped, border/line uses of --ph-dim are untouched */
+b { font-weight: normal; color: var(--ph-bright); }
+::selection { background: var(--ph); color: var(--ink); text-shadow: none; }
+
+/* ================= TOP BAR ================= */
+#topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; overflow: hidden; }
+/* HOISTED TO <body>, BUT UNDER THE GLASS. Two independent things are going on here, and the z
+   number resolves both:
+   - The hoist (index.html) is what lets the mark paint over every floating window: #terms lives
+     inside #screen-game, a z-index:10 stacking context, so nothing in there can out-stack a <body>
+     child. ANY z above 10 buys that, which is why app/logoclip.js still has to clip the mark under
+     windows. #logo-anchor keeps its seat in the topbar flex row; positionLogo() syncs geometry.
+   - 935 puts it BENEATH both CRT overlays (vignette+themed top-glow z940, scanlines z950), so the
+     beam runs across the wordmark instead of stopping dead at its edges. The mark is picture; the
+     glass is the tube in front of the picture.
+   It sat at 960 — above the glass — because the art used to be a fixed-amber bitmap that the themed
+   top-glow washed muddy in green/blue/purple. The mark is painted in var(--ph) now, so the glow it
+   picks up is its own hue and that reason is gone. Do not raise this back over 940 without it. */
+#logo {
+  color: var(--ph);
+  display: none; align-items: center; gap: 12px; flex-shrink: 0;
+  position: fixed; z-index: 935; pointer-events: none;
+}
+/* in-game only; the title screen has its own big logo, and REFIT (builder) is its own full screen —
+   the fixed z-960 logo must not float over it (2026-07-09 layering bug; :not(.refit-on) lives INSIDE
+   this rule because a separate body.refit-on override loses the specificity fight to the :has(#id)). */
+body:has(#screen-game.active):not(.refit-on) #logo { display: flex; }
+#logo-anchor { flex-shrink: 0; }
+.logo-mark { font-size: 27px; color: var(--bad); text-shadow: 0 0 12px rgba(255,92,77,0.7); animation: pulse 2.8s infinite; }
+/* the STARNET wordmark image sits in the chrome top-left; the big version
+   lives on the title screen where it has room to read */
+/* MASKED, not placed. The mark paints as var(--ph) through starnet-wordmark.svg, so it re-tints
+   with the theme (the PNG was gold in every one) and re-rasterizes at whatever the device asks
+   for — the baked 60px PNG was exact only at DPR 2 and soft either side of it. aspect-ratio
+   supplies the width at FIRST layout, so #logo-anchor reserves the right seat before any asset
+   has loaded (the img had to fire `load` to get one). Ratio = the SVG's viewBox; if the trace is
+   ever regenerated at a different field height, copy the new viewBox here.
+   The asset is the `mosaic` preset — the master's own ASCII-dash texture, coarsened until it
+   survives this box. It is tuned FOR 24-30px: the dashes are sized so they still resolve here, and
+   the same texture at the master's native dash scale goes to dim mush by 30px. If this height ever
+   grows past ~56px, retrace finer (dev/trace-logo.mjs); if it ever shrinks below 24, switch to
+   --preset=solid, which is the legible floor.
+   No CSS glow/drop-shadow — removed per Andrew, and that still stands. */
+.logo-img {
+  height: 30px; aspect-ratio: 946 / 160; display: block;
+  background-color: var(--ph);
+  -webkit-mask: url(../assets/brand/starnet-wordmark.svg) center / contain no-repeat;
+          mask: url(../assets/brand/starnet-wordmark.svg) center / contain no-repeat;
+}
+/* one confident wordmark in the chrome — the big ASCII logo lives on the
+   title screen where it has room to read (salvaged from agent/design-system) */
+.logo-word {
+  font-family: inherit; font-size: var(--fs-4); line-height: 1; letter-spacing: 6px;
+  color: var(--ph); text-shadow: 0 0 12px var(--ph-glow), 0 0 2px var(--ph-glow);
+}
+.logo-sub {
+  font-size: var(--fs-0); letter-spacing: var(--ls-3); color: var(--ph-dim); text-shadow: none;
+  white-space: nowrap; align-self: center;
+  border-left: 1px solid var(--ph-faint); margin-left: var(--s-1); padding-left: var(--s-3);
+}
+.tb-stats { display: flex; align-items: center; gap: 0; height: 100%; }
+.tb-stat {
+  font-size: 11px; color: var(--ph-dim); letter-spacing: 2px;
+  padding: 0 16px; border-left: 1px solid var(--ph-faint);
+  display: flex; flex-direction: column; justify-content: center; height: 68%;
+}
+.tb-stat b { font-size: 20px; margin-top: -2px; letter-spacing: 1px; text-shadow: 0 0 8px var(--ph-glow2); }
+#tb-mode {
+  background: linear-gradient(180deg, rgba(var(--ph-rgb),.07), rgba(var(--ph-rgb),.02));
+  color: var(--ph); border: 1px solid var(--ph-dim); border-radius: 5px;
+  font-family: inherit; font-size: 16px; padding: 4px 15px; cursor: pointer; letter-spacing: 2px;
+  text-shadow: inherit; margin: 0 14px;
+  box-shadow: inset 0 1px 0 rgba(var(--ph-rgb),.12), 0 1px 0 rgba(0,0,0,.4);
+  transition: color .12s, border-color .12s, background-color .12s, box-shadow .12s;
+}
+#tb-mode:hover { background: var(--ph-faint); color: var(--ph-bright); border-color: var(--ph); box-shadow: inset 0 1px 0 rgba(var(--ph-rgb),.16), 0 0 14px var(--ph-glow2), 0 1px 0 rgba(0,0,0,.4); }
+#tb-mode.auto { color: var(--gold); border-color: var(--gold); box-shadow: 0 0 10px rgba(var(--gold-rgb), 0.35); }
+#tb-mode.auto:hover { background: rgba(var(--gold-rgb), 0.12); color: var(--gold); }
+#tb-level { font-size: 11px; color: var(--ph-dim); min-width: 96px; letter-spacing: 2px; }
+#tb-level b { font-size: 20px; color: var(--ph); text-shadow: 0 0 8px var(--ph-glow); }
+#xpbar { height: 7px; background: var(--ph-faint); margin-top: 2px; border: 1px solid var(--ph-dim); }
+#xpfill {
+  height: 100%; width: 0%; transition: width 0.4s;
+  background: repeating-linear-gradient(90deg, var(--ph) 0 6px, rgba(0,0,0,0.35) 6px 8px);
+  box-shadow: 0 0 8px var(--ph-glow);
+}
+
+/* ================= CREW ================= */
+#left { display: flex; flex-direction: column; overflow: hidden; }
+/* RAIL SPACE SPLIT (2026-07-27): #crew used to take flex:1 and hold ALL the column's slack, so a
+   2-agent station left ~350px of dead black under the roster while #workstreams — the list that
+   actually grows without bound — sat capped and scrolling beneath it. The roster is content-sized
+   now (it scrolls itself only past the cap), and #ws-wrap takes the slack instead. */
+/* ROSTER WINDOW (2026-08-07): the cap is --crew-cap, MEASURED by leftrail.js as a whole number of
+   rows (see the ROSTER WINDOW block there). 40% is only the no-JS fallback — a flat percentage is
+   never a whole number of rows, which is what sliced the last row in half. flex-shrink is 0 so a
+   long SESSIONS list cannot squeeze the roster back under the cap and re-open the same slice. */
+#crew { list-style: none; overflow-y: auto; flex: 0 0 auto; max-height: var(--crew-cap, 40%); scrollbar-width: thin; scrollbar-color: var(--ph) transparent; }
+.crew-row {
+  display: flex; gap: 6px; padding: 4px 7px; border-bottom: 1px solid var(--ph-faint);
+  cursor: pointer; align-items: flex-start;
+}
+.crew-row:hover { background: var(--ph-faint); box-shadow: inset 0 0 0 1px var(--ph); }
+.crew-row:hover .crew-status { opacity: 1; }
+.dot {
+  width: 7px; height: 7px; background: var(--ok); margin-top: 6px; flex-shrink: 0;
+  box-shadow: 0 0 7px var(--ok); animation: pulse 2.4s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.dot.alert { background: var(--warn); box-shadow: 0 0 7px var(--warn); animation: pulse 0.7s infinite; }
+.crew-main { min-width: 0; flex: 1; }
+.crew-name { font-size: 17px; letter-spacing: 1px; display: flex; align-items: baseline; }
+.crew-id, .ag-name-id { margin-left:6px; color:var(--ph-dim); font-size:.72em; letter-spacing:.5px; }
+.crew-room { font-size: 10.5px; color: var(--ph-dim); margin-left: auto; letter-spacing: 1px; padding-left: 8px; }
+.crew-status {
+  font-size: 12px; color: var(--text); opacity: 0.7;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 198px;
+}
+.crew-prog { height: 2px; background: var(--ph-faint); margin-top: 3px; }
+.crew-prog.off { opacity: 0.25; }
+.crew-prog > div {
+  height: 100%; width: 0%; background: var(--ph);
+  box-shadow: 0 0 5px var(--ph-glow); transition: width 0.6s;
+}
+.crew-row:hover .crew-prog > div { background: var(--ph-bright); }
+#crew-sum {
+  display: flex; justify-content: space-between; gap: 6px;
+  border-top: 1px solid var(--ph-faint); padding: 5px 9px;
+  font-size: 11.5px; letter-spacing: 1.5px; color: var(--ph-dim); flex-shrink: 0;
+}
+
+/* ================= CENTER / CRT ================= */
+#center { padding: 4px; background: #000; min-width: 0; min-height: 0; overflow: hidden; }
+#station-frame { position: relative; width: 100%; height: 100%; overflow: hidden; background: #030201; border-radius: calc(7px * var(--cz)); }
+#station {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: var(--cam-grade);
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  -webkit-mask-image: radial-gradient(ellipse 88% 88% at 50% 50%, black 38%, transparent 100%);
+  mask-image: radial-gradient(ellipse 88% 88% at 50% 50%, black 38%, transparent 100%);
+}
+.crt-scan {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+body.no-scan .crt-scan { display: none; }
+body.crt-dull .crt-scan { opacity: 0.45; }
+
+/* DULLED — the phosphor halo TIGHTENED on the prose you actually read, and nowhere else.
+   Not removed: the glow is the phosphor, and killing it makes the copy read as flat web text in a
+   pixel-art station. Halving the blur is what buys the stems back — a 4px halo around a glyph whose
+   strokes are ~2px is a soft edge on every one of them; at 2px the same colour sits tight to the
+   letterform. `text-shadow` is an INHERITED property and the halo comes from the `body` rule above,
+   so naming the four prose containers is enough: descendants inherit the tighter value, while every
+   chip, button and heading that declares its own glow keeps it untouched. That is why there is no
+   `*` selector and no !important here — a blanket sweep would flatten the chrome's identity along
+   with the copy, and the identity is not the part that is hard to read. */
+body.crt-dull #chat-log, body.crt-dull .term-body, body.crt-dull #left, body.crt-dull #bottombar { text-shadow: 0 0 2px var(--ph-glow2); }
+.crt-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 56%, rgba(0,0,0,0.6) 100%);
+}
+.crt-band {
+  position: absolute; left: 0; right: 0; height: 110px; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255,220,170,0.045), transparent);
+  animation: band 8s linear infinite;
+}
+@keyframes band { 0% { top: -110px; } 100% { top: 110%; } }
+
+/* ====== STATION VIEW HUD: security-cam dressing over the main screen ====== */
+.cam-hud { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.cam-hud span { position: absolute; color: var(--ph); }
+.cam-c { font-size: 24px; line-height: 1; opacity: 0.85; text-shadow: 0 0 8px var(--ph-glow); }
+.cam-tl { top: 6px; left: 10px; }
+.cam-tr { top: 6px; right: 10px; }
+.cam-bl { bottom: 6px; left: 10px; }
+.cam-br { bottom: 6px; right: 10px; }
+.cam-label { top: 10px; left: 34px; font-size: 11.5px; letter-spacing: 2px; color: var(--ph-dim); }
+.cam-rec { top: 10px; right: 34px; font-size: 11.5px; letter-spacing: 2px; color: var(--bad); animation: pulse 1.6s infinite; text-shadow: 0 0 8px rgba(255,92,77,0.5); }
+.cam-feed { bottom: 10px; left: 34px; font-size: 11px; letter-spacing: 2px; color: var(--ph-dim); }
+.cam-alt { bottom: 10px; right: 34px; font-size: 11px; letter-spacing: 2px; color: var(--ph-dim); }
+
+/* ================= RIGHT COLUMN ================= */
+#right { display: flex; flex-direction: column; overflow: hidden; }
+#right section { display: flex; flex-direction: column; border-bottom: 1px solid var(--ph-dim); min-height: 0; }
+#ops-sec { flex: 5; } #mc-sec { flex: 0 0 auto; } #obj-sec { flex: 0 0 auto; } #chat-sec { flex: 6; border-bottom: none; }
+#ops { flex: 1; padding: 3px 8px 3px 6px; font-size: 14px; }
+.op { margin-bottom: 1px; opacity: 0.92; border-left: 2px solid transparent; padding-left: 5px; }
+.op.sale { color: var(--ok); border-left-color: var(--ok); }
+.op.warn { color: var(--warn); border-left-color: var(--warn); }
+.op.bad { color: var(--bad); border-left-color: var(--bad); }
+.op.gold { color: var(--gold); border-left-color: var(--gold); }
+.op.good { color: var(--ph-bright); border-left-color: var(--ph-dim); }
+.op.dim { opacity: 0.42; }
+.ts { color: var(--ph-dim); font-size: 12px; }
+
+#mc { padding: 5px 9px; font-size: 14px; }
+.mc-row { display: flex; justify-content: space-between; color: var(--ph-dim); letter-spacing: 1px; }
+.mc-row b { color: var(--ph); font-size: 17px; }
+.mc-bar { height: 8px; background: var(--ph-faint); margin: 4px 0; border: 1px solid var(--ph-dim); }
+.mc-bar > div {
+  height: 100%; transition: width 0.5s;
+  background: repeating-linear-gradient(90deg, var(--ph) 0 6px, rgba(0,0,0,0.35) 6px 8px);
+  box-shadow: 0 0 6px var(--ph-glow);
+}
+.mc-bar.sm { height: 5px; margin: 2px 0 4px; }
+.mc-task { font-size: 13px; margin-top: 3px; }
+.mc-agent { letter-spacing: 1px; }
+
+#objs { padding: 5px 9px; font-size: 14px; }
+.obj { margin-bottom: 3px; }
+.obj.done { color: var(--ph-dim); text-decoration: line-through; }
+.obj-chk { color: var(--ph); }
+.obj-n { color: var(--ph-dim); font-size: 12px; float: right; }
+
+#chat { flex: 1; padding: 3px 8px; font-size: 14px; }
+.msg { margin-bottom: 2px; word-wrap: break-word; }
+.msg b { letter-spacing: 1px; }
+.mn { letter-spacing: 1px; }
+#chat-inputrow {
+  display: flex; gap: 8px; border-top: 2px solid var(--ph-dim); padding: 5px 9px; align-items: center;
+  background: rgba(0,0,0,0.3); transition: box-shadow 0.25s, border-color 0.25s;
+}
+#chat-sec:focus-within #chat-inputrow {
+  border-top-color: var(--ph);
+  box-shadow: 0 -4px 18px var(--ph-glow2), inset 0 0 18px var(--ph-glow2);
+}
+.prompt {
+  color: var(--ph); background: transparent; padding: 0 5px;
+  border: 1px solid var(--ph); text-shadow: 0 0 5px var(--ph-glow2);
+  box-shadow: 0 0 8px var(--ph-glow2); animation: pulse 1.4s infinite;
+}
+#chat-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--ph-bright); font-family: inherit; font-size: 16px; text-shadow: inherit;
+  caret-color: var(--ph);
+}
+#chat-input::placeholder { color: var(--ph-dim); }
+
+/* ================= BOTTOM BAR ================= */
+#bottombar { display: flex; align-items: center; gap: 2px; padding: 0 12px; }
+.bb + .bb { border-left: 1px solid var(--ph-faint); }
+#sig { font-size: 12px; letter-spacing: 1px; color: var(--ph-dim); }
+#sig b { color: var(--ph); font-weight: normal; text-shadow: 0 0 7px var(--ph-glow2); }
+/* E1: UPLINK bars are wired to the real SSE bridge health (World.linkState). Down → red bars collapse
+   to the empty-signal glyph + label, matching the canvas LINK DOWN (#ff6a4c). Restores on reconnect. */
+#sig.down { color: rgba(255,80,60,0.75); }
+#sig.down b { color: var(--link-down); text-shadow: 0 0 7px rgba(255,80,60,0.9); animation: sig-down-breathe 2.2s ease-in-out infinite; }
+@keyframes sig-down-breathe { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+/* STANDBY (pre-bridge / paused): dim, unglowing bars — not the live-green full-signal look. */
+#sig.standby b { color: var(--ph-dim); text-shadow: none; opacity: 0.6; }
+.bb {
+  background: transparent; color: var(--ph); border: none;
+  font-family: inherit; font-size: 16px; letter-spacing: 2px; padding: 6px 18px;
+  cursor: pointer; position: relative; text-shadow: inherit;
+}
+/* pip-boy menu selection brackets on hover */
+.bb:hover { color: var(--ph-bright); }
+.bb:hover::before { content: '['; position: absolute; left: 4px; color: var(--ph); }
+.bb:hover::after { content: ']'; position: absolute; right: 4px; color: var(--ph); }
+.bb.active {
+  background: var(--ph-faint); color: var(--ph-bright);
+  text-shadow: 0 0 6px var(--ph-glow);
+  box-shadow: inset 0 0 0 2px var(--ph), 0 0 14px var(--ph-glow2);
+}
+.bb.active:hover::before, .bb.active:hover::after { color: var(--ph); }
+.bb.sm { font-size: 13px; padding: 3px 9px; border: 1px solid var(--ph-dim); }
+/* compact buttons (.sm/.xs) have too little padding for the absolute [..] brackets —
+   they'd overprint the label. Both use the quiet background hover instead. */
+.bb.sm:hover::before, .bb.sm:hover::after,
+.bb.xs:hover::before, .bb.xs:hover::after { content: none; }
+.bb.sm:hover, .bb.xs:hover { background: var(--ph-faint); }
+.bb.danger { color: var(--bad); }
+.badge {
+  display: none; position: absolute; top: -5px; right: -4px;
+  background: var(--warn); color: #1a1200; font-size: 12px; min-width: 16px;
+  text-align: center; padding: 0 3px; text-shadow: none; z-index: 2;
+}
+.bb-right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+#clock {
+  background: linear-gradient(180deg, rgba(var(--ph-rgb),.07), rgba(0,0,0,.5));
+  color: var(--ph); font-size: 17px; letter-spacing: 3px;
+  padding: 2px 15px; border: 1px solid var(--ph); border-radius: 999px; text-shadow: 0 0 5px var(--ph-glow2);
+  box-shadow: inset 0 1px 0 rgba(var(--ph-rgb),.14), 0 0 12px var(--ph-glow2), inset 0 0 10px rgba(0,0,0,0.6);
+}
+#save-dot { color: var(--ph-faint); font-size: 13px; transition: color 0.3s; }
+#save-dot.flash { color: var(--ph); text-shadow: 0 0 8px var(--ph-glow); }
+/* durable-mirror STALE: local cache is fine, but the backup copy hasn't synced. Amber/warn, in-vocabulary
+   (same --warn token the ctx-gauge + refit notes use), with a slow pulse so it reads as "attention" not
+   "error". Truthful telemetry: this only lights when CloudSave can't PROVE a recent backup. */
+#save-dot.stale { color: var(--warn); text-shadow: 0 0 8px rgba(255,233,122,0.55); animation: save-dot-stale 2.4s ease-in-out infinite; }
+/* EL-11 FIX 1: workspace written by a NEWER StarNet — the sidecar is REFUSING backup writes. Persistent red
+   (--bad), distinct from the amber transient states; the title (stationui refreshSaveDurability) advises. */
+#save-dot.degraded { color: var(--bad); text-shadow: 0 0 8px rgba(255,92,77,0.55); animation: save-dot-stale 2.4s ease-in-out infinite; }
+@keyframes save-dot-stale { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* ---- CONTEXT-WINDOW gauge: engraved into the bottom bar ----
+   The agent's live context occupancy, moved off the desk and recessed into the
+   chrome so it reads at a glance no matter where the camera is. A milled groove
+   (inset shadow) holds a phosphor fill that climbs toward the model's REAL ceiling;
+   amber at 75%, red + a slow pulse near the top. Honest by construction: an unknown
+   model limit shows an empty groove + "—" (calibrating), never a fabricated fill. */
+.ctx-gauge { display: flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: 1px; color: var(--ph-dim); user-select: none; }
+.ctx-gauge .ctx-lbl { letter-spacing: 2px; }
+/* ASCII cell bar — ▮ lit / ▯ hollow, written by ctxTick in whole cells (deliberate, chunky ticks
+   instead of a sliding fill). Same green→amber→red escalation (the desk core's proven palette),
+   kept theme-independent so the warn/crit step is always visible — even on amber chrome. */
+.ctx-gauge .ctx-cells {
+  font-size: 13px; line-height: 1; letter-spacing: 1px; user-select: none;
+  color: #3fd07c; text-shadow: 0 0 6px rgba(63,208,124,0.45);
+  transition: color 0.3s, text-shadow 0.3s;
+}
+/* the HALF cell — the same lit glyph held back to a partial state, which is how the bar carries 20
+   steps in ten cells of width without introducing a glyph VT323 might not have (a fallback glyph
+   would change that one cell's advance width and visibly break the row). Inherits every level colour
+   above, so the amber/red escalation still applies to it. */
+.ctx-gauge .ctx-cells .ctx-half { opacity: 0.42; }
+/* one-shot brightness tick when a new cell lights (class re-armed by ctxTick) */
+.ctx-gauge .ctx-cells.ctx-tick { animation: ctx-cell-tick 0.35s ease-out; }
+@keyframes ctx-cell-tick { 0% { filter: brightness(2.1); } 100% { filter: brightness(1); } }
+.ctx-gauge .ctx-num { color: #3fd07c; font-weight: normal; min-width: 30px; text-shadow: 0 0 6px rgba(63,208,124,0.45); }
+.ctx-gauge .ctx-cap { color: var(--ph-dim); font-size: 11px; }
+/* calibrating / idle: groove sits dark, readout dimmed — no glow it can't justify */
+.ctx-gauge[data-level="unknown"] .ctx-cells,
+.ctx-gauge[data-level="idle"] .ctx-cells { color: var(--ph-dim); text-shadow: none; }
+.ctx-gauge[data-level="unknown"] .ctx-num,
+.ctx-gauge[data-level="idle"] .ctx-num { color: var(--ph-dim); text-shadow: none; }
+.ctx-gauge[data-level="warn"] .ctx-cells { color: #ffb24a; text-shadow: 0 0 6px rgba(255,178,74,0.5); }
+.ctx-gauge[data-level="warn"] .ctx-num { color: #ffb24a; text-shadow: 0 0 6px rgba(255,178,74,0.5); }
+.ctx-gauge[data-level="crit"] .ctx-cells { color: #ff5a4a; text-shadow: 0 0 6px rgba(255,90,74,0.55); animation: ctx-crit 1.1s ease-in-out infinite; }
+.ctx-gauge[data-level="crit"] .ctx-num { color: #ff5a4a; text-shadow: 0 0 6px rgba(255,90,74,0.55); }
+@keyframes ctx-crit { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+/* COMPACTION beat: a brief mint flash on the cells when the loop folded old context away */
+.ctx-gauge.compact .ctx-cells { color: #9effc4; text-shadow: 0 0 9px rgba(158,255,196,0.6); }
+.ctx-gauge.compact .ctx-cap { color: #9effc4; }
+@media (prefers-reduced-motion: reduce) {
+  .ctx-gauge[data-level="crit"] .ctx-cells { animation: none; }
+  .ctx-gauge .ctx-cells.ctx-tick { animation: none; }
+}
+/* narrow windows: drop the wordy bits, keep the bar + percent */
+@media (max-width: 1180px) { .ctx-gauge .ctx-cap, .ctx-gauge .ctx-lbl { display: none; } }
+
+/* ================= TERMINAL WINDOWS (floating) =================
+   The shared window shell. Every floating window (dossier, settings,
+   kanban, prop consoles…) is built from the same molded-CRT material as
+   the panels: bezel + recessed curved-glass overlay + a CRT power-on +
+   an inverted-chip header. Prop consoles (.pw) keep their own power-on
+   and amber-on-dark title; everything else inherits this verbatim. */
+#terms { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+/* focus scrim — dims & desaturates the station so the open window owns the eye.
+   Mounted under the lowest window (z 480 < the 501+ that zTop() hands out). */
+.term-scrim {
+  position: fixed; inset: 0; pointer-events: none; z-index: 480;
+  background: radial-gradient(ellipse 72% 66% at 50% 47%, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.84) 100%);
+  -webkit-backdrop-filter: saturate(0.5) blur(1.5px); backdrop-filter: saturate(0.5) blur(1.5px);
+  animation: scrim-in 0.22s ease-out;
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+/* WHERE A WINDOW RESTS — the BAND, not the raw glass. StationUI.syncTermBand() measures the
+   chrome that owns the top and bottom of the frame (#topbar, #bottombar, and on the Windows
+   desktop shell #sn-titlebar, which paints OVER every window at z930) and publishes the strip
+   between them on #terms as --term-top / --term-band, in the same zoomed-space px a window's
+   own left/top are written in. Centring on the viewport instead hid a tall window's titlebar —
+   its title chip AND its ✕ — under those bars at the largest TEXT SIZE (2026-08-06 report).
+   The fallbacks are the pre-band numbers, so a frame that has not measured yet still opens sane.
+   vw/vh inside the TEXT SIZE body zoom resolve against the REAL viewport and are THEN multiplied
+   by the zoom (86vh renders as 129vh at 150%) — --sn-unzoom is the exact reciprocal, so a
+   viewport-relative cap keeps meaning what it says. Same law as the cabinet block in app.css. */
+/* TWO WINDOW SIZES, AND ONLY TWO (2026-08-13, Andrew's call). Every window used to carry its own
+   hand-picked width — 460 / 480 / 540 / 560 / 620 / 640 / 760 / 1000 / console — so opening two of
+   them side by side read as eight unrelated apps. There are now exactly two shells:
+     PANEL  (--term-w-panel)  — a single reading column: UPDATES, NOTIFICATIONS, FIELD MANUAL,
+                                OUTBOX, TROPHY CASE. The default; no class needed.
+     WIDE   (--term-w-wide)   — anything with a rail, a grid, or side-by-side columns: every
+                                `.console` window plus TASK BOARD / QUEST LOG / COMMANDER DOSSIER
+                                (`.term.wide`, which is width-only — it does NOT imply the console
+                                rail markup that `.console` mounts).
+   Both are declared HERE so `.term.console` in app.css and `.term.wide` resolve the same token and
+   can never drift apart again. A user drag still writes inline width (.term-sized) and wins over both. */
+.term {
+  --term-w-panel: min(640px, calc(94vw * var(--sn-unzoom, 1)));
+  --term-w-wide: min(1060px, calc(88vw * var(--sn-unzoom, 1)));
+  position: fixed; left: 50%;
+  top: calc(var(--term-top, 0px) + var(--term-band, calc(100vh * var(--sn-unzoom, 1))) / 2);
+  transform: translate(-50%, -50%);
+  width: var(--term-w-panel);
+  max-width: calc(94vw * var(--sn-unzoom, 1));
+  max-height: var(--term-band, calc(86vh * var(--sn-unzoom, 1)));
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(ellipse 130% 100% at 50% 0%, var(--ph-glow2), transparent 42%),
+    rgba(5, 3, 1, 0.97);
+  box-shadow: var(--bezel);
+  pointer-events: auto; display: flex; flex-direction: column; overflow: hidden;
+  transform-origin: center; animation: term-power 0.42s ease-out;
+}
+/* recessed curved-glass overlay sits over the screen content (not the header) */
+.term::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 6; background: var(--glass);
+}
+@keyframes term-power {
+  0%   { transform: translate(-50%, -50%) scale(1, 0.012); filter: brightness(6); }
+  9%   { transform: translate(-50%, -50%) scale(1, 0.04); }
+  46%  { transform: translate(-50%, -50%) scale(1.004, 1.03); filter: brightness(2.2); }
+  100% { transform: translate(-50%, -50%) scale(1, 1); filter: brightness(1); }
+}
+.term-head {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s-2);
+  background: linear-gradient(180deg, var(--ph-glow2), transparent);
+  color: var(--ph); padding: 5px 7px 5px 10px; cursor: grab; flex-shrink: 0;
+  position: relative; z-index: 7;
+  border-bottom: 1px solid var(--ph-dim); text-shadow: 0 0 6px var(--ph-glow2);
+}
+.term-head:active { cursor: grabbing; }
+.term-title { color: var(--ph); letter-spacing: var(--ls-3); font-size: var(--fs-2); }
+/* inverted title chip on the main windows — ties them to the panel header
+   language; prop consoles keep amber-on-dark + their per-prop accent bullet */
+.term:not(.pw) .term-title {
+  color: var(--ink); background: var(--ph); padding: 1px 10px;
+  border-radius: var(--r-sm); box-shadow: 0 0 12px var(--ph-glow2); text-shadow: none;
+}
+/* ============================================================
+   CLOSE-BUTTON PRIMITIVE (.x-btn) — the one ✕ control.
+   Base = shared geometry + chip skin + motion + active. The legacy
+   close classes compose it through the grouped selectors below and
+   keep only their size / position / ghost / danger deltas, so their
+   JS class names never change. Declared here in the first-loaded
+   stylesheet so every later modifier file (app / marketplace /
+   tutorial / widgets) wins the cascade over the base.
+   (.nav-coach-x stays a labeled inverted acknowledge button — not
+    part of this glyph family.) */
+.x-btn,
+.term-x, .ag-name-x, .mkt-x, .wg-x, .tut-brief-x, .queued-x, .q-dismiss {
+  flex: 0 0 auto; font-family: inherit; line-height: 1; cursor: pointer;
+  color: var(--ph); background: var(--panel2); border: 1px solid var(--ph-dim);
+  border-radius: var(--r-sm); font-size: var(--fs-1); padding: 2px 7px; text-shadow: none;
+  transition: border-color var(--t-fast) var(--ease-soft), background-color var(--t-fast) var(--ease-soft),
+              box-shadow var(--t-fast) var(--ease-soft), color var(--t-fast) var(--ease-soft);
+}
+/* default phosphor-bright hover */
+.x-btn:hover,
+.term-x:hover, .mkt-x:hover, .tut-brief-x:hover, .q-dismiss:hover {
+  color: var(--ph-bright); border-color: var(--ph); box-shadow: 0 0 12px var(--ph-glow2);
+}
+/* danger hover — removal/cancel controls flush red */
+.x-btn.danger:hover,
+.wg-x:hover, .queued-x:hover, .ag-name-x:hover {
+  color: var(--bad); border-color: var(--bad);
+}
+/* shared active sink (mirrors the motion.css button feel) */
+.x-btn:active,
+.term-x:active, .ag-name-x:active, .mkt-x:active, .wg-x:active,
+.tut-brief-x:active, .queued-x:active, .q-dismiss:active {
+  filter: brightness(0.86); transition-duration: 60ms;
+}
+
+/* .term-x — window-chrome instance: translucent casing over the glass */
+.term-x { background: rgba(0,0,0,0.35); }
+.term-x:hover { background: var(--ph-faint); }
+.term-body {
+  padding: var(--s-3) var(--s-4); overflow-y: auto; position: relative; z-index: 5;
+  flex: 1 1 auto; min-height: 0;
+  scrollbar-width: thin; scrollbar-color: var(--ph) transparent;
+}
+.term-body::-webkit-scrollbar { width: 6px; }
+.term-body::-webkit-scrollbar-thumb { background: var(--ph); }
+
+/* Shared resize affordance: pointer/touch/pen drag plus arrow-key resizing (wired in stationui.js).
+   It sits above both ordinary footer chrome and the molded feature casing, and remains reachable on phones. */
+.term-resize {
+  position: absolute; right: 3px; bottom: 3px; z-index: 10;
+  width: 24px; height: 24px; padding: 0; display: grid; place-items: center;
+  font: 14px/1 VT323, monospace; color: var(--ph); background: rgba(0,0,0,.78);
+  border: 1px solid var(--ph-dim); border-radius: var(--r-sm); cursor: nwse-resize;
+  touch-action: none; user-select: none; opacity: .78;
+  text-shadow: 0 0 6px var(--ph-glow2); box-shadow: 0 0 7px rgba(0,0,0,.7);
+}
+.term-resize:hover, .term-resize:focus-visible {
+  opacity: 1; color: var(--ph-bright); border-color: var(--ph);
+  outline: 2px solid var(--ph-bright); outline-offset: 1px;
+  box-shadow: 0 0 12px var(--ph-glow2);
+}
+.term-resize:active { filter: brightness(.82); }
+
+/* ---- HERO "feature window": the full molded-monitor casing (opt-in) ----
+   Reserved for hero windows (the dossier). The casing is real plastic with
+   corner screws + a nameplate + control knobs; head+body live inside a
+   recessed glass screen. Built by toggleTerm({ feature: true }). */
+.term.feature {
+  padding: 13px 13px 24px; border-radius: 16px;
+  background:
+    radial-gradient(circle at 11px 11px, #2c1f0d 0 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 11px) 11px, #2c1f0d 0 2px, transparent 3px),
+    radial-gradient(circle at 11px calc(100% - 22px), #2c1f0d 0 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 11px) calc(100% - 22px), #2c1f0d 0 2px, transparent 3px),
+    linear-gradient(180deg, #0d0a05, #080502 62%, #050301);
+  box-shadow: var(--bezel), 0 0 70px var(--ph-glow2);
+}
+.term.feature::before { display: none; }   /* glass moves onto the inner screen */
+.term-screen {
+  position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
+  border-radius: var(--r); overflow: hidden;
+  background:
+    radial-gradient(ellipse 130% 100% at 50% 0%, var(--ph-glow2), transparent 42%),
+    rgba(5, 3, 1, 0.97);
+  box-shadow:
+    inset 0 0 0 1.5px var(--ph), inset 0 0 0 3px rgba(0, 0, 0, 0.92), inset 0 0 52px rgba(0, 0, 0, 0.9);
+}
+.term-screen::before {   /* recessed curved-glass over the screen */
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 6; background: var(--glass);
+}
+.term.feature .term-body { flex: 1 1 auto; min-height: 0; }
+/* nameplate strip in the bottom rim — brand + control knobs */
+.term-plate {
+  position: absolute; left: 14px; right: 14px; bottom: 5px; height: 16px;
+  display: flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-0); letter-spacing: var(--ls-3); color: var(--ph-dim);
+}
+.term-plate .term-knobs { margin-left: auto; display: inline-flex; gap: 9px; }
+.term-knobs .knob {
+  width: 13px; height: 13px; border-radius: 50%; position: relative;
+  background: radial-gradient(circle at 35% 30%, #1c1307, #080502 72%);
+  box-shadow: inset 0 0 0 1px rgba(var(--ph-bright-rgb), 0.10), 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.term-knobs .knob::after {
+  content: ''; position: absolute; left: 50%; top: 2px; width: 2px; height: 4px;
+  transform: translateX(-50%); background: var(--ph); box-shadow: 0 0 4px var(--ph-glow2);
+}
+
+/* ================= AGENTS TERMINAL — DOSSIER ROSTER (console rail-top) =================
+   The roster lives in the console's .con-rail-top slot (above the search + section rail).
+   Rows keep the .ag-list / .ag-item class names; premium row = color dot + name + a small
+   live idle/working hint, with the selected row inverted like a .con-rail-item.active. */
+.con-rail-top { flex: 0 0 auto; padding: 8px 8px 4px; border-bottom: 1px solid var(--ph-faint); }
+.ag-list { display: flex; flex-direction: column; gap: 3px; max-height: 30vh; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--ph-dim) transparent; }
+.ag-list::-webkit-scrollbar { width: 6px; }
+.ag-list::-webkit-scrollbar-thumb { background: var(--ph-dim); border-radius: 4px; }
+.ag-item {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  font-size: var(--fs-1); letter-spacing: var(--ls-2); color: var(--ph-dim);
+  padding: 5px 8px; border: 1px solid transparent; border-radius: var(--r-sm);
+  text-shadow: 0 0 6px var(--ph-glow2);
+}
+.ag-item-dot { flex: 0 0 auto; font-size: 11px; line-height: 1; }
+.ag-item-nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-item-st { flex: 0 0 auto; font-size: 10px; letter-spacing: 1px; color: var(--ph-dim); opacity: .7; text-transform: uppercase; }
+.ag-item-st.working { color: var(--gold); opacity: 1; }
+.ag-item:hover { color: var(--ph-bright); border-color: var(--ph-dim); background: var(--ph-faint); }
+.ag-item:focus-visible { outline: 2px solid var(--ph-bright); outline-offset: 1px; }
+/* selected = the inverted chip idiom (ties into .con-rail-item.active + the window title chip) */
+.ag-item.sel {
+  color: var(--ink); background: var(--ph); border-color: var(--ph);
+  text-shadow: none; box-shadow: 0 0 12px var(--ph-glow2), inset 3px 0 0 var(--ph-bright);
+}
+.ag-item.sel .ag-item-st { color: var(--ink); opacity: .8; }
+.ag-item.sel .ag-item-st.working { color: var(--ink); }
+/* tabsTop: the roster now OWNS the whole left rail (the five section tabs moved to the pane top). The rail
+   is [roster, search] in DOM order; put the search on TOP with flex order, then let the roster fill the rest
+   of the column full-height. Rows get a touch more room to breathe now that the rail is theirs alone. */
+.con-tabstop .con-search { order: 0; }
+.con-tabstop .con-rail-top {
+  order: 1; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  border-bottom: none; padding-top: 4px;
+}
+.con-tabstop .con-rail-top .ag-list { flex: 1 1 auto; max-height: none; }
+.con-tabstop .ag-item { padding: 8px 10px; gap: 9px; }
+.con-tabstop .ag-item-dot { font-size: 12px; }
+#ag-portrait {
+  width: 88px; height: 116px; image-rendering: pixelated;
+  border: 2px solid var(--ph-dim); background: #02080a; flex-shrink: 0;
+}
+/* Phase-2 dossier hero: larger name with a soft glow (the glow rides the agent's own
+   inline suit colour via currentColor, so it stays "this unit's" hue) + faint chromatic edge. */
+.ag-name { font-size: 28px; letter-spacing: 4px; line-height: 1; text-shadow: 0 0 15px var(--ph-glow2), -1px 0 rgba(255,90,90,.22), 1px 0 rgba(90,170,255,.20); }
+.ag-role { color: var(--ph); font-size: 14px; letter-spacing: 2px; }
+.ag-tags { margin-top: 4px; display: flex; gap: 5px; flex-wrap: wrap; }
+.tag {
+  border: 1px solid var(--ph-dim); padding: 0 6px; font-size: 12px;
+  color: var(--ph); letter-spacing: 1px;
+}
+.tag.claw { color: var(--bad); border-color: var(--bad); }
+.tag.model { color: var(--gold); border-color: var(--gold); }
+/* the model tag doubles as a one-click shortcut into CONFIG › model */
+.tag.model[data-goconfig] { cursor: pointer; }
+.tag.model[data-goconfig]:hover { color: var(--ink); background: var(--gold); }
+.tag.model[data-goconfig]:focus { outline: none; box-shadow: 0 0 0 1px var(--gold); }
+/* rename affordance on the dossier name (per-agent rename) */
+.ag-rename {
+  display: inline-block; vertical-align: middle; margin-left: 8px;
+  font-size: 13px; line-height: 1; letter-spacing: 0; color: var(--ph-dim);
+  background: transparent; border: 1px solid transparent; border-radius: 3px;
+  padding: 2px 5px; cursor: pointer; opacity: 0.4; transition: opacity .12s, color .12s, border-color .12s;
+}
+.ag-name:hover .ag-rename, .ag-rename:focus { opacity: 1; }
+.ag-rename:hover { color: var(--ph-bright); border-color: var(--ph-dim); }
+.ag-name-edit { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ag-name-input {
+  font-family: inherit; font-size: 24px; letter-spacing: 3px; line-height: 1;
+  background: var(--panel2); border: 1px solid var(--ph); border-radius: 3px;
+  padding: 3px 8px; width: 11ch; max-width: 60vw; text-transform: uppercase;
+}
+.ag-name-input:focus { outline: none; box-shadow: 0 0 0 1px var(--ph), 0 0 12px var(--ph-glow2); }
+.ag-name-ok {
+  font-size: 15px; line-height: 1; cursor: pointer; border: 1px solid var(--ph-dim);
+  border-radius: 3px; padding: 3px 9px; background: var(--panel2); color: var(--ph);
+}
+.ag-name-ok:hover { color: var(--gold); border-color: var(--gold); }
+/* .ag-name-x composes .x-btn (danger hover) — size delta only */
+.ag-name-x { font-size: 15px; padding: 3px 9px; }
+.ag-desc { font-size: 14px; margin: 8px 0; opacity: 0.85; user-select: text; }
+.stat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 13px; }
+.stat-row span { width: 86px; color: var(--ph-dim); letter-spacing: 1px; }
+.stat-row b { width: 30px; text-align: right; }
+.stat-bar { flex: 1; height: 8px; background: var(--ph-faint); border: 1px solid var(--ph-dim); }
+.stat-bar > div { height: 100%; box-shadow: 0 0 5px var(--ph-glow); transition: width 0.5s; }
+.ag-stats { display: flex; gap: 14px; margin: 8px 0 4px; font-size: 13px; color: var(--ph-dim); flex-wrap: wrap; }
+.ag-status { font-size: 14px; color: var(--ph); margin-top: 4px; }
+.ag-note { font-size: 12px; opacity: 0.55; margin-top: 6px; }
+.ag-task-block { border: 1px solid var(--ph-dim); padding: 6px 8px; margin: 8px 0 6px; background: var(--ph-faint); border-radius: var(--r-sm); box-shadow: var(--raise); }
+.ag-task-label { font-size: 11px; color: var(--ph-dim); letter-spacing: 2px; margin-bottom: 4px; }
+.ag-task-title { font-size: 13px; color: var(--ph); line-height: 1.3; }
+.ag-task-pct { font-size: 11px; color: var(--ph-dim); margin-top: 2px; }
+.ag-task-idle { font-size: 13px; color: var(--ph-dim); font-style: italic; }
+.ag-no-fb { opacity: 0.4; font-size: 12px; }
+
+/* (dossier sub-tab strip retired — the five tabs are now console sections in the rail.) */
+
+/* ---- CONFIG tab: the agent's real .md config files ---- */
+.cf-root { font-size: 13px; color: var(--gold); letter-spacing: 1px; margin: 2px 0 6px; opacity: 0.85; }
+.cf-intro { font-size: 12px; color: var(--ph-dim); line-height: 1.5; margin: 0 0 10px; }
+.cf-intro b { color: var(--ph); font-weight: normal; }
+.cf {
+  border: 1px solid var(--ph-faint); border-left: 3px solid var(--ph-dim);
+  background: rgba(0,0,0,0.35); padding: 6px 9px; margin-bottom: 8px;
+  border-radius: var(--r-sm); box-shadow: var(--raise);
+}
+.cf.cf-on { border-left-color: var(--ph); box-shadow: 0 0 10px var(--ph-glow2); }
+.cf.cf-ro { border-left-color: var(--ph-faint); opacity: 0.92; }
+.cf-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* per-agent CONFIG cards (personality / model / approval / while-you're-away) — same card
+   language as .cf; this class had NO rule, so the cards ran together as bare unspaced divs. */
+.cf-card {
+  border: 1px solid var(--ph-faint); border-left: 3px solid var(--ph-dim);
+  background: rgba(0,0,0,0.35); padding: 8px 11px 10px; margin-bottom: 10px;
+  border-radius: var(--r-sm); box-shadow: var(--raise);
+}
+.cf-card .cf-head { margin-bottom: 4px; }
+.cf-card .cf-desc { margin: 0 0 8px; }
+.cf-card .ov-vchips { margin: 2px 0 4px; }
+.cf-card .msg:empty { display: none; }
+.cf-card .set-row { margin: 6px 0; }
+/* GROUP RULES (dossier UX pass): CONFIG's nine cards now sit under three named rules instead of running as one
+   1565px column. First rule sheds its top margin — it lands directly under the station:// path line. */
+.cf-grp { margin: 20px 0 0; scroll-margin-top: 8px; }
+.cf-nav + .cf-grp { margin-top: 8px; }
+/* the group jump row — three flat chips, matte, no lift. It is a table of contents, not a control panel. */
+.cf-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 4px; }
+.cf-nav-b {
+  font: inherit; font-size: 10px; letter-spacing: 1.6px; color: var(--ph-dim);
+  background: rgba(0,0,0,.28); border: 1px solid var(--ph-faint); border-radius: var(--r-sm);
+  padding: 4px 9px; cursor: pointer;
+}
+.cf-nav-b:hover, .cf-nav-b:focus-visible { color: var(--ph-bright); border-color: var(--ph-dim); background: var(--ph-faint); }
+.cf-nav-b:focus-visible { outline: 2px solid var(--ph-bright); outline-offset: 1px; }
+.cf-grp-note { font-size: 11px; color: var(--ph-dim); line-height: 1.45; margin: 5px 0 9px; max-width: 78ch; }
+/* the landing flash for a card reached from BRIEF's setup strip — without it the pane simply teleports and the
+   Commander has to re-find the row they clicked. Fades out on its own (class dropped after 1.4s). */
+.cf-card.cf-jumped { border-left-color: var(--ph-bright); box-shadow: 0 0 14px var(--ph-glow2); }
+.cf-file { font-size: 14px; color: var(--ph-bright); letter-spacing: 1px; }
+.cf-name { font-size: 14px; color: var(--ph-bright); letter-spacing: 1px; }
+.cf-badge { font-size: 10px; letter-spacing: 1px; border: 1px solid var(--ph-dim); padding: 0 5px; }
+.cf-badge.you { color: var(--gold); border-color: var(--gold); }
+.cf-badge.agent { color: var(--ph-dim); }
+.cf-bytes { font-size: 11px; color: var(--ph-dim); }
+.cf-edit { margin-left: auto; }
+.cf-desc { font-size: 12px; color: var(--ph-dim); line-height: 1.45; margin: 3px 0 4px; }
+.cf-body {
+  font-family: inherit; font-size: 13px; color: var(--ph); line-height: 1.4;
+  white-space: pre-wrap; word-break: break-word; margin: 0; max-height: 150px; overflow-y: auto;
+  background: rgba(0,0,0,0.35); border: 1px solid var(--ph-faint); padding: 5px 7px; user-select: text;
+}
+.cf-body.empty, .cf-body.ro { color: var(--ph-dim); font-style: italic; }
+.cf-ta {
+  width: 100%; box-sizing: border-box; min-height: 110px; resize: vertical; margin: 4px 0;
+  font-family: inherit; font-size: 13px; line-height: 1.4; color: var(--ph-bright);
+  background: #000; border: 1px solid var(--ph); padding: 6px 8px; outline: none;
+  text-shadow: 0 0 4px var(--ph-glow2);
+}
+.cf-ta:focus { box-shadow: inset 0 0 16px rgba(0,0,0,0.7), 0 0 10px var(--ph-glow2); }
+.cf-acts { display: flex; gap: 6px; }
+
+/* while-you're-away card — the live BUILD LIST (2026-07-15 UX audit: the queue was invisible) */
+.ws-bl-head { color: var(--gold); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin: 8px 0 3px; }
+.ws-bl-row { display: flex; align-items: center; gap: 7px; padding: 2px 4px; font-size: 12px; border-radius: 2px;
+  transition: background var(--t-fast) var(--ease-soft); }
+.ws-bl-row:hover { background: var(--ph-faint); }
+.ws-bl-title { flex: 1 1 auto; min-width: 0; color: var(--ph-bright); overflow-wrap: anywhere; }
+.ws-bl-state { flex: 0 0 auto; font-size: 10px; letter-spacing: .5px; color: var(--ph-dim); border: 1px solid var(--ph-faint); border-radius: 2px; padding: 0 5px; }
+.ws-bl-state.built { color: var(--gold); border-color: var(--gold); }
+.ws-bl-state.building { color: var(--ph); border-color: var(--ph-dim); }
+.ws-bl-state.parked { color: var(--bad); border-color: var(--bad); }
+.ws-bl-row button { flex: 0 0 auto; background: none; border: 1px solid var(--ph-dim); border-radius: 2px; color: var(--ph); font-family: inherit; font-size: 11px; padding: 0 6px; cursor: pointer; }
+.ws-bl-row button:hover { color: var(--ph-bright); border-color: var(--ph); }
+.ws-bl-row .ws-bl-review { color: var(--gold); border-color: var(--gold); }
+.ws-bl-row .ws-bl-remove { border-color: transparent; color: var(--ph-dim); }
+.ws-bl-foot { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding-top: 6px; flex-wrap: wrap;
+  border-top: 1px solid var(--ph-faint); }
+.ws-bl-foot button { background: none; border: 1px solid var(--gold); border-radius: 2px; color: var(--gold); font-family: inherit; font-size: 11px; padding: 1px 8px; cursor: pointer; }
+.ws-bl-foot button:disabled { opacity: .6; cursor: default; }
+.ws-bl-last { font-size: 11px; color: var(--ph-dim); margin-top: 5px; line-height: 1.35; }
+.ws-bl-last.warn { color: var(--gold); }
+
+/* ================= KANBAN ================= */
+.kb-filter { margin-bottom: 8px; font-size: 14px; color: var(--ph-dim); letter-spacing: 1px; }
+#kb-sel {
+  background: var(--panel2); color: var(--ph); border: 1px solid var(--ph-dim);
+  font-family: inherit; font-size: 14px; padding: 2px 6px;
+}
+.kb-cols { display: flex; gap: 8px; align-items: flex-start; }
+.kb-col { flex: 1; min-width: 0; max-height: 62vh; overflow-y: auto; scrollbar-width: thin; }
+.kb-col h4 {
+  font-weight: normal; background: var(--ph-faint); color: var(--ph);
+  padding: 1px 6px; margin-bottom: 6px; letter-spacing: 2px; font-size: 14px;
+  position: sticky; top: 0;
+}
+.kb-col h4 i { color: var(--ph); font-style: normal; float: right; }
+.kb-card {
+  border: 1px solid var(--ph-faint); border-left: 3px solid var(--ph-dim); background: rgba(0,0,0,0.35);
+  padding: 4px 6px; margin-bottom: 5px; font-size: 13px;
+  border-radius: var(--r-sm); box-shadow: var(--raise); cursor: pointer;
+}
+/* the whole card is a role=button that opens the conversation — show the pointer, and give keyboard focus a ring */
+.kb-card:hover { border-color: var(--ph-dim); }
+.kb-card:focus-visible { outline: none; border-color: var(--ph); box-shadow: var(--raise), 0 0 0 1px var(--ph), 0 0 10px var(--ph-glow2); }
+.kb-card:focus { outline: none; }
+/* pinned = prioritized: gold spine, sorts to the top of its column (Workstreams.list pinned-first) */
+.kb-card.pinned { border-left-color: var(--gold); }
+/* drag-a-card-between-lanes affordances (buildTasks dragstart/drop) */
+.kb-card.dragging { opacity: 0.45; }
+.kb-col.drop { outline: 1px dashed var(--ph); outline-offset: -2px; background: var(--ph-faint); }
+/* inline card rename (beginCardRename) — sits where .kb-title text was, same type size */
+.kb-rename { width: 100%; font-size: 13px; padding: 0 3px; }
+.kb-title { color: var(--text); }
+.kb-meta { display: flex; gap: 8px; font-size: 11px; color: var(--ph-dim); margin-top: 2px; }
+
+/* ================= MILESTONES ================= */
+.ms-level { text-align: center; margin-bottom: 6px; }
+.ms-lvl-num { font-size: 25px; color: var(--ph); letter-spacing: 4px; text-shadow: 0 0 10px var(--ph-glow); }
+.ms-xp { font-size: 12px; color: var(--ph-dim); }
+.ms-h {
+  display: flex; align-items: center; gap: 9px;
+  color: var(--ph); letter-spacing: 2px; font-weight: normal; font-size: 15px; margin: 16px 0 10px;
+  text-shadow: 0 1px 0 #000, 0 0 8px var(--ph-glow2);
+}
+/* Phase-2 section-divider language on the shared header: a fading gradient rule
+   (was a flat 2px bar) + a diamond node cap, matching the .sec divider. Pure CSS,
+   so every ms-h header across the panels upgrades with no markup churn. */
+.ms-h::after {
+  content: ''; flex: 1; height: 4px; background:
+    linear-gradient(90deg, var(--ph-dim), transparent 92%) top / 100% 1px no-repeat,
+    linear-gradient(90deg, var(--ph-faint), transparent 70%) bottom / 100% 1px no-repeat;
+}
+.ms-h::before {
+  content: ''; order: 3; width: 6px; height: 6px; flex: 0 0 auto;
+  transform: rotate(45deg); background: var(--ph); box-shadow: 0 0 6px var(--ph-glow);
+}
+.perk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+/* a LOCKED perk is legible, not a ghost — 0.65 keeps its status line readable (the fix + the "no CABINET at desk"
+   truth both need to be read). .perk.on stays fully lit + inner-glow so live capabilities still clearly out-read it. */
+.perk { border: 1px solid var(--ph-faint); padding: 5px 4px; text-align: center; opacity: 0.65; border-radius: var(--r-sm); box-shadow: var(--raise); }
+.perk.on { opacity: 1; border: 1px solid var(--ph-dim); box-shadow: var(--raise), inset 0 0 12px var(--ph-glow2); }
+.perk-icon { font-size: 22px; color: var(--gold); }
+.perk-name { font-size: 11px; color: var(--ph); letter-spacing: 0.5px; }
+.perk-desc { font-size: 10px; opacity: 0.7; }
+.perk-lvl { font-size: 10px; color: var(--ph-dim); margin-top: 2px; }
+.ms-list { font-size: 14px; }
+.ms-item { padding: 2px 0; opacity: 0.42; }
+.ms-item.on { opacity: 1; }
+.ms-item.on span { color: var(--gold); }
+.ms-item i { color: var(--ph-dim); font-style: normal; font-size: 12px; }
+
+/* ================= STATS ================= */
+.st-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.st-card { box-shadow: var(--well); background: linear-gradient(180deg, #0a0602, #050301); padding: var(--s-2) var(--s-2); text-align: center; border-radius: var(--r-sm); }
+.st-card i { display: block; font-style: normal; font-size: 11px; color: var(--ph-dim); letter-spacing: 1px; }
+.st-card b { font-size: 17px; }
+#st-chart { width: 100%; border: 1px solid var(--ph-dim); margin-top: 2px; }
+.st-chrow { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 3px; }
+.st-chrow span { width: 56px; color: var(--ph-dim); }
+.st-chrow b { width: 72px; text-align: right; }
+.st-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.st-tbl th { text-align: left; color: var(--ph-dim); font-weight: normal; border-bottom: 2px solid var(--ph-dim); letter-spacing: 1px; }
+.st-tbl td { padding: 1px 4px 1px 0; }
+
+/* ================= FEEDBACK ================= */
+.fb-empty { text-align: center; padding: 30px 16px; color: var(--ph); letter-spacing: 1px; }
+.fb-empty span { font-size: 13px; color: var(--text); opacity: 0.6; letter-spacing: 0; }
+.fb-item { border: 1px solid var(--ph-dim); border-left: 4px solid var(--warn); background: rgba(0,0,0,0.35); padding: 8px 10px; margin-bottom: 10px; border-radius: var(--r-sm); box-shadow: var(--raise); }
+.fb-head { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.fb-kind { font-size: 11px; border: 1px solid var(--ph-faint); padding: 0 5px; color: var(--ph-dim); }
+.fb-title { font-size: 15px; color: var(--ph-bright); margin: 3px 0; }
+.fb-msg { font-size: 13px; opacity: 0.8; font-style: italic; }
+.fb-conf { font-size: 12px; color: var(--ph-dim); margin: 4px 0; }
+.fb-note {
+  width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--ph-faint);
+  color: var(--ph-bright); font-family: inherit; font-size: 13px; padding: 3px 6px; outline: none;
+  caret-color: var(--ph);
+}
+.fb-note:focus { border-color: var(--ph); }
+.fb-btns { display: flex; gap: 6px; margin-top: 6px; }
+.fb-b {
+  flex: 1; background: transparent; border: 1px solid var(--ph-dim); color: var(--ph);
+  font-family: inherit; font-size: 12px; letter-spacing: 1px; padding: 3px 0; cursor: pointer; text-shadow: inherit;
+}
+.fb-b:hover { background: var(--ph-faint); border-color: currentColor; text-shadow: 0 0 6px var(--ph-glow2); }
+.fb-b.ap { color: var(--ok); } .fb-b.dn { color: var(--bad); }
+.fb-b.rt { color: var(--gold); } .fb-b.ar { color: var(--ph-dim); }
+
+/* ================= NOTIFS ================= */
+.nf-list { margin-top: 8px; max-height: 56vh; overflow-y: auto; font-size: 14px; }
+.nf { padding: 3px 0; border-bottom: 1px solid var(--ph-faint); }
+.nf.good { color: var(--ok); } .nf.warn { color: var(--warn); } .nf.gold { color: var(--gold); }
+.nf.read { opacity: 0.45; }
+
+/* ================= SETTINGS ================= */
+.set-themes { display: flex; gap: 6px; flex-wrap: wrap; }
+.set-theme {
+  background: linear-gradient(180deg, rgba(var(--ph-rgb),.06), rgba(var(--ph-rgb),.015));
+  border: 1px solid var(--ph-dim); border-radius: 5px; color: var(--sw, var(--ph));
+  font-family: inherit; font-size: 14px; padding: 5px 13px; cursor: pointer; letter-spacing: 2px; text-shadow: inherit;
+  box-shadow: inset 0 1px 0 rgba(var(--ph-rgb),.1), 0 1px 0 rgba(0,0,0,.35);
+  transition: border-color .12s, background-color .12s, box-shadow .12s;
+}
+.set-theme:hover { background: var(--ph-faint); border-color: var(--ph); }
+.set-theme.sel { background: var(--ph-faint); border-color: var(--ph); box-shadow: inset 0 0 0 1px var(--ph), inset 0 1px 0 rgba(var(--ph-rgb),.12), 0 0 10px var(--ph-glow2); text-shadow: none; }
+/* GROWTH Tier 3 — an EARNED autonomy rung wears a gold ◈ mark (the trust was earned, not user-set). Cosmetic only. */
+.set-theme.earned { position: relative; }
+.set-theme.earned::after { content: '◈'; position: absolute; top: -6px; right: -4px; font-size: 10px; color: var(--gold); text-shadow: 0 0 4px var(--gold); }
+.auto-earned { color: var(--gold); opacity: .92; font-size: 12px; letter-spacing: 1px; }
+/* BACKDROP picker — the same chip vocabulary as .set-theme, sized to hold a live-painted swatch.
+   The canvas is the REAL backdrop renderer's output, so it is never scaled or filtered: pixel art
+   that got smoothed here would be promising a softer sky than the station draws. */
+.set-backdrops { display: flex; gap: 8px; flex-wrap: wrap; }
+.set-bd {
+  display: flex; flex-direction: column; align-items: stretch; gap: 5px;
+  background: linear-gradient(180deg, rgba(var(--ph-rgb),.06), rgba(var(--ph-rgb),.015));
+  border: 1px solid var(--ph-dim); border-radius: 5px; color: var(--ph);
+  font-family: inherit; font-size: 11px; letter-spacing: 1.5px; padding: 5px; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(var(--ph-rgb),.1), 0 1px 0 rgba(0,0,0,.35);
+  transition: border-color .12s, background-color .12s, box-shadow .12s;
+}
+.set-bd:hover { background: var(--ph-faint); border-color: var(--ph); }
+.set-bd.sel { background: var(--ph-faint); border-color: var(--ph); box-shadow: inset 0 0 0 1px var(--ph), inset 0 1px 0 rgba(var(--ph-rgb),.12), 0 0 10px var(--ph-glow2); }
+.set-bd-cv { display: block; width: 112px; height: 63px; border-radius: 3px; image-rendering: pixelated; background: #040302; }
+.set-bd-name { text-align: center; opacity: .9; }
+/* CUSTOM PHOSPHOR sliders — hue/sat derive a live palette, glow scales the bloom. Recessed-well
+   track (the --well vocabulary) + a phosphor thumb; the HUE track shows the actual spectrum at
+   the derivation lightness (hsl l 60%) so the handle sits on the colour you'll get. */
+.set-slider { display: flex; align-items: center; gap: 10px; margin: 7px 0; font-size: 13px; cursor: pointer; }
+.set-slider-name { width: 92px; letter-spacing: 2px; color: var(--ph-dim); flex: none; }
+.set-slider-val { width: 44px; text-align: right; color: var(--ph); font-size: 13px; flex: none; }
+.set-slider input[type="range"] {
+  -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 10px; border-radius: 3px;
+  background: linear-gradient(180deg, rgba(0,0,0,.6), rgba(var(--ph-rgb),.08));
+  border: 1px solid var(--ph-dim); box-shadow: inset 0 2px 5px rgba(0,0,0,.85); cursor: pointer;
+}
+.set-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 12px; height: 20px; border-radius: 3px;
+  background: var(--ph); border: 1px solid rgba(0,0,0,.9);
+  box-shadow: 0 0 8px var(--ph-glow), inset 0 1px 0 rgba(var(--ph-bright-rgb),.5);
+}
+.set-slider input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 20px; border-radius: 3px; background: var(--ph); border: 1px solid rgba(0,0,0,.9);
+  box-shadow: 0 0 8px var(--ph-glow), inset 0 1px 0 rgba(var(--ph-bright-rgb),.5);
+}
+.set-slider input.set-hue-track {
+  background: linear-gradient(90deg,
+    hsl(0,90%,55%), hsl(45,90%,55%), hsl(90,90%,55%), hsl(135,90%,55%),
+    hsl(180,90%,55%), hsl(225,90%,55%), hsl(270,90%,55%), hsl(315,90%,55%), hsl(359,90%,55%));
+}
+.set-row { display: block; margin: 5px 0; font-size: 15px; cursor: pointer; }
+.set-row input { accent-color: var(--ph); }
+/* a label directly followed by its control renders flush in the block rows (no markup whitespace);
+   .bg-cap rows are excluded — #budget-form already spaces them with flex gap. */
+.set-row > label + .key-input:not(.bg-cap), .set-row > label + select.fbc-sel { margin-left: 10px; }
+.set-save { display: flex; gap: 8px; }
+.set-about { font-size: 12px; opacity: 0.55; margin-top: 12px; }
+/* NIGHT SHIFT durable-halt (E-STOP) callout — the panel must read as STOPPED, never as dim standing-by
+   telemetry (EL-11 FIX 1). Same error palette as .up-error; the why line gets the bordered card. */
+#ns-state.ns-halt { color: #ffb0a8; opacity: 1; }
+#ns-why.ns-halt { color: #ffb0a8; opacity: 1; border: 1px solid rgba(255, 120, 100, 0.45); background: rgba(80, 10, 5, 0.18); padding: 7px; }
+/* CHANNELS panel — one card per messaging platform, generated from the channel catalog (stationui buildMessaging).
+   Speaks the marketplace-era card grammar: a per-platform --accent strip + coin plate for the glyph, hover lift and
+   the shared cardIn entrance, keeping the .on green glow for a truly-connected channel. */
+.ch-headless { font-size: 13px; margin: 6px 0 10px; color: var(--ph-bright); letter-spacing: .2px; }
+.ch-optin { display: block; margin: 2px 0 8px; }
+.ch-optin-t { }
+.ch-optin-d { display: block; margin-left: 22px; font-size: 12px; line-height: 1.25; }
+/* console-mode CHANNELS: no glyphs anywhere in this window — abstract marks read as wrong-logo noise next to
+   real platform names, so the rail's glyph slot is hidden and the tabs carry name + live status dot only. */
+.channels-console .con-rail-glyph { display: none; }
+/* a live status dot on each platform's rail tab (same st-* truth palette as .ch-state) */
+.ch-rail-dot { flex: 0 0 auto; margin-left: auto; font-size: 9px; line-height: 1; }
+.ch-rail-dot.st-up { color: var(--ok); text-shadow: 0 0 6px rgba(80,255,140,.5); }
+.ch-rail-dot.st-wait { color: var(--gold); }
+.ch-rail-dot.st-err { color: var(--bad); }
+.ch-rail-dot.st-off { color: var(--ph-dim); opacity: .55; }
+.con-rail-item.active .ch-rail-dot.st-off { color: var(--ink); }
+/* OVERVIEW pane: one clickable summary row per platform (title + live state), jumps to that pane */
+.ch-sum { margin-top: 14px; }
+.ch-sum-row {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  font-family: inherit; color: var(--ph); background: var(--panel2);
+  border: 1px solid var(--ph-faint); border-radius: var(--r-sm); padding: 7px 9px; margin: 6px 0;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .12s var(--ease-out, ease), border-color .12s ease, box-shadow .12s ease;
+}
+.ch-sum-row::before {   /* the same per-platform accent strip signature as the cards, turned sideways */
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--accent, var(--ph)), transparent 90%); opacity: .85;
+}
+.ch-sum-row:hover {
+  transform: translateY(-1px); border-color: var(--ph); color: var(--ph-bright);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, var(--ph)) 45%, transparent), 0 4px 14px rgba(0,0,0,.5);
+}
+.ch-sum-t { letter-spacing: 2px; font-size: 13px; }
+.ch-sum-row .ch-state { margin-left: auto; }
+.ch-card {
+  position: relative; border: 1px solid var(--ph-dim); background: var(--panel2); box-shadow: var(--raise);
+  border-radius: var(--r-sm); padding: 10px 11px 9px; margin: 9px 0; overflow: hidden;
+  animation: cardIn 0.34s var(--ease-out, ease) backwards;
+  transition: transform .12s var(--ease-out, ease), border-color .12s ease, box-shadow .12s ease;
+}
+.ch-card::before {   /* per-platform accent strip, fading out — the marketplace card signature */
+  content: ''; position: absolute; left: 0; top: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent, var(--ph)), transparent 80%); opacity: .85;
+}
+.ch-card:hover {
+  transform: translateY(-2px); border-color: var(--ph);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, var(--ph)) 45%, transparent), 0 6px 22px rgba(0,0,0,.55);
+}
+.ch-card.on { border-color: var(--ok); box-shadow: var(--raise), inset 0 0 12px rgba(80, 255, 140, 0.10); }
+.ch-card.on::before { opacity: 1; background: linear-gradient(90deg, var(--ok), transparent 80%); }
+.ch-head { display: flex; align-items: center; gap: 9px; }
+.ch-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ch-title { margin: 0; letter-spacing: 2px; color: var(--ph); font-weight: normal; font-size: 15px; text-shadow: 0 1px 0 #000, 0 0 8px var(--ph-glow2); }
+/* ADVANCED is the STATION's word about a platform, so it wears the station's phosphor — not that
+   platform's brand hue. Reading `--accent` here painted the badge in Signal's blue, which is the same
+   off-palette seal problem the recruitment bay had. The row's own left rail still carries the brand
+   accent, which is the honest place for it: that rail identifies Telegram/Discord/Signal, this chip
+   does not. */
+.ch-adv { font-size: 10.5px; letter-spacing: 1px; color: var(--ph-dim); border: 1px solid color-mix(in srgb, var(--ph) 40%, transparent); border-radius: 3px; padding: 0 4px; vertical-align: middle; opacity: .9; }
+.ch-answers { font-size: 11px; letter-spacing: .5px; color: var(--ph-dim); }
+.ch-state { margin-left: auto; font-size: 12px; letter-spacing: 0.5px; text-align: right; white-space: nowrap; }
+.ch-state.st-up { color: var(--ok); }
+.ch-state.st-wait { color: var(--gold); }
+.ch-state.st-err { color: var(--bad); }
+.ch-state.st-off { color: var(--ph-dim); }
+.ch-tagline { margin-top: 5px; }
+.ch-setup { margin: 5px 0 6px; }
+.ch-setup > summary {
+  cursor: pointer; font-size: 11px; letter-spacing: 2px; color: var(--ph-dim);
+  list-style: none; user-select: none;
+}
+.ch-setup > summary::before { content: '▸ '; }
+.ch-setup[open] > summary::before { content: '▾ '; }
+.ch-setup > summary:hover { color: var(--ph-bright); }
+.ch-steps { margin: 6px 0 4px; padding-left: 20px; font-size: 12px; line-height: 1.4; color: var(--ph); }
+.ch-steps li { margin: 2px 0; }
+.ch-steps li::marker { color: var(--accent, var(--ph-dim)); }
+.ch-note { font-size: 11px; color: var(--ph-dim); opacity: .85; margin: 2px 0 0; }
+/* dedicated field label — small-caps, no ms-h diamond/divider dressing (that header language is for section rules) */
+.ch-lbl { display: block; margin: 8px 0 3px; font-size: 11px; letter-spacing: 1.5px; color: var(--ph); text-transform: uppercase; }
+.ch-card .set-save { margin-top: 8px; align-items: center; }
+.ch-card .msg { min-height: 0; }
+.msg.info { color: var(--ph); }   /* neutral outcome (connecting…/disconnected/hints) — never the --bad error red */
+.ch-door {   /* inline deep-link door (e.g. → SETTINGS → PROVIDERS) styled as a phosphor text-button */
+  background: transparent; border: 0; border-bottom: 1px dotted currentColor; color: var(--gold);
+  font-family: inherit; font-size: inherit; letter-spacing: .5px; cursor: pointer; padding: 0; margin-left: 2px;
+}
+.ch-door:hover { color: var(--ph-bright); text-shadow: 0 0 6px var(--ph-glow2); }
+/* multi-bot telegram: the AGENT BOTS block inside the telegram card — one row per bound bot contact */
+.ch-bots { margin-top: 10px; padding-top: 8px; border-top: 1px dashed color-mix(in srgb, var(--accent, var(--ph)) 30%, transparent); }
+.ch-bots-head { font-size: 11px; letter-spacing: 1.5px; color: var(--ph); text-transform: uppercase; margin-bottom: 4px; }
+.tg-bot-row { display: flex; align-items: center; gap: 7px; padding: 4px 2px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.tg-bot-row:last-child { border-bottom: 0; }
+.tg-bot-name { font-size: 12.5px; color: var(--ph); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tg-bot-row .ch-state { font-size: 11px; }
+.tg-bot-row .bb.xs { flex: 0 0 auto; }
+.tg-bot-row.on .tg-bot-name { color: var(--ph-bright); }
+.up-mini {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  border: 1px solid var(--ph-faint); background: var(--panel2); padding: 7px 8px; margin: 6px 0;
+}
+.up-mini b { display: block; color: var(--ph-bright); font-size: 13px; letter-spacing: 1px; }
+.up-mini span { display: block; color: var(--ph-dim); font-size: 12px; line-height: 1.25; }
+.up-center { display: flex; flex-direction: column; gap: 9px; font-size: 14px; }
+.up-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  border-bottom: 1px solid var(--ph-faint); padding-bottom: 8px;
+}
+.up-head b { display: block; color: var(--ph-bright); letter-spacing: 1.2px; }
+.up-head span, .up-meta, .up-foot { color: var(--ph-dim); font-size: 12px; line-height: 1.25; }
+.up-auto { margin-top: 0; }
+.up-card {
+  border: 1px solid var(--ph-dim); background: var(--panel2); box-shadow: var(--raise);
+  border-radius: var(--r-sm); padding: 9px;
+}
+.up-card.critical { border-color: var(--warn); box-shadow: var(--raise), inset 0 0 14px rgba(255, 182, 65, 0.14); }
+.up-version { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.up-version span { color: var(--ph-dim); font-size: 11px; letter-spacing: 1.5px; }
+.up-version b { color: var(--gold); font-size: 20px; letter-spacing: 1px; }
+.up-notes {
+  margin: 8px 0 0; white-space: pre-wrap; color: var(--text); font: inherit; font-size: 13px;
+  line-height: 1.28; max-height: 150px; overflow-y: auto;
+}
+.up-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.up-progress { height: 10px; border: 1px solid var(--ph-dim); background: #060401; box-shadow: inset 0 0 8px rgba(0,0,0,.8); }
+.up-progress div { height: 100%; background: var(--ph); box-shadow: 0 0 10px var(--ph-glow); transition: width .15s linear; }
+.up-empty { border: 1px dashed var(--ph-faint); padding: 9px; }   /* dim grade + size via the grouped empty rule (motion.css) */
+.up-error { color: #ffb0a8; border: 1px solid rgba(255, 120, 100, 0.45); background: rgba(80, 10, 5, 0.18); padding: 7px; }
+/* Manual-download fallback: the guaranteed update path when the auto-updater can't finish. */
+.up-manual { margin-top: 7px; }
+.up-manual-note { display: block; margin-top: 4px; }
+.up-manual-link { color: var(--ph); text-decoration: underline; cursor: pointer; }
+.up-manual-link:hover { color: var(--ph-bright); }
+/* GB-4 install guard: live agents would be killed by the restart — amber, not error-red,
+   because nothing is broken; the station is asking for an explicit call. */
+.up-guard { color: var(--warn); border: 1px solid rgba(255, 182, 65, 0.45); background: rgba(70, 45, 5, 0.18); padding: 7px; margin-top: 9px; font-size: 12px; letter-spacing: 0.6px; }
+/* GB-4 quit guard: same amber vocabulary, but modal — window close is an app-level act. */
+.quit-guard-backdrop { position: fixed; inset: 0; z-index: 3000; background: rgba(3, 2, 1, 0.72); display: flex; align-items: center; justify-content: center; }
+.quit-guard-card { max-width: 420px; border: 1px solid var(--ph-dim); background: var(--panel2); box-shadow: var(--raise); border-radius: var(--r-sm); padding: 12px; }
+.quit-guard-card .up-guard { margin-top: 0; }
+
+/* ================= BOOT ================= */
+#boot {
+  position: fixed; inset: 0; background: #030201; z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.6s;
+}
+#boot.off { opacity: 0; pointer-events: none; }
+/* the vw cap is the narrow-screen fit guard, so it carries the --sn-unzoom reciprocal or it is a
+   DEAD guard under TEXT SIZE: at HUGE a bare 92vw resolves to 133% of the real glass, which can
+   never bind, while the 640px beside it renders at 928. Same law as `.term` below. */
+#boot-inner { width: 640px; max-width: calc(92vw * var(--sn-unzoom, 1)); }
+#boot-logo {
+  font-family: inherit; color: var(--ph); font-size: 14px; line-height: 1.02; letter-spacing: 0;
+  text-shadow: 0 0 18px var(--ph-glow), 0 0 4px var(--ph-glow);
+  margin-bottom: 18px;
+}
+#boot-lines { font-size: 18px; color: var(--text); min-height: 320px; }
+#boot-lines div { animation: bootline 0.12s steps(2); }
+@keyframes bootline { from { opacity: 0; } to { opacity: 1; } }
+#boot-go {
+  display: none; margin-top: 22px; color: var(--gold); font-size: 20px;
+  letter-spacing: 3px; animation: pulse 1.1s infinite; text-align: center;
+}
+
+/* ============================================================
+   PROP TERMINAL WINDOWS (propterm.js) — every prop is a console.
+   Builds on the .term chrome; positioned by JS, CRT power-on pop.
+   ============================================================ */
+@keyframes rt-power {
+  0%   { transform: scaleY(0.004); filter: brightness(8); }
+  55%  { transform: scaleY(1.02);  filter: brightness(2.2); }
+  100% { transform: scaleY(1);     filter: brightness(1); }
+}
+/* a prop window overrides `.term`'s max-width, so it must carry the same reciprocal — otherwise the
+   96vw half of this min() can never bind under TEXT SIZE and 760px renders at 1102 on a 1024 screen. */
+.pw { transform: none; animation: rt-power 0.18s ease-out; max-width: min(calc(96vw * var(--sn-unzoom, 1)), 760px); }
+.pw .term-title {
+  font-size: 14px; letter-spacing: 2px; flex-shrink: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pw-head { cursor: grab; gap: 10px; }
+.pw-head:active { cursor: grabbing; }
+.pw-state { margin-left: auto; font-size: 11px; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
+.pw-btns { display: flex; gap: 5px; flex-shrink: 0; }
+.pw-rolled .pw-body { display: none; }
+.pw-body { padding: 8px 11px; font-size: 14px; overflow-x: hidden; }
+
+/* two-column dashboard inside a business window.
+   min-width: 0 lets the grid tracks shrink below their content width —
+   without it the columns refuse to compress and clip off the right edge */
+.pw-cols { display: grid; grid-template-columns: 1.08fr 1fr; gap: 18px; align-items: start; }
+.pw-cols > div { min-width: 0; }
+.pw .rt-feed-canvas pre { font-size: 12px; letter-spacing: 1px; }
+.pw .rt-feed-head { flex-wrap: wrap; row-gap: 0; }
+
+/* commander uplink — note input + redirect buttons at the window foot */
+.pw-uplink { display: flex; gap: 6px; margin: 3px 0 4px; }
+.pw-note {
+  flex: 1; min-width: 0; background: rgba(0,0,0,0.5);
+  border: 1px solid var(--ph-dim); color: var(--ph-bright);
+  font-family: inherit; font-size: 13.5px; padding: 3px 8px; letter-spacing: 0.5px;
+}
+.pw-note:focus { border-color: var(--ph); outline: none; box-shadow: 0 0 8px var(--ph-glow2); }
+.pw-note::placeholder { color: var(--ph-dim); opacity: 1; }   /* solid --ph-dim hint >=4.5:1; .7 opacity was ~3.2:1 (WCAG fail) — matches input::placeholder / #chat-input::placeholder */
+.pw-send { flex-shrink: 0; }
+.pw-dirs { margin-top: 2px; }
+.pw-dir { border-color: var(--ph-dim) !important; color: var(--ph) !important; }
+.pw-dir:hover { border-color: var(--ph-bright) !important; color: var(--ph-bright) !important; background: var(--ph-faint); }
+.pw-flash { font-size: 11.5px; letter-spacing: 1px; padding: 1px 0 2px; }
+.pw-flash.good { color: var(--ph-bright); }
+.pw-flash.bad { color: var(--bad); }
+
+/* operator strip — who runs this console, where they are, what they're doing */
+.pw-op { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; padding: 2px 0; }
+.pw-op-pres { color: var(--ph-dim); font-size: 11px; letter-spacing: 1px; flex-shrink: 0; }
+.pw-op-status {
+  margin-left: auto; color: var(--ph-dim); font-size: 11.5px; text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pw-flagrow {
+  border: 1px solid var(--gold); color: var(--gold); font-size: 11.5px;
+  letter-spacing: 1px; padding: 2px 6px; margin-top: 4px; cursor: pointer;
+  animation: pulse 1.2s infinite;
+}
+.pw-flagrow:hover { background: rgba(var(--gold-rgb), 0.08); animation: none; }
+
+/* arcade cabinet screen (propterm game window) */
+.arc-wrap { margin-bottom: 6px; }
+.arc-cv {
+  display: block; width: 100%; image-rendering: pixelated; cursor: pointer;
+  background: #000; border: 2px solid var(--ph-dim); border-radius: 4px;
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.75), 0 0 14px var(--ph-glow2);
+}
+.arc-foot {
+  display: flex; justify-content: space-between;
+  font-size: 11px; letter-spacing: 1px; color: var(--ph-dim); margin-top: 4px;
+}
+
+.rt-kv { display: flex; justify-content: space-between; gap: 10px; padding: 1px 0; font-size: 14px; }
+.rt-kv span { color: var(--ph-dim); letter-spacing: 1px; }
+.rt-kv b { text-align: right; }
+.rt-row { padding: 2px 0; border-bottom: 1px dotted var(--ph-faint); font-size: 13.5px; }
+.rt-row i { float: right; font-style: normal; color: var(--ph-dim); }
+.rt-note { font-size: 12px; opacity: 0.5; margin-top: 8px; }
+.rt-sub {
+  color: var(--ph); letter-spacing: 3px; font-size: 14px;
+  border-bottom: 1px solid var(--ph-dim); margin: 10px 0 5px; padding-bottom: 1px;
+}
+.rt-sub:first-child { margin-top: 0; }
+.rt-chip { border: 1px solid var(--ph-dim); font-size: 10.5px; padding: 0 4px; color: var(--ph); letter-spacing: 1px; }
+.rt-chip.gold { color: var(--gold); border-color: var(--gold); }
+.rt-ag { cursor: pointer; letter-spacing: 1px; }
+.rt-ag:hover { text-decoration: underline; }
+.rt-find { padding: 3px 0; border-bottom: 1px dotted var(--ph-faint); font-size: 13px; }
+
+.rt-bar { height: 9px; background: var(--ph-faint); border: 1px solid var(--ph-dim); margin: 3px 0; }
+.rt-bar > div {
+  height: 100%; transition: width 0.6s;
+  background: repeating-linear-gradient(90deg, var(--ph) 0 7px, rgba(0,0,0,0.4) 7px 9px);
+  box-shadow: 0 0 8px var(--ph-glow);
+}
+.rt-bar.low > div { background: repeating-linear-gradient(90deg, var(--warn) 0 7px, rgba(0,0,0,0.4) 7px 9px); }
+
+.rt-job { border: 1px solid var(--ph-dim); border-left: 3px solid var(--ph); background: rgba(0,0,0,0.35); padding: 5px 7px; margin-bottom: 7px; box-shadow: 0 0 8px var(--ph-glow2); }
+.rt-job.idle { opacity: 0.55; }
+.rt-job.rt-job-flag { border-left-color: var(--gold); }
+.rt-job-top { display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 1px; }
+.rt-job-pct { color: var(--ph); }
+.rt-job-title { color: var(--ph-bright); font-size: 14.5px; margin: 1px 0; }
+.rt-job-meta { font-size: 11.5px; color: var(--ph-dim); letter-spacing: 0.5px; }
+/* --- stage spotlight: enlarged current-step panel --- */
+.rt-spot { border: 1px solid var(--ph-dim); background: var(--ph-faint); padding: 5px 8px; margin: 5px 0 4px; }
+.rt-spot-hdr { display: flex; gap: 10px; align-items: baseline; margin-bottom: 3px; }
+.rt-spot-step { font-size: 11px; color: var(--ph-dim); letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; }
+.rt-spot-name { color: var(--ph-bright); font-size: 13px; letter-spacing: 2px; }
+.rt-spot-ln { font-size: 11.5px; color: var(--ph-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.rt-bar.inner > div { background: repeating-linear-gradient(90deg, var(--ph) 0 5px, var(--ph-faint) 5px 7px); }
+
+/* --- horizontal stage pipeline --- */
+.rt-pipe { display: flex; align-items: flex-start; margin: 5px 0 3px; overflow-x: auto; padding-bottom: 2px; }
+.rt-pipe::-webkit-scrollbar { height: 3px; background: var(--bg); }
+.rt-pipe::-webkit-scrollbar-thumb { background: var(--ph); }
+.rt-pipe-wire { min-width: 10px; flex: 1; height: 2px; background: var(--ph-faint); margin-top: 4px; flex-shrink: 0; }
+.rt-pipe-wire.done { background: var(--ph-dim); }
+.rt-pipe-node { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 52px; }
+.rt-pipe-dot { width: 10px; height: 10px; border: 2px solid var(--ph-faint); background: var(--bg); }
+.rt-pipe-node.done .rt-pipe-dot { background: var(--ph-dim); border-color: var(--ph-dim); }
+.rt-pipe-node.cur .rt-pipe-dot { background: var(--ph); border-color: var(--ph); box-shadow: 0 0 6px var(--ph-glow); animation: pulse 1.2s infinite; }
+.rt-pipe-lbl { font-size: 10px; color: var(--ph-faint); text-align: center; margin-top: 2px; letter-spacing: 0.3px; line-height: 1.2; word-break: break-word; }
+.rt-pipe-node.done .rt-pipe-lbl { color: var(--ph-dim); }
+.rt-pipe-node.cur .rt-pipe-lbl { color: var(--ph-bright); }
+
+/* --- LIVE WORKSTATION feed: render canvas + streaming agent terminal --- */
+.rt-feed {
+  border: 1px solid var(--ph); background: rgba(0,0,0,0.42); margin-bottom: 8px;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.6), 0 0 10px var(--ph-glow2);
+}
+.rt-feed-head {
+  display: flex; gap: 9px; align-items: baseline;
+  background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--ph-dim);
+  padding: 2px 8px; font-size: 12.5px; letter-spacing: 1px;
+}
+.rt-live {
+  border: 1px solid var(--bad); color: var(--bad); background: transparent;
+  padding: 0 5px; font-size: 10.5px;
+  letter-spacing: 2px; animation: pulse 1.1s infinite; text-shadow: none;
+}
+.rt-feed-fill { flex: 1; }
+.rt-feed-cap {
+  font-size: 11.5px; color: var(--ph); padding: 2px 8px 0; letter-spacing: 0.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rt-feed-canvas { display: flex; justify-content: center; padding: 3px 6px 1px; overflow: hidden; }
+.rt-feed-canvas pre {
+  font-family: inherit; font-size: 13.5px; line-height: 1.04; letter-spacing: 1.5px;
+  color: var(--ph); text-shadow: 0 0 8px var(--ph-glow2), 0 0 2px var(--ph-glow2);
+}
+.rt-feed-meters {
+  display: flex; gap: 14px; align-items: center; padding: 2px 8px;
+  font-size: 11px; color: var(--ph-dim); border-top: 1px solid var(--ph-faint); letter-spacing: 1px;
+}
+.rt-feed-meters b { color: var(--ph); }
+.rt-ctx { display: flex; align-items: center; gap: 5px; flex: 1; }
+.rt-ctxbar { flex: 1; height: 6px; background: var(--ph-faint); border: 1px solid var(--ph-dim); display: block; }
+.rt-ctxbar > span {
+  display: block; height: 100%; transition: width 0.5s;
+  background: repeating-linear-gradient(90deg, var(--ph) 0 4px, rgba(0,0,0,0.4) 4px 6px);
+}
+.rt-feed-stream {
+  border-top: 1px solid var(--ph-faint); padding: 3px 8px 4px; height: 122px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: flex-end; font-size: 12.5px; line-height: 1.28;
+}
+.rt-fs-ln { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.78; }
+.rt-fs-ln.good { color: var(--ph-bright); opacity: 1; }
+.rt-fs-ln.dim { opacity: 0.42; }
+.rt-fs-ln.cur { opacity: 1; color: var(--ph-bright); }
+.rt-cur { animation: pulse 0.65s infinite; }
+
+/* --- chain of command --- */
+.rt-chain { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; border-bottom: 1px dotted var(--ph-faint); font-size: 13.5px; }
+.rt-chain-role { width: 54px; color: var(--ph-dim); font-size: 11px; letter-spacing: 1px; flex-shrink: 0; }
+.rt-chain-info { margin-left: auto; color: var(--ph-dim); font-size: 11.5px; text-align: right; }
+
+/* --- sparkline + thin bars --- */
+.rt-spark { color: var(--ph); font-size: 17px; letter-spacing: 1px; text-shadow: 0 0 8px var(--ph-glow2); }
+.rt-bar.thin { height: 4px; margin: 1px 0 4px; }
+
+/* --- commander control strip --- */
+.rt-ctrl { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.rt-btn { border: 1px solid var(--ph-faint); background: none; color: var(--ph-dim); padding: 2px 7px; font-family: inherit; font-size: 11px; cursor: pointer; letter-spacing: 1px; transition: border-color 0.15s, color 0.15s; }
+.rt-btn:hover { border-color: var(--ph); color: var(--ph); }
+.rt-btn-rush { border-color: var(--warn) !important; color: var(--warn) !important; }
+.rt-btn-rush:hover { border-color: var(--ph-bright) !important; color: var(--ph-bright) !important; }
+.rt-btn-flag { border-color: var(--gold) !important; color: var(--gold) !important; }
+
+/* narrow screens */
+@media (max-width: 1480px) {
+  .logo-sub { display: none; }
+  .logo-word { font-size: var(--fs-3); letter-spacing: 4px; }
+  .logo-img { height: 24px; }
+}
+@media (max-width: 1100px) {
+  #app { grid-template-columns: 184px 1fr 254px; }
+  .crew-status { max-width: 150px; }
+  .pw-cols { grid-template-columns: 1fr; gap: 10px; }
+}
+
+/* ====== STAGE ACTIVITY TICKER (agent/stage-ticker) ======
+   One diegetic security-camera line in the .cam-hud overlay: the latest REAL harness event, terse.
+   Sits bottom-center, right of "FEED: LIVE". Dim phosphor VT323, letter-spaced, subtle glow, "▸" lead.
+   Event-driven (world.js pushTicker/paintTicker): a fresh event blips the line in; 7s idle fades it out.
+   Theme-var colours only, so it re-tints under body.theme-green (and every other theme). */
+.cam-ticker {
+  /* .cam-hud span is already position:absolute; color:var(--ph) */
+  bottom: 10px; left: 50%;
+  transform: translateX(-50%);
+  max-width: 62%;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 12px; line-height: 1; letter-spacing: 1.5px;
+  color: var(--ph-dim);
+  text-shadow: 0 0 5px var(--ph-glow2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: center;
+  /* start invisible; page reload = clean frame */
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.cam-ticker .ct-name { font-weight: normal; color: var(--ph); }   /* suit tint applied inline overrides this */
+.cam-ticker .ct-sep { color: var(--ph-dim); }
+.cam-ticker--bad { color: var(--bad); text-shadow: 0 0 5px rgba(255,92,77,0.35); }
+.cam-ticker--bad .ct-name { color: var(--bad); }
+.cam-ticker--on { opacity: 0.9; }
+/* CRT blip: a quick one-step transform/opacity flicker as a new line takes over (no marquee, no layout thrash) */
+@keyframes cam-ticker-blip {
+  0%   { opacity: 0; transform: translateX(-50%) scaleY(0.4); }
+  45%  { opacity: 1; transform: translateX(-50%) scaleY(1.06); }
+  100% { opacity: 0.9; transform: translateX(-50%) scaleY(1); }
+}
+.cam-ticker--blip { animation: cam-ticker-blip 0.22s steps(3, end); }
+@media (prefers-reduced-motion: reduce) {
+  .cam-ticker { transition: opacity 0.5s ease; }   /* keep the fade */
+  .cam-ticker--blip { animation: none; }           /* but no blip — instant swap */
+}
+.deliverable-row { border: 1px solid var(--ph-dim); margin: 10px 0; padding: 10px; background: var(--panel2); }
+.deliverable-row .row, .cfg > .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.deliverables-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+.deliverables-toolbar input { flex: 1 1 260px; min-width: 0; }
+.deliverables-toolbar select { flex: 0 1 190px; min-width: 140px; }
+.deliverable-row small { display: block; color: var(--ph-dim); margin: 4px 0; }
+.deliverable-image { display: block; max-width: 100%; max-height: 55vh; object-fit: contain; border: 1px solid var(--ph-dim); }
+.deliverable-csv { border-collapse: collapse; width: 100%; font-size: 12px; }
+.deliverable-csv th, .deliverable-csv td { border: 1px solid var(--ph-dim); padding: 4px 6px; text-align: left; max-width: 240px; overflow: hidden; text-overflow: ellipsis; }

@@ -1,0 +1,42 @@
+[package]
+name = "skynet-desktop"
+version = "0.12.5"
+description = "StarNet native desktop shell for the gamified AI-agent harness"
+authors = ["StarNet"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+# Lane 4D: opt-in launch-at-login (Windows Run key / macOS LaunchAgent / Linux .desktop autostart).
+tauri-plugin-autostart = "2"
+# Host-gesture gate: native blocking confirm dialogs for OS-launch commands (open/reveal).
+# A renderer IPC call is not a human gesture (docs/MISTAKES.md) — the host must ask.
+tauri-plugin-dialog = "2"
+# per-platform credential-store backends: Credential Manager / macOS Keychain /
+# Secret Service (dbus) with keyutils fallback — without these, non-Windows builds
+# compile but have NO store and every keychain call errors at runtime.
+keyring = { version = "3", features = ["windows-native", "apple-native", "linux-native", "sync-secret-service"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Power", "Win32_System_Threading", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_WindowsAndMessaging"] }
+# WebView2 crash recovery (webview_recovery.rs) hooks ICoreWebView2::add_ProcessFailed. Must stay on
+# the same release line wry uses, so PlatformWebview::controller() hands us the same COM types.
+webview2-com = "0.38"
+
+# A small, fast desktop binary: strip symbols and optimize for size in release.
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

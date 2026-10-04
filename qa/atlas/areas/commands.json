@@ -1,0 +1,1565 @@
+{
+  "area": "commands",
+  "updatedAt": "2026-07-24T00:00:00.000Z",
+  "entries": [
+    {
+      "id": "command/agents",
+      "kind": "command",
+      "area": "commands",
+      "name": "/agents — show active agents and running streams",
+      "purpose": "Give the Commander a one-line roll-call of the live roster and which workstreams are currently running.",
+      "promise": "Typing /agents prints an agent line naming the real roster agents plus the workstream count and which streams are busy — all read from App.agents()/workstreamList(), never hardcoded.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (catalog exposes agents; dispatch resolves to client directive)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (agentsCommand mapped in palette)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /agents → 'Agents: NOVA. Streams: 1; running: none.' — real roster + stream count.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/away",
+      "kind": "command",
+      "area": "commands",
+      "name": "/away — queue work for this agent to build on its own away shift",
+      "purpose": "Put a door on the away-workshop subsystem (grant, backlog, shift) which previously had only the catalog-orphan /build-away in the browser fallback list.",
+      "promise": "Typing /away <text> queues onto the REAL per-agent workshop backlog and states the grant state in the same breath; /away on|off writes the grant; /away list marks a row as waiting in OUTBOX only when its manifest still validates on disk (the same proof the count uses), and says so plainly when the files are gone; /away now reports a shift that RAN but produced nothing as a failure, never as delivered work.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/slash-actions.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (build-away alias canonicalizes to away)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash-actions.test.js (queue/grant/list + grant-off honesty + reserved-word boundary)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash-actions.test.js (fired:true + no-manifest is a failure; parked items say they will not be retried)"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-24T00:00:00.000Z",
+      "lastSeen": "2026-07-24T00:00:00.000Z",
+      "missing": false,
+      "notes": "Replaces the old /build-away, which existed ONLY in chat.js FALLBACK_SLASH_COMMANDS and was absent from this atlas, sidecar/slash.js and /api/slash/catalog. build-away is kept as an alias."
+    },
+    {
+      "id": "command/background",
+      "kind": "command",
+      "area": "commands",
+      "name": "/background — run a prompt in a new background workstream",
+      "purpose": "Spin up a fresh board task workstream for a prompt and send it, then return focus to the current stream so the directive runs in the background.",
+      "promise": "Typing /background <prompt> creates a kind:task workstream (Workstreams.create), sends the prompt to it, switches back to the prior stream, and confirms with the new stream label; bare /background prints a usage line.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (bg alias canonicalizes; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (backgroundCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /background → 'Usage: /background <prompt>' live; arg form resolves {type:client,action:background,args:'summarize'} with NO run fired. RUN-BOUNDARY: the create+send path mints a task run — proven only to the ack/resolution, not through a completion."
+    },
+    {
+      "id": "command/blueprint",
+      "kind": "command",
+      "area": "commands",
+      "name": "/blueprint — load a recipe blueprint into the composer",
+      "purpose": "Insert a named recipe's directive text into the composer so the Commander can edit and launch it as a run.",
+      "promise": "Typing /blueprint <recipe> inserts the recipe's filled directive into the input (an insert-type directive), selecting the first placeholder; an unknown recipe reports it.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/recipes.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (bp alias dispatches to blueprint with args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (blueprintCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /blueprint → 'Blueprints: /morning-brief, /deep-research, …' live; '/blueprint no-such-recipe-xyz' → 'No blueprint matched \"no-such-recipe-xyz\".'; arg form resolves {action:blueprint,args:'deep-research'} (insert directive)."
+    },
+    {
+      "id": "command/branch",
+      "kind": "command",
+      "area": "commands",
+      "name": "/branch — fork this conversation into a new workstream",
+      "purpose": "Fork the current conversation into a new workstream so a tangent can proceed without disturbing the original thread.",
+      "promise": "Typing /branch (or /fork) creates a new workstream seeded from the current one and switches to it; args are carried through as the fork directive.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (fork alias canonicalizes to branch; client directive with args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (branchWorkstreamCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /branch → 'Branched from General.' live; the new stream carries title 'General branch' (fork created + switched to)."
+    },
+    {
+      "id": "command/bundles",
+      "kind": "command",
+      "area": "commands",
+      "name": "/bundles — list recipe and skill slash bundles",
+      "purpose": "List the recipe and skill slash bundles available to the Commander so they know what /command shortcuts exist.",
+      "promise": "Typing /bundles prints a line summarizing the recipe and skill slash bundles currently exposed in the catalog.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (bundles in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (bundlesCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /bundles → 'Bundles: 50 recipe blueprints (…); 40 skill recipes, active: decision-1-3-1, ascii-art, creative-ideation, plan, humanizer.' — real catalog counts."
+    },
+    {
+      "id": "command/clear",
+      "kind": "command",
+      "area": "commands",
+      "name": "/clear — clear COMMS and start a fresh workstream",
+      "purpose": "Wipe the rendered COMMS panel and start a brand-new workstream, giving a clean slate without touching any other stream's in-flight run.",
+      "promise": "Typing /clear (or /cls) empties the chat log and spins up a fresh workstream (via newWorkstreamCommand), confirming with 'Cleared COMMS and started a fresh workstream.'",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (clear + cls alias dispatch to clear action)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (clearCommand path present)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /clear → 'Cleared COMMS and started a fresh workstream.' live; #chat-log reset to a single row (fresh stream), no slash echoed as chat.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/compress",
+      "kind": "command",
+      "area": "commands",
+      "name": "/compress — show context compaction status",
+      "purpose": "Report the honest state of context compaction — how full the live prompt is and that compaction is automatic during a run (the run host is stateless, so there is no idle context to fold on demand).",
+      "promise": "Typing /compress prints the current context used/limit (when known) plus an honest explanation that compaction happens automatically inside a run and there is no manual between-run compaction.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (compress in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (compress fallback present)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /compress → honest auto-compaction explanation ('Chat memory is managed automatically… There is nothing you need to do.') — no fake manual-compaction claim."
+    },
+    {
+      "id": "command/copy",
+      "kind": "command",
+      "area": "commands",
+      "name": "/copy — copy the agent's last reply",
+      "purpose": "Copy the agent's most recent reply text to the clipboard so the Commander can paste it elsewhere.",
+      "promise": "Typing /copy copies the last agent message's body text to the clipboard (copyLastReply) and confirms.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (copy in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (palette fallback includes copy)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /copy resolves {type:client,action:copy,args:''}; idle no-op — does NOT echo as a .cmsg.user chat row (echo_copy=false)."
+    },
+    {
+      "id": "command/cron",
+      "kind": "command",
+      "area": "commands",
+      "name": "/cron — show or arm scheduled routines",
+      "purpose": "Show or arm the station's scheduled routines (cron), reading/writing the real /api/cron state.",
+      "promise": "Typing /cron shows the current routine schedule from /api/cron; with on|off|status it arms/disarms and reports the real armed state — never a faked status.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (cron in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (cronCommand + /api/cron endpoint use)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /cron → 'Routines: scheduler on, 0 jobs. Use /cron on or /cron off to arm/disarm.' — read from the real /api/cron state."
+    },
+    {
+      "id": "command/debug",
+      "kind": "command",
+      "area": "commands",
+      "name": "/debug — show chat and slash debug state",
+      "purpose": "Print internal chat + slash debug state (loaded catalog size, active model, etc.) for diagnosing the composer.",
+      "promise": "Typing /debug prints a diagnostic line reporting the loaded slash-catalog count and current model — real internal values, not placeholders.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (debug in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (palette fallback includes debug)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /debug → 'Debug: stream=ws_…, agent=agent, run=none, busy=no, queued=0, slashCatalog=95, model=anthropic/claude-haiku-4.5.' — real internal values."
+    },
+    {
+      "id": "command/fast",
+      "kind": "command",
+      "area": "commands",
+      "name": "/fast — drop reasoning effort to minimal for quicker, cheaper replies",
+      "purpose": "One-word shortcut to the fastest, cheapest setting, for users who will never think in terms of a reasoning dial.",
+      "promise": "Typing /fast drops reasoning effort to minimal through the SAME real dial /reasoning writes, confirms the before -> after levels, and names the command to restore the previous one. If effort is already minimal or none it says so and changes nothing. It never claims a \"fast mode\" as an independent switch, because StarNet has none.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "frontend/app/chat.js",
+          "frontend/app/app.js",
+          "frontend/app/harness.js",
+          "sidecar/index.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (/fast writes reasoningEffort minimal via applyConfig; the dead placeholder string cannot return)"
+        },
+        {
+          "kind": "audit",
+          "ref": "live 2026-07-24 :9400 — /fast moved high -> minimal and the next /api/run body carried reasoningEffort \"minimal\"; a second /fast correctly reported already-fastest and wrote nothing"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Was a DEAD door: it advertised argsHint [status] and any other arg answered \"Fast mode is not a separate runtime toggle yet\". Grep confirmed no fast-mode toggle exists anywhere (\"fast\" appears only as a model TIER tag in specialty resolution), so rather than keep a command that could only ever say no, it now drives the reasoning dial that genuinely governs reply latency and cost. Re-audit owed: dropped from perfected because the implementation changed."
+    },
+    {
+      "id": "command/goal",
+      "kind": "command",
+      "area": "commands",
+      "name": "/goal — set an autonomous standing goal (status/pause/resume/clear)",
+      "purpose": "Set, inspect, or control an autonomous goal loop on the current workstream — the agent works toward the goal over a turn budget until satisfied.",
+      "promise": "Typing /goal <text> creates a GoalLoop and kicks off the first continuation; bare /goal (or status) prints the loop status line; pause/resume/clear control it, each confirming the real new state.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/goalloop.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (goal in catalog; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (goalCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /goal → 'No goal loop is running. Set one with /goal <text>.' live (status branch); arg form resolves {action:goal,args:'ship it'} with NO run fired. RUN-BOUNDARY: /goal <text> kickGoal mints a run — proven to the ack/resolution only.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/help",
+      "kind": "command",
+      "area": "commands",
+      "name": "/help — list available commands",
+      "purpose": "List the available slash commands so the Commander can discover what the composer can do.",
+      "promise": "Typing /help prints a line of the built-in command names plus an honest count of recipe commands and a hint to type '/' to browse — the names come from the live catalog, so it can only list commands that actually exist.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (help in catalog; dispatch accepts leading slash + args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (palette fallback includes help)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /help → systemCard 'Commands (46) — click to expand' grouped by category (Session/Info/Configuration/Tools) + recipe count; names catalog-derived (95 total in catalog).",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/history",
+      "kind": "command",
+      "area": "commands",
+      "name": "/history — show recent turns of this workstream",
+      "purpose": "Print the last N turns of the active workstream's conversation, read-only, so the Commander can review the thread.",
+      "promise": "Typing /history [n] prints the last n (default 10, capped 30) user/assistant turns from ws.history, role-prefixed and truncated; an empty stream honestly says there is no history yet. Never mutates history.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (history + hist alias; dispatch carries count arg)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (historyCommand path)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /history 5 → 'No conversation history in this workstream yet.' — honest empty state on the seeded fresh stream, read-only.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/insights",
+      "kind": "command",
+      "area": "commands",
+      "name": "/insights — usage rollup from the run history",
+      "purpose": "Show a lifetime usage rollup for this agent from the durable run history (GET /api/insights) — runs, spend, tokens, success rate, top models.",
+      "promise": "Typing /insights fetches /api/insights and prints the persisted lifetime rollup; when the sidecar is offline it falls back to a clearly-labelled session-only total — no number is ever fabricated.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (insights dispatches to insights action)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (insightsCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /insights → 'Insights (lifetime run history for agent): 0 runs, $0.00, 0 tokens.' — read from /api/insights, honest zeros."
+    },
+    {
+      "id": "command/loop",
+      "kind": "command",
+      "area": "commands",
+      "name": "/loop — repeat a prompt on an interval in this workstream",
+      "purpose": "The in-session watcher shape: keep re-asking the same question on a clock while you watch, distinct from /goal (judge-driven) and /routine (persisted, headless).",
+      "promise": "Typing /loop <interval> <prompt> re-sends that prompt into THIS workstream every interval, visible in COMMS, capped at 20 runs and refusing sub-minute cadence; it skips a tick while the stream is busy or unfocused rather than firing into the wrong conversation; /stop and /loop off end it; the status line states it does not survive closing StarNet.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "frontend/app/chat.js",
+          "sidecar/index.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (registry: stays a client directive, args preserved)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (SOURCE-GREP only — pins handler wiring, goalBlocked guard, budget constants; proves no runtime behavior)"
+        },
+        {
+          "kind": "audit",
+          "ref": "live 2026-07-24 :9400 — fired 1/20 in its own stream, 2 ticks skipped while another stream was focused, 0 cross-stream turns, /stop ended an armed idle loop"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-24T00:00:00.000Z",
+      "lastSeen": "2026-07-24T00:00:00.000Z",
+      "missing": false,
+      "notes": "dispatch:client — it drives send() in the browser. Deliberately in-memory: a loop that resurrected after a restart would spend real money unasked. Live-walked 2026-07-24: cross-stream canary proved a tick never enters another workstream. No harness test drives a real tick — the behavioral evidence is the live walk, not the greps."
+    },
+    {
+      "id": "command/memory",
+      "kind": "command",
+      "area": "commands",
+      "name": "/memory — show the active agent memory records",
+      "purpose": "Show the active agent's memory records (facts/preferences the agent has minted), optionally filtered by a query.",
+      "promise": "Typing /memory [query] prints the agent's current memory records (from the real memory store), filtered when a query is given — reflecting only records that actually exist.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (memory in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (memoryCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /memory → 'Memory: 0 records.' — reflects the real (empty) memory store."
+    },
+    {
+      "id": "command/model",
+      "kind": "command",
+      "area": "commands",
+      "name": "/model — show or set the active model",
+      "purpose": "Show the active model or set it as a per-agent roster property (never a per-chat override), honoring the 'model is a roster property' law.",
+      "promise": "Typing /model prints the current model+provider; /model <id> applies it via App.applyConfig({model}) — patching agent.model on the roster agent and persisting it 'for future runs', not just this chat. Values read from Harness/App, never hardcoded.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (model dispatch carries model-id args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (App.applyConfig applies model; chat uses App config seam)"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/journeys.mjs (J7 slash-truth: drives the REAL #chat-input — \"/model <id>\" with args dispatches as a command, arg reaches App.currentAgent().model, \"/model …\" NOT echoed as a .cmsg.user chat row; the 2026-07-05 args-bug seam)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [
+        "070e8aca"
+      ],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /model → 'Model: anthropic/claude-haiku-4.5 via openrouter. Use /model <model-id> to switch.'; F4 honest-warn LOCKED PROVEN — '/model totally/bogus-model-xyz' → 'Warning: \"totally/bogus-model-xyz\" is not in the current model catalog (344 known ids) — runs may fail with model-not-found. It stays set;…' (no confident ack over garbage); arg form resolves {action:model,args}. J7 journey now drives the real #chat-input for the args seam (finding 070e8aca's input-path gap).",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/new",
+      "kind": "command",
+      "area": "commands",
+      "name": "/new — start a fresh workstream",
+      "purpose": "Start a fresh, empty workstream and rebind the COMMS panel to it, leaving other streams untouched.",
+      "promise": "Typing /new (or /reset) creates a new workstream via Workstreams.create and loads it, giving a clean panel; it never touches another stream's in-flight run.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (new + reset alias dispatch to new)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (newWorkstreamCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /new → 'Started a fresh workstream.' live; #chat-log reset (clean panel), no slash echoed as chat.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/personality",
+      "kind": "command",
+      "area": "commands",
+      "name": "/personality — show or set the active personality",
+      "purpose": "Show the active personality or set it as a per-agent roster property (persona), driving voice + prompt tone.",
+      "promise": "Typing /personality lists options and the current persona; /personality <id> applies a known persona via App.applyConfig({personaId}) on the roster agent (re-inits Voice); an unknown value is reported without changing anything.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (personality in catalog; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (App.applyConfig applies personaId)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /personality → 'Personality: Friendly. Options: professional, friendly, direct, witty, calm, unhinged, hype, overlord, gremlin, noir.' — real persona + option list. Set-path (applyConfig personaId) machine-covered by slash.config.test.js."
+    },
+    {
+      "id": "command/queue",
+      "kind": "command",
+      "area": "commands",
+      "name": "/queue — show or add queued follow-up text",
+      "purpose": "Show the pending follow-up queue for the active stream, or add a message to it (auto-sent when the stream frees).",
+      "promise": "Typing /queue <message> enqueues it (or sends immediately if idle); bare /queue lists the pending follow-ups for this stream — reflecting the real queued map, never a fabricated list.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (q alias canonicalizes to queue; dispatch runs queue action)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (queue fallback present)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /queue → 'Queue is empty for this stream.' — reflects the real queued map."
+    },
+    {
+      "id": "command/reasoning",
+      "kind": "command",
+      "area": "commands",
+      "name": "/reasoning — show or set how hard the model thinks before answering",
+      "purpose": "Let the Commander set how hard the model thinks before answering — the real per-provider reasoning dial the run payload already carried.",
+      "promise": "Typing /reasoning shows the current effort for the active provider; /reasoning <none|minimal|low|medium|high|xhigh> WRITES it through App.applyConfig, and the confirmation is printed only after the harness store reads the new value back. An unknown token is refused rather than silently normalized to medium. A model with no reasoning dial gets a warn-not-block note. The chosen level rides the next /api/run payload and persists across reload.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "frontend/app/chat.js",
+          "frontend/app/app.js",
+          "frontend/app/harness.js",
+          "sidecar/index.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (applyConfig effort branch; read-back-before-claiming; unknown level refused; the old false claim cannot return)"
+        },
+        {
+          "kind": "audit",
+          "ref": "live 2026-07-24 :9400 — /reasoning high then /fast; captured /api/run bodies carried reasoningEffort \"xhigh\" then \"minimal\"; survived a full page reload on both the harness store and the agent"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Was a NOTE-ONLY placeholder: any non-status arg answered \"Reasoning effort is not a separate StarNet toggle yet\", which was false — Harness.get/setReasoningEffort, the model dock and the run payload all carried the dial already; the command simply never reached it. applyAgentConfig gained a reasoningEffort branch (it handled model/persona/approval but not effort). Re-audit owed: dropped from perfected because the implementation changed."
+    },
+    {
+      "id": "command/reload-mcp",
+      "kind": "command",
+      "area": "commands",
+      "name": "/reload-mcp — refresh configured MCP connectors",
+      "purpose": "Refresh the configured MCP connectors (re-read connector config and reconnect) via the real /api/connectors/refresh endpoint.",
+      "promise": "Typing /reload-mcp [connector-id] hits /api/connectors/refresh and reports the real refresh result; it acts on actual configured connectors, not a stub.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (reload_mcp alias canonicalizes; dispatch runs reload-mcp)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (reloadMcpCommand + /api/connectors/refresh)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /reload-mcp → 'No MCP connectors are configured.' — hit /api/connectors/refresh, honest empty result."
+    },
+    {
+      "id": "command/reload-skills",
+      "kind": "command",
+      "area": "commands",
+      "name": "/reload-skills — refresh the slash skill catalog",
+      "purpose": "Invalidate and re-fetch the slash skill + command catalog for the active workstation so newly-authored skills appear.",
+      "promise": "Typing /reload-skills clears the cached catalog and re-warms it from /api/slash/catalog (whose payload the sidecar composes from the skill library, so skills refresh with it), confirming the refresh; the palette then reflects the current skills.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (reload_skills alias canonicalizes; dispatch runs reload-skills)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (reloadSkillsCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /reload-skills → 'Refreshing slash skills and command catalog for this workstation.' — ack; re-warms the catalog from /api/slash/catalog + /api/skills."
+    },
+    {
+      "id": "command/resume",
+      "kind": "command",
+      "area": "commands",
+      "name": "/resume — list or switch workstreams",
+      "purpose": "List the existing workstreams or switch to one by name/number, so the Commander can move between conversations.",
+      "promise": "Typing /resume lists the workstreams; /resume <name|number> switches to that stream and loads it; args flow through the dispatch (proven for /sessions 2).",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (sessions alias dispatches to resume with args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (resumeCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /resume → 'Workstreams: >1. General (0). Use /resume <number|title>.' — real workstream list."
+    },
+    {
+      "id": "command/retry",
+      "kind": "command",
+      "area": "commands",
+      "name": "/retry — re-run the last turn",
+      "purpose": "Re-run the last user turn after an outage/error, discarding the failed reply so the thread stays clean.",
+      "promise": "Typing /retry (when idle) drops a trailing errored reply, re-renders the thread, and resends the last user message without echoing it again; it no-ops when busy or when there is nothing to retry.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (dispatch resolves /retry to client directive)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (palette fallback includes retry)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /retry resolves {type:client,action:retry,args:''}; idle no-op — no .cmsg.user chat echo (echo_retry=false).",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/routine",
+      "kind": "command",
+      "area": "commands",
+      "name": "/routine — list, create, preview, pause or delete a scheduled routine",
+      "purpose": "Give the chat surface the cron CRUD the ROUTINES panel already had, so a Commander can schedule recurring work without leaving COMMS.",
+      "promise": "Typing /routine lists the REAL cron jobs with their stored cadence and next-fire time; /routine add <schedule> | <task> mints one through the same validation + mint gate as POST /api/cron; every reply naming a routine that cannot fire — including the mint-gate duplicate — says the scheduler is disarmed. The routine is bound to the agent the workstream is talking to, and rows owned by another agent are labelled.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/slash-actions.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (server directive + argsHint)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash-actions.test.js (create/pause/rm/preview + disarmed-scheduler honesty)"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-24T00:00:00.000Z",
+      "lastSeen": "2026-07-24T00:00:00.000Z",
+      "missing": false,
+      "notes": "dispatch:server — the sidecar executes it and returns a say directive. No run-now verb: firing streams NDJSON through handleCronRun and stays in the ROUTINES panel."
+    },
+    {
+      "id": "command/save",
+      "kind": "command",
+      "area": "commands",
+      "name": "/save — save the current station state",
+      "purpose": "Persist the current station state (agent save) on demand so the Commander can checkpoint their work.",
+      "promise": "Typing /save writes the current station/agent save and confirms; it persists the real save document, not a no-op.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (save in catalog; dispatch resolves)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /save → 'Saved the current station state.' — ack proven live. KNOWN: deep persist-across-restart not re-verified this pass; the ack + dispatch resolution are the guarded surface."
+    },
+    {
+      "id": "command/skills",
+      "kind": "command",
+      "area": "commands",
+      "name": "/skills — show installed skill recipes",
+      "purpose": "Show the installed skill recipes available to the active agent, reading the real /api/skills catalog scoped to placed capabilities.",
+      "promise": "Typing /skills fetches /api/skills?placed=<caps> and lists the skills available to this workstation (respecting placed-capability gating) — it reflects only skills that actually exist and are reachable.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (skills in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (skills command reads /api/skills?placed=)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /skills → 'Skills: 5 active (decision-1-3-1, ascii-art, creative-ideation, plan, humanizer); 35 off. Use /<skill-slug> to draft…' — read from /api/skills (placed-cap scoped)."
+    },
+    {
+      "id": "command/status",
+      "kind": "command",
+      "area": "commands",
+      "name": "/status — show current stream and run state",
+      "purpose": "Give the Commander a one-line snapshot of the current workstream: idle/working, turn count, queued follow-ups, active model, and any goal loop.",
+      "promise": "Typing /status prints working|idle on the current stream label with the real turn count, queued count, model+provider, and goal-loop status line — every value read from live state (Harness/GoalLoop/queued), never faked.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (status in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (App exposes currentAgent for status)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /status → 'Status: idle on General (0 turns, 0 queued); model anthropic/claude-haiku-4.5 via openrouter.' — every value from live state (truthful telemetry).",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/steer",
+      "kind": "command",
+      "area": "commands",
+      "name": "/steer — steer the running turn (nothing to steer when idle)",
+      "purpose": "Inject mid-run guidance into the live turn (folded in before the next model call) or queue it to run next when idle — so a steer is never silently dropped.",
+      "promise": "Typing /steer <guidance> while a run is live POSTs it to /api/run/steer so the loop folds it in at its next step; if the run cannot be addressed (no runId, or the POST fails) the note is queued to run next instead of being dropped; when NOTHING is running it refuses outright and points at /queue — it never mints a full model run out of a steering note.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (steer in catalog; dispatch carries args)"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /steer → 'Usage: /steer <guidance>' live; arg form resolves {action:steer,args:'focus tests'} with NO run fired. RUN-BOUNDARY: a live-run steer POSTs /api/run/steer (or idle sends a turn) — proven to the ack/resolution only. CORRECTED 2026-07-24: the promise still described the pre-F3 fallthrough (\"when idle it sends the note as the next turn\"), which f488ed11 removed precisely because it silently minted a paid run; the entry had been blessed perfected after that change. Dropped to mapped for re-audit."
+    },
+    {
+      "id": "command/stop",
+      "kind": "command",
+      "area": "commands",
+      "name": "/stop — interrupt the running turn",
+      "purpose": "Interrupt the running turn on the active stream (abort the fetch, kill the server run, pause any goal loop) — the Commander taking over.",
+      "promise": "Typing /stop (when busy) aborts the in-flight run, clears its pending approvals/queue, pauses an active goal loop, and shows 'stopping…'; it no-ops when the stream is idle.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (stop in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (palette fallback includes stop)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /stop resolves {type:client,action:stop,args:''}; idle no-op — no .cmsg.user chat echo (echo_stop=false).",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/subgoal",
+      "kind": "command",
+      "area": "commands",
+      "name": "/subgoal — add a criterion the goal loop must also satisfy",
+      "purpose": "Append (or list/remove) a criterion that the active goal loop must ALSO satisfy before it declares the goal done.",
+      "promise": "Typing /subgoal <text> adds a criterion to the running goal loop; bare /subgoal lists them; /subgoal remove N and /subgoal clear edit them — each acting on the real GoalLoop subgoals and requiring a goal to exist first.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/goalloop.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (subgoal in catalog; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (subgoalCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /subgoal → 'No subgoals set. Use /subgoal <text> once a goal loop is running.' (requires a goal first); arg form resolves {action:subgoal,args:'add coverage'}."
+    },
+    {
+      "id": "command/suggestions",
+      "kind": "command",
+      "area": "commands",
+      "name": "/suggestions — review recurring-task recipe suggestions",
+      "purpose": "Review the recurring-task recipe suggestions the station has mined from run history, and accept/dismiss/clear them.",
+      "promise": "Typing /suggestions lists the mined candidates (MintStore.candidates); accept saves one as a recipe (Recipes.saveCustom), dismiss/reject denylists it, clear wipes the history — acting on the real suggestion store.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/mintstore.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (suggest alias canonicalizes; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (suggestionsCommand + MintStore/Recipes.saveCustom)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /suggestions → 'No recurring-task suggestions are ready yet.' — reflects the real (empty) MintStore candidates."
+    },
+    {
+      "id": "command/title",
+      "kind": "command",
+      "area": "commands",
+      "name": "/title — show or rename the current workstream",
+      "purpose": "Show or rename the current workstream's title so the Commander can label conversations meaningfully.",
+      "promise": "Typing /title shows the current title; /title <name> renames the active workstream and refreshes the board — reflecting the real workstream title.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (title in catalog; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (titleCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). bare /title → 'Title: General. Use /title <name> to rename this workstream.'; rename proven — the /branch fork stream reads title 'General branch'."
+    },
+    {
+      "id": "command/tools",
+      "kind": "command",
+      "area": "commands",
+      "name": "/tools — show the tools this agent can actually call",
+      "purpose": "Answer \"what can this agent actually call right now\" from the real capability registry, not from a list typed into the UI.",
+      "promise": "Typing /tools lists each toolset family with the REAL tool names CAP_REGISTRY grants it, split three ways: active (prop placed AND the TOOLSETS switch on), placed-but-switched-OFF (named explicitly, tools NOT advertised), and locked-until-placed (naming the objectType required). A placed Jukebox with no Spotify session is called out as inert. compute is described as a grant, never listed as a callable tool.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/slash-actions.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (registry: dispatch:server)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash-actions.test.js (real tool names; placed-but-disabled family withholds its tools; unplaced listed as locked; jukebox inert note)"
+        },
+        {
+          "kind": "audit",
+          "ref": "live 2026-07-24 :9400 — toggling the cabinet toolset OFF moved FILE CABINET from active to \"switched OFF\" and dropped the count 4->3, verified against POST /api/toolsets/cabinet"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "notes": "Was dispatch:client reading a HARDCODED literal (chat.js toolRows) that understated the real surface ~3x (web claimed 2 tools, CAP_REGISTRY grants 14) and ignored the TOOLSETS switch entirely, so a disabled family still read as available. Now dispatch:server off toolsetRows(CAP_REGISTRY) + the persisted enable-state. Re-audit owed: status dropped from perfected because the implementation changed.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/undo",
+      "kind": "command",
+      "area": "commands",
+      "name": "/undo — remove the last local exchange",
+      "purpose": "Remove the last local user/assistant exchange from the active workstream's history (local edit only).",
+      "promise": "Typing /undo (when idle) pops the trailing assistant + user messages from ws.history, re-renders, and reports how many were removed; it refuses while a turn is running and no-ops on empty history.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (undo in catalog; dispatch resolves)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (undo fallback present)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /undo → 'Nothing to undo.' — honest empty-history no-op (refuses to fabricate a removal)."
+    },
+    {
+      "id": "command/usage",
+      "kind": "command",
+      "area": "commands",
+      "name": "/usage — show real spend from the station ledger",
+      "purpose": "Tell the Commander what the station has actually SPENT, from the same ledger the budget caps enforce against.",
+      "promise": "Typing /usage prints today's spend (against the daily cap when one is set), all-time spend with run count and token total, and this agent's share — every figure read from the sidecar spend ledger, so it includes headless runs (routines, away shifts, night shift, messaging) the browser never observed. Sub-cent spend renders as </usr/bin/bash.01, never /usr/bin/bash.00. An unreadable ledger refuses rather than reporting zero.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/slash-actions.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (registry: dispatch:server)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash-actions.test.js (ledger-sourced today/lifetime/tokens/per-agent + caps; sub-cent; unreadable ledger refuses)"
+        },
+        {
+          "kind": "audit",
+          "ref": "live 2026-07-24 :9400 — ledger seeded with 3 HEADLESS runs (.504); /usage reported .50 / 3 runs / 43,900 tokens and per-agent /usr/bin/bash.42 vs .08, matching GET /api/budget/status"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [],
+      "notes": "Was dispatch:client reading Harness.totals(), a counter that only accumulates runs THIS BROWSER watched — it labelled that \"lifetime\" while every cron/away/night-shift/Telegram run spent real money it never saw, structurally disagreeing with the ledger the caps enforce against. Reads effectiveCaps directly rather than GET /api/budget/status, whose caps key is clobbered by budget.status() (pre-existing; the Budget panel compensates with its own precedence chain). Re-audit owed: status dropped from perfected because the implementation changed.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/version",
+      "kind": "command",
+      "area": "commands",
+      "name": "/version — show StarNet version information",
+      "purpose": "Show the running StarNet version/build information so the Commander knows what they are on.",
+      "promise": "Typing /version (or /v) prints the real StarNet version/build string.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (v alias dispatches to version)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.palette.test.js (versionCommand mapped)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /version → 'Version: StarNet 0.5.2, harness v0.5.2-79-g0a009ec2, Node v22.23.0.' — real build string."
+    },
+    {
+      "id": "command/voice",
+      "kind": "command",
+      "area": "commands",
+      "name": "/voice — show or toggle spoken replies",
+      "purpose": "Show or toggle spoken replies and the canonical Local Live hands-free system, reflecting real browser speech/listen capability.",
+      "promise": "Typing /voice status reports whether replies and Local Live are on and whether the browser supports listen/speak; on|off control spoken replies while live (and legacy handsfree aliases) toggle VoiceLive rather than the retired hands-free loop.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/voice.js",
+          "frontend/app/voice-live.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (voice in catalog; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (Voice exposes setSpeakReplies for /voice)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Local Live is the sole hands-free target. /voice handsfree remains as a compatibility alias for /voice live; it no longer activates the retired legacy loop.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/whoami",
+      "kind": "command",
+      "area": "commands",
+      "name": "/whoami — show the current agent identity",
+      "purpose": "Tell the Commander who the active agent is: name, id, class/role, level, model, and its placed capabilities.",
+      "promise": "Typing /whoami prints the real active agent identity (name+id from the roster, class from Specialties/role, level from Xp.compute, model+provider from Harness, placed caps from World.heroCaps) — every field read from live state, none invented.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (whoami dispatches to whoami action)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (App.currentAgent exposed for whoami)"
+        },
+        {
+          "kind": "journey",
+          "ref": "scripts/qa/journeys.mjs (J7 slash-truth: bare \"/whoami\" typed into the real #chat-input dispatches to a local .cmsg.agent line, no slash user row)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /whoami → 'You are NOVA [agent] — orchestrator, Lv 1 (0 XP, 0% to Lv 2). Model: anthropic/claude-haiku-4.5 via openrouter. Placed capabilities: none on the floor yet.' — live identity, every field from state.",
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "command/yolo",
+      "kind": "command",
+      "area": "commands",
+      "name": "/yolo — toggle full-access approval mode",
+      "purpose": "Toggle the active agent's approval mode between full-access (no consent prompts) and ask-first, as a per-agent roster property.",
+      "promise": "Typing /yolo flips (or sets, with on|off) agent.approvalMode via App.applyConfig({approvalMode}) and confirms the real new mode; it is a per-agent setting, not per-chat.",
+      "wiring": {
+        "files": [
+          "sidecar/slash.js",
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "frontend/app/app.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/slash.test.js (yolo in catalog; dispatch carries args)"
+        },
+        {
+          "kind": "test",
+          "ref": "test/slash.config.test.js (App.applyConfig applies approvalMode)"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "3d0ebc1d1732a2e0ae86a8d8fa772031ee8d3386",
+        "date": "2026-07-18T01:12:00.000Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.408Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Live-proven @ seed :8965 / CDP :9365 (evidence .uiatlas/commands-live.json + commands-boundary.json). /yolo → 'Approval mode: full access. The agent will not pause for approval prompts.' live; App.currentAgent().approvalMode default→'full' (per-agent roster mutation confirmed)."
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "drive-docx-preview-no-progress-sanitized",
+  "source": "sanitized shape of run e95b9bcc; no account, document-body, or credential data retained",
+  "identifiedAt": 0,
+  "calls": [
+    { "name": "browser.get_text", "args": { "selector": "body" }, "summary": "text", "content": "Drive results: Latest Resume.docx, 13 KB" },
+    { "name": "browser.snapshot", "args": { "limit": 100 }, "summary": "snapshot", "content": "b12 [button] Latest Resume.docx" },
+    { "name": "browser.get_text", "args": { "selector": "body" }, "summary": "text", "content": "Drive results: Latest Resume.docx, 13 KB" },
+    { "name": "browser.find", "args": { "text": "Latest Resume.docx", "limit": 5 }, "summary": "1 match", "content": "b31 [button] Latest Resume.docx" },
+    { "name": "browser.snapshot", "args": { "limit": 100 }, "summary": "snapshot", "content": "b48 [button] Latest Resume.docx" },
+    { "name": "browser.find", "args": { "text": "Latest Resume.docx", "limit": 10 }, "summary": "1 match", "content": "b75 [button] Latest Resume.docx" },
+    { "name": "browser.get_text", "args": { "selector": "body" }, "summary": "text", "content": "Drive results: Latest Resume.docx, 13 KB" },
+    { "name": "browser.find", "args": { "text": "Latest Resume.docx", "limit": 5 }, "summary": "1 match", "content": "b89 [button] Latest Resume.docx" },
+    { "name": "browser.snapshot", "args": { "limit": 100 }, "summary": "snapshot", "content": "b101 [button] Latest Resume.docx" },
+    { "name": "browser.get_text", "args": { "selector": "body" }, "summary": "text", "content": "Drive results: Latest Resume.docx, 13 KB" },
+    { "name": "browser.find", "args": { "text": "Latest Resume.docx", "limit": 20 }, "summary": "1 match", "content": "b130 [button] Latest Resume.docx" },
+    { "name": "browser.snapshot", "args": { "limit": 100 }, "summary": "snapshot", "content": "b144 [button] Latest Resume.docx" }
+  ]
+}

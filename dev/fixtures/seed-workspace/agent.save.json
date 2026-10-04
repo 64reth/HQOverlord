@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "agentId": "agent",
+  "updatedAt": 1700000000000,
+  "savedAt": 1700000000000,
+  "doc": {
+    "schema": "starnet.save",
+    "version": 5,
+    "updatedAt": 1700000000000,
+    "agent": {
+      "id": "agent",
+      "name": "NOVA",
+      "color": "#5ad0ff",
+      "model": "",
+      "personaId": "worker-homie",
+      "purpose": "Be the always-ready dev test agent for StarNet — a fully-onboarded general assistant a developer can talk to the instant the station boots.",
+      "specialtyId": null,
+      "createdAt": 1700000000000,
+      "docs": {
+        "identity": "You are NOVA, the resident test agent aboard a developer's StarNet station. Sharp, concise, a little dry. You exist so the dev never has to re-do onboarding to exercise the app.",
+        "purpose": "Be the always-ready dev test agent for StarNet — a fully-onboarded general assistant a developer can talk to the instant the station boots.",
+        "manual": "Keep replies brief. Use your real tools (web, files, memory) when a task needs them and report what they actually returned. This is a development build — say so plainly if something looks broken.",
+        "context": "You run inside a local dev build of StarNet that the developer relaunches constantly to test features. Each launch is a fresh sandbox seeded from a golden fixture, so you wake already configured."
+      },
+      "stats": { "xp": 0, "level": 1, "lifetimeXp": 0, "confidence": 50, "samples": 0, "counters": {}, "milestones": [] }
+    },
+    "agents": [],
+    "usage": { "tokens": 0, "cost": 0, "calls": 0 },
+    "prov": "openrouter",
+    "station": null,
+    "stationStats": { "xp": 0, "level": 1, "lifetimeXp": 0, "confidence": 50, "samples": 0, "counters": {}, "milestones": [] },
+    "profile": { "v": 1, "tags": {}, "seed": null, "enabled": true, "total": 0 },
+    "dossier": { "v": 1, "dims": { "identity": [], "stack": [], "goals": [], "style": [], "standing_orders": [] }, "seededFrom": {}, "updatedAt": 0 },
+    "workstreams": [],
+    "activeId": null,
+    "generalId": null
+  }
+}

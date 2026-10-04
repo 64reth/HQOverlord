@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "starnet.eval.fixture.v1",
+  "type": "object",
+  "required": ["schemaVersion", "taskId", "fixtureId", "prompt", "setup", "oracle"],
+  "properties": {
+    "schemaVersion": { "const": "starnet.eval.fixture.v1" },
+    "taskId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "fixtureId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "prompt": { "type": "string", "minLength": 1 },
+    "setup": { "type": "object" },
+    "oracle": {
+      "type": "object",
+      "required": ["allowedMutations", "checks"],
+      "properties": {
+        "allowedMutations": { "type": "integer", "minimum": 0 },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "path", "op"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "path": { "type": "string", "minLength": 1 },
+              "op": { "enum": ["equals", "contains", "contains_all", "contains_any", "set_equals", "length_equals", "gte", "in", "truthy"] }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

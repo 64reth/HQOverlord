@@ -1,0 +1,49 @@
+# eval-gates — recurring credential-free eval slice.
+#
+# Runs on every PR and every push to trunk (feat/harness-backend). Evals only — the full
+# test:fast gate stays where it is (release train). Nothing here needs a provider key,
+# touches the public network, or claims model quality: this slice proves harness PLUMBING
+# (contract/claims coherence, deterministic loop conformance, 10x100 fault-boundary
+# recovery, and offline parity oracle + zero-tolerance violation detection).
+#
+# The fault capture runs the full frozen 100 repeats per boundary (~15s measured); the
+# runner refuses any other repeat count against the frozen contract, so there is no
+# reduced-repeat CI mode — and none is needed.
+#
+# One durable receipt is written to qa/eval-receipts/last-gate-receipt.json (committed
+# home; .dogfood/ is gitignored and its receipts do not survive). The receipt is printed
+# to the job log and uploaded as an artifact so a red run still leaves evidence.
+name: eval-gates
+
+on:
+  pull_request:
+  push:
+    branches: [feat/harness-backend]
+
+jobs:
+  credential-free-evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Credential-free eval gate (contract, quality, fault x100, parity-offline)
+        run: npm run eval:gate
+
+      - name: Print gate receipt
+        if: always()
+        run: cat qa/eval-receipts/last-gate-receipt.json || echo "no receipt was written"
+
+      - name: Upload gate receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-gate-receipt
+          path: qa/eval-receipts/last-gate-receipt.json
+          if-no-files-found: ignore

@@ -1,0 +1,217 @@
+/* STARNET — tutorial.css : First Command spotlight + bail-out chrome.
+   Minimal, theme-aware (falls back to amber if the --ph token is ever absent). The spotlight is a
+   single positioned div whose oversized box-shadow dims everything but the cut-out; pointer-events
+   stay off it so the highlighted control underneath is still fully clickable. */
+
+.tut-spot {
+  position: fixed;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(3, 7, 5, 0.5);
+  outline: 1px solid var(--ph, #ffaa33);
+  outline-offset: 3px;
+  pointer-events: none;
+  z-index: 1400;
+  transition: left .25s ease, top .25s ease, width .25s ease, height .25s ease;
+}
+
+/* ---- P2 just-in-time coachmarks: a non-blocking agent-voiced hint glued to a surface + a soft ring.
+   High z so it floats above the REFIT overlay and topbar; only the small panel itself is interactive,
+   so you keep building behind it. ---- */
+.tut-coach {
+  position: fixed;
+  z-index: 99000;
+  max-width: 320px;
+  font-family: VT323, monospace;
+  color: var(--text);
+  background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border: 1px solid var(--ph, #ffaa33);
+  border-left: 3px solid var(--ph, #ffaa33);
+  border-radius: 8px;
+  padding: 9px 11px 10px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55), 0 0 14px var(--ph-glow2, rgba(255, 170, 51, 0.12));
+  animation: tutCoachIn .22s ease both;
+}
+.tut-coach.no-anim { animation: none; }
+.tut-coach-who {
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ph, #ffaa33);
+  opacity: .85;
+  margin-bottom: 3px;
+}
+.tut-coach-who::before { content: '▸ '; }
+.tut-coach-body { font-size: 18px; line-height: 1.18; }
+.tut-coach-ok {
+  margin-top: 9px;
+  font-family: VT323, monospace;
+  font-size: 15px;
+  letter-spacing: .03em;
+  color: var(--ink);
+  background: var(--ph, #ffaa33);
+  border: 0;
+  border-radius: 5px;
+  padding: 3px 12px;
+  cursor: pointer;
+}
+.tut-coach-ok:hover { filter: brightness(1.12); }
+
+/* the kit-out's WAY OUT (tutorial.js kitBail). Deliberately quieter than .tut-coach-ok — the tour is still
+   the recommended path — but always present, station-painted, never the OS button. */
+.tut-coach-bail {
+  margin-top: 9px;
+  font-family: VT323, monospace;
+  font-size: 15px;
+  letter-spacing: .03em;
+  color: var(--ph-dim);
+  background: rgba(var(--ph-rgb), 0.06);
+  border: 1px solid var(--ph-dim, rgba(255, 170, 51, 0.3));
+  border-radius: 5px;
+  padding: 3px 12px;
+  cursor: pointer;
+}
+.tut-coach-ok + .tut-coach-bail { margin-left: 8px; }
+.tut-coach-bail:hover { color: var(--ph, #ffaa33); border-color: var(--ph, #ffaa33); }
+
+.tut-ring {
+  position: fixed;
+  z-index: 98999;
+  pointer-events: none;
+  border: 2px solid var(--ph, #ffaa33);
+  border-radius: 8px;
+  box-shadow: 0 0 12px var(--ph-glow, rgba(255, 170, 51, 0.5));
+  animation: tutRingPulse 1.5s ease-in-out infinite;
+}
+.tut-ring.no-anim { animation: none; }
+
+/* ---- G1c deferred BUILD-dock glow (dockglow.js): a SOFT standing hint on the BUILD dock while a station quest
+   is open — the fix (place a prop) is one click away. Gentler than the tutorial's imperative .tut-ring: a slow
+   breathing halo on the button itself, no scrim, fully clickable. Stands down while the tutorial coaches. ---- */
+.bb-grp.dock-glow, #bb-build.dock-glow {
+  position: relative;
+  border-color: var(--ph, #ffaa33) !important;
+  box-shadow: 0 0 10px var(--ph-glow, rgba(255, 170, 51, 0.45)), inset 0 0 6px var(--ph-glow, rgba(255, 170, 51, 0.25));
+  animation: dockGlowPulse 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .bb-grp.dock-glow, #bb-build.dock-glow { animation: none; } }
+@keyframes dockGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px var(--ph-glow, rgba(255, 170, 51, 0.30)), inset 0 0 4px var(--ph-glow, rgba(255, 170, 51, 0.18)); }
+  50% { box-shadow: 0 0 14px var(--ph-glow, rgba(255, 170, 51, 0.65)), inset 0 0 8px var(--ph-glow, rgba(255, 170, 51, 0.32)); }
+}
+
+/* ---- kit-out spotlight: the coach bubble is PINNED to a safe zone so it never covers the dock controls it
+   points at (the old bug: the bubble flipping onto the MODE row). The pulsing .tut-ring does the pointing.
+   A fixed width + margin centering avoids the entrance animation's transform fighting the horizontal centre. ---- */
+.tut-coach.kit {
+  left: 50%;
+  width: 460px;
+  /* the reciprocal, or this narrow-screen guard is dead under TEXT SIZE (a bare 100vw resolves to
+     145% of the real glass at HUGE and can never bind) — same law as `.term` in style.css. */
+  max-width: calc(100vw * var(--sn-unzoom, 1) - 32px);
+  margin-left: -230px;
+  animation: tutCoachFade .2s ease both;
+}
+.tut-coach.kit.no-anim { animation: none; }
+.tut-coach.kit.kit-top { top: 60px; }        /* inside REFIT: just under the ▮ REFIT MODE bar, clear of the dock */
+.tut-coach.kit.kit-bottom { bottom: 70px; }  /* outside REFIT: floating just above the bottom bar */
+.tut-coach.kit .tut-coach-body { font-size: 19px; }
+@media (max-width: 540px) {
+  .tut-coach.kit { left: 16px; right: 16px; width: auto; margin-left: 0; max-width: none; }
+}
+@keyframes tutCoachFade { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes tutCoachIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* pulse the blur at the active theme's glow colour (the colour token is constant per theme; only the spread animates) */
+@keyframes tutRingPulse {
+  0%, 100% { box-shadow: 0 0 8px var(--ph-glow, rgba(255, 170, 51, 0.35)); }
+  50% { box-shadow: 0 0 16px var(--ph-glow, rgba(255, 170, 51, 0.7)); }
+}
+
+/* ---- P3 Station Briefing: a small, dismissible first-steps checklist, bottom-left above the bottom bar ---- */
+.tut-brief {
+  position: fixed;
+  left: 14px;
+  bottom: 52px;
+  z-index: 1300;
+  width: 246px;
+  font-family: VT323, monospace;
+  color: var(--text);
+  background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border: 1px solid var(--ph, #ffaa33);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  animation: tutCoachIn .25s ease both;
+}
+.tut-brief.no-anim { animation: none; }
+.tut-brief.complete { border-color: var(--ok); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(var(--ok-rgb), 0.25); }
+.tut-brief-head { display: flex; align-items: center; gap: 6px; padding: 7px 9px 5px; border-bottom: 1px solid var(--ph-glow2, rgba(255, 170, 51, 0.22)); }
+.tut-brief-title { flex: 1; color: var(--ph, #ffaa33); font-size: 14px; letter-spacing: .1em; }
+.tut-brief.complete .tut-brief-title { color: var(--ok); }
+.tut-brief-count { color: var(--ph-dim); font-size: 14px; }
+/* .tut-brief-x composes .x-btn (bright hover) — ghost delta only */
+.tut-brief-x { background: none; border: 0; color: var(--ph-dim); font-size: 14px; padding: 0 2px; }
+.tut-brief-list { list-style: none; margin: 0; padding: 6px 9px 4px; }
+.tut-brief-item { display: flex; gap: 7px; align-items: baseline; font-size: 16px; line-height: 1.3; padding: 2px 0; color: var(--text); border-radius: 4px; }
+.tut-brief-item.done { color: var(--ph-dim); text-decoration: line-through; text-decoration-color: var(--ph-dim); }
+.tut-brief-box { flex: 0 0 12px; color: var(--ph, #ffaa33); }
+.tut-brief-item.done .tut-brief-box { color: var(--ok); }
+.tut-brief-item.flash { animation: tutBriefFlash .8s ease; }
+.tut-brief-foot { padding: 4px 9px 7px; font-size: 13px; color: var(--ph-dim); }
+@keyframes tutBriefFlash { from { background: rgba(var(--ok-rgb), 0.35); } to { background: transparent; } }
+
+/* Field Manual: a chaptered game handbook inside the shared panel shell. */
+.fm-body { container-type: inline-size; }
+.fm-cover { padding: 16px; margin-bottom: 14px; border: 1px solid var(--ph-dim); border-top: 4px solid var(--ph); background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(var(--ph-rgb), .035) 3px 4px); }
+.fm-eyebrow { display: block; color: var(--ph); font-size: 13px; letter-spacing: .12em; }
+.fm-cover h2 { margin: 7px 0 3px; font: 32px/1.1 VT323, monospace; color: var(--ph); letter-spacing: .05em; }
+.fm-cover p { margin: 0; color: var(--text); font-size: 16px; }
+.fm-body .fm-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 18px; }
+.fm-tab, .fm-action { font: 15px/1.25 VT323, monospace; letter-spacing: .03em; color: var(--text); background: rgba(var(--ph-rgb), .055); border: 1px solid var(--ph-dim); border-radius: 3px; padding: 7px 10px; cursor: pointer; }
+.fm-tab:hover, .fm-action:hover { color: var(--ph); border-color: var(--ph); background: rgba(var(--ph-rgb), .12); }
+.fm-tab:focus-visible, .fm-action:focus-visible { outline: 2px solid var(--ph); outline-offset: 3px; }
+.fm-tab.on { color: var(--ink); background: var(--ph); border-color: var(--ph); }
+.fm-chapter { margin-bottom: 10px; }
+.fm-chapter h2 { font: 25px/1.1 VT323, monospace; color: var(--ph); margin: 3px 0 0; }
+.fm-lead { font-size: 18px; color: var(--text); margin: 0 0 16px; line-height: 1.4; }
+.fm-note { font-size: 15px; color: var(--text); margin: 14px 0; border-top: 1px dashed var(--ph-dim); padding-top: 10px; line-height: 1.45; }
+.fm-entry { border-left: 2px solid var(--ph-dim); padding: 2px 0 3px 12px; margin: 18px 0; break-inside: avoid; }
+.fm-entry-h { font: 19px/1.2 VT323, monospace; color: var(--ph); margin: 3px 0 6px; }
+.fm-entry-b { font-size: 16px; color: var(--text); line-height: 1.45; overflow-wrap: anywhere; }
+.fm-tag { display: inline-block; color: var(--ph); font-size: 12px; letter-spacing: .1em; }
+.fm-mission { margin: 17px 0; padding: 14px; background: rgba(var(--gold-rgb), .06); border: 1px solid var(--gold); box-shadow: inset 3px 0 var(--gold); }
+.fm-mission .fm-eyebrow, .fm-mission h3 { color: var(--gold); }
+.fm-mission h3 { font: 21px/1.2 VT323, monospace; margin: 5px 0 8px; }
+.fm-mission p { font-size: 16px; line-height: 1.45; color: var(--text); margin: 0; }
+.fm-route { display: flex; align-items: center; gap: 8px; padding: 14px 8px; border-block: 1px solid var(--ph-dim); color: var(--ph); }
+.fm-route > span { flex: 1; min-width: 0; font-size: 16px; text-align: center; }
+.fm-route small { display: block; font-size: 14px; color: var(--text); margin-top: 4px; }
+.fm-route i { font-style: normal; }
+.fm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.platform-guide { border:1px solid var(--ph-dim); background:var(--panel); color:var(--text); padding:12px 16px; margin:0 0 16px; font-size:16px; line-height:1.45; }
+.platform-guide summary { color:var(--ph); cursor:pointer; font-size:18px; }
+.platform-guide summary:focus-visible { outline:2px solid var(--ph); outline-offset:4px; }
+.platform-guide ol { padding-left:22px; margin:12px 0; }
+.platform-guide li { margin:8px 0; }
+.platform-guide .fm-note { margin:10px 0; font-size:15px; }
+.tut-brief-link { padding:0; border:0; background:transparent; color:inherit; font:inherit; text-align:left; text-decoration:underline; cursor:pointer; }
+.tut-brief-link:focus-visible { outline:2px solid var(--ph); outline-offset:3px; }
+.fm-pager { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--ph-dim); padding-top: 14px; margin-top: 22px; }
+.fm-pager > span { align-self: center; font-size: 12px; letter-spacing: .07em; color: var(--ph); }
+.fm-map, .fm-gear-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.fm-map > div { padding: 11px; border: 1px solid var(--ph-dim); }
+.fm-map b, .fm-map span { display: block; }
+.fm-map b { font-size: 17px; color: var(--ph); margin-bottom: 5px; }
+.fm-map span { font-size: 15px; line-height: 1.4; color: var(--text); }
+.fm-gear-grid .fm-entry { margin: 7px 0; }
+.fm-subhead { font: 19px VT323, monospace; color: var(--ph); margin: 20px 0 0; }
+.fm-body kbd { display: inline-block; font: inherit; color: var(--ph); border: 1px solid var(--ph-dim); border-bottom: 2px solid var(--ph-dim); padding: 0 5px; border-radius: 3px; }
+.fm-keys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 16px; margin: 12px 0; }
+.fm-keys > div { display: flex; gap: 9px; align-items: center; }
+.fm-keys dt, .fm-keys dd { margin: 0; font-size: 16px; color: var(--text); }
+@container (max-width: 400px) {
+  .fm-map, .fm-gear-grid { grid-template-columns: 1fr; }
+  .fm-cover { padding: 12px; }
+  .fm-cover h2 { font-size: 27px; }
+  .fm-route { gap: 4px; padding-inline: 0; }
+  .fm-route > span { font-size: 14px; }
+}

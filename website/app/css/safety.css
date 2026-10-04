@@ -1,0 +1,13 @@
+/* ---------- accessibility: honor the OS "reduce motion" setting (the repo had NONE) ----------
+   Neutralizes the CRT screen-flicker, button/dot pulses, and any keyframe/transition motion while keeping
+   the static phosphor look intact. The interface stays fully usable — no cue here is motion-only. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* the full-screen CRT brightness oscillation is the worst offender — kill it outright */
+  body #screen-game.active { animation: none !important; }
+}

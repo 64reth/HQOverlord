@@ -1,0 +1,16 @@
+# Cloudflare Pages headers — security hardening for starnetos.com.
+# Strict CSP on the marketing/docs/legal pages (no inline scripts anywhere there);
+# /app/* (the live-preview embed, a verbatim frontend copy) carries ONE inline
+# bootstrap <script> (the shared specialty catalog), so it gets script 'unsafe-inline'.
+# connect-src on the top scope allows api.github.com (release-asset resolution in site.js).
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self' https://api.github.com; frame-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+/app/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'

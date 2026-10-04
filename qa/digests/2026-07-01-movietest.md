@@ -1,0 +1,432 @@
+# QA morning digest — 2026-07-01
+
+**106** open findings — 0 P0 · 0 P1 · 106 P2
+
+## P2 (106)
+
+### Janitor
+- **Removable worktree: audit-summon-determinism (branch merged + clean)**
+  - Branch agent/audit-summon-determinism is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 audit-summon-determinism -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `a9a065a4-1782948400596` · fingerprint: `a9a065a4`
+- **Removable worktree: ambition (branch merged + clean)**
+  - Branch agent/ambition is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 ambition -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `b2fa6960-1782948400596` · fingerprint: `b2fa6960`
+- **Removable worktree: autobuild (branch merged + clean)**
+  - Branch agent/autobuild is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 autobuild -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `e89149ae-1782948400597` · fingerprint: `e89149ae`
+- **Removable worktree: autopilot (branch merged + clean)**
+  - Branch agent/autopilot is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 autopilot -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `5aaf8694-1782948400598` · fingerprint: `5aaf8694`
+- **Removable worktree: awakening-dialogue (branch merged + clean)**
+  - Branch agent/awakening-dialogue is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 awakening-dialogue -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `9526a8a3-1782948400598` · fingerprint: `9526a8a3`
+- **Removable worktree: backend-triage (branch merged + clean)**
+  - Branch agent/backend-triage is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 backend-triage -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `64fd0886-1782948400599` · fingerprint: `64fd0886`
+- **Removable worktree: beginner-run (branch merged + clean)**
+  - Branch agent/beginner-run is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 beginner-run -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `a4645bd7-1782948400599` · fingerprint: `a4645bd7`
+- **Removable worktree: beginner-ux-land (branch merged + clean)**
+  - Branch agent/beginner-ux-land is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 beginner-ux-land -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8cbed0bb-1782948400600` · fingerprint: `8cbed0bb`
+- **Removable worktree: bug-loops (branch merged + clean)**
+  - Branch agent/bug-loops is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 bug-loops -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `c8d7669f-1782948400600` · fingerprint: `c8d7669f`
+- **Removable worktree: comms-model-status (branch merged + clean)**
+  - Branch agent/comms-model-status is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 comms-model-status -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `2b52ec5b-1782948400601` · fingerprint: `2b52ec5b`
+- **Removable worktree: codex-pets (branch merged + clean)**
+  - Branch agent/codex-pets is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 codex-pets -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `55156341-1782948400601` · fingerprint: `55156341`
+- **Removable worktree: connectivity (branch merged + clean)**
+  - Branch agent/connectivity is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 connectivity -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `2ebb7302-1782948400602` · fingerprint: `2ebb7302`
+- **Removable worktree: context-window-honesty (branch merged + clean)**
+  - Branch agent/context-window-honesty is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 context-window-honesty -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `727a4a38-1782948400602` · fingerprint: `727a4a38`
+- **Removable worktree: crew-awareness (branch merged + clean)**
+  - Branch agent/crew-awareness is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 crew-awareness -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `a280f9a0-1782948400603` · fingerprint: `a280f9a0`
+- **Removable worktree: crew-sentience (branch merged + clean)**
+  - Branch agent/crew-sentience is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 crew-sentience -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `ba33a54f-1782948400603` · fingerprint: `ba33a54f`
+- **Removable worktree: create-overseer (branch merged + clean)**
+  - Branch agent/create-overseer is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 create-overseer -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `db59fb7d-1782948400603` · fingerprint: `db59fb7d`
+- **Removable worktree: crt-lighting (branch merged + clean)**
+  - Branch agent/crt-lighting is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 crt-lighting -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `02f68913-1782948400604` · fingerprint: `02f68913`
+- **Removable worktree: desktop-ship (branch merged + clean)**
+  - Branch agent/desktop-ship is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 desktop-ship -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `17e4bee0-1782948400604` · fingerprint: `17e4bee0`
+- **Removable worktree: delegation-router (branch merged + clean)**
+  - Branch agent/delegation-router is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 delegation-router -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `5d13dce7-1782948400604` · fingerprint: `5d13dce7`
+- **Removable worktree: first-pitch (branch merged + clean)**
+  - Branch agent/first-pitch is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 first-pitch -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `1007c30a-1782948400605` · fingerprint: `1007c30a`
+- **Removable worktree: evidence-secret-lint (branch merged + clean)**
+  - Branch agent/evidence-secret-lint is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 evidence-secret-lint -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `58c72fe3-1782948400605` · fingerprint: `58c72fe3`
+- **Removable worktree: floor-real (branch merged + clean)**
+  - Branch agent/floor-real is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 floor-real -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `660d20ac-1782948400605` · fingerprint: `660d20ac`
+- **Removable worktree: fresh-install-hygiene (branch merged + clean)**
+  - Branch agent/fresh-install-hygiene is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 fresh-install-hygiene -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `26e434df-1782948400606` · fingerprint: `26e434df`
+- **Removable worktree: g0-floor (branch merged + clean)**
+  - Branch agent/g0-floor is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 g0-floor -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `f7284d35-1782948400606` · fingerprint: `f7284d35`
+- **Removable worktree: harness-core (branch merged + clean)**
+  - Branch agent/harness-core is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 harness-core -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `56228bc5-1782948400607` · fingerprint: `56228bc5`
+- **Removable worktree: g1a-quests (branch merged + clean)**
+  - Branch agent/g1a-quests is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 g1a-quests -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `6f724910-1782948400607` · fingerprint: `6f724910`
+- **Removable worktree: harness-security (branch merged + clean)**
+  - Branch agent/harness-security is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 harness-security -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `ff840ddc-1782948400607` · fingerprint: `ff840ddc`
+- **Removable worktree: hermes-parity (branch merged + clean)**
+  - Branch agent/hermes-parity is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 hermes-parity -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `7e04f893-1782948400608` · fingerprint: `7e04f893`
+- **Removable worktree: internal-rename (branch merged + clean)**
+  - Branch agent/internal-rename is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 internal-rename -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `cc17e86d-1782948400608` · fingerprint: `cc17e86d`
+- **Removable worktree: native-providers (branch merged + clean)**
+  - Branch agent/native-providers is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 native-providers -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8eabae5d-1782948400609` · fingerprint: `8eabae5d`
+- **Removable worktree: modelfix (branch merged + clean)**
+  - Branch agent/modelfix is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 modelfix -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `c2d8aeed-1782948400609` · fingerprint: `c2d8aeed`
+- **Removable worktree: onboarding-remaster (branch merged + clean)**
+  - Branch agent/onboarding-remaster is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 onboarding-remaster -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `d88f5dec-1782948400610` · fingerprint: `d88f5dec`
+- **Removable worktree: openai-provider-pack (branch merged + clean)**
+  - Branch agent/openai-provider-pack is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 openai-provider-pack -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `efe54367-1782948400610` · fingerprint: `efe54367`
+- **Removable worktree: orchestrator-control (branch merged + clean)**
+  - Branch agent/orchestrator-control is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 orchestrator-control -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `66f4a651-1782948400611` · fingerprint: `66f4a651`
+- **Removable worktree: p4-live-env-isolation (branch merged + clean)**
+  - Branch agent/p4-live-env-isolation is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 p4-live-env-isolation -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8e492d75-1782948400611` · fingerprint: `8e492d75`
+- **Removable worktree: p5-readiness-execution (branch merged + clean)**
+  - Branch agent/p5-readiness-execution is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 p5-readiness-execution -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `916f0f70-1782948400611` · fingerprint: `916f0f70`
+- **Removable worktree: p5-replacement-proof (branch merged + clean)**
+  - Branch agent/p5-replacement-proof is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 p5-replacement-proof -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `916ca30c-1782948400612` · fingerprint: `916ca30c`
+- **Removable worktree: phase4-evidence-helper (branch merged + clean)**
+  - Branch agent/phase4-evidence-helper is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 phase4-evidence-helper -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `a89f2ff1-1782948400612` · fingerprint: `a89f2ff1`
+- **Removable worktree: p5-sweep-hardening (branch merged + clean)**
+  - Branch agent/p5-sweep-hardening is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 p5-sweep-hardening -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `f7030828-1782948400612` · fingerprint: `f7030828`
+- **Removable worktree: provider-loop (branch merged + clean)**
+  - Branch agent/provider-loop is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 provider-loop -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `9faa5971-1782948400613` · fingerprint: `9faa5971`
+- **Removable worktree: popup-layering (branch merged + clean)**
+  - Branch agent/popup-layering is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 popup-layering -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `b518fe6b-1782948400613` · fingerprint: `b518fe6b`
+- **Removable worktree: qa-beginner (branch merged + clean)**
+  - Branch agent/qa-beginner is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 qa-beginner -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `03be204c-1782948400614` · fingerprint: `03be204c`
+- **Removable worktree: qa-guardian (branch merged + clean)**
+  - Branch agent/qa-guardian is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 qa-guardian -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `0755082d-1782948400614` · fingerprint: `0755082d`
+- **Removable worktree: qa-janitor (branch merged + clean)**
+  - Branch agent/qa-janitor is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 qa-janitor -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `b8733cab-1782948400615` · fingerprint: `b8733cab`
+- **Removable worktree: qa-spine (branch merged + clean)**
+  - Branch agent/qa-spine is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 qa-spine -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `fb438be1-1782948400615` · fingerprint: `fb438be1`
+- **Removable worktree: qa-watch (branch merged + clean)**
+  - Branch agent/qa-watch is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 qa-watch -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `1a51ff9d-1782948400616` · fingerprint: `1a51ff9d`
+- **Removable worktree: qa-truth (branch merged + clean)**
+  - Branch agent/qa-truth is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 qa-truth -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `7bf2e307-1782948400616` · fingerprint: `7bf2e307`
+- **Removable worktree: rate-work (branch merged + clean)**
+  - Branch agent/rate-work is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 rate-work -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `c58e1883-1782948400616` · fingerprint: `c58e1883`
+- **Removable worktree: recruit-bay (branch merged + clean)**
+  - Branch agent/recruit-bay is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 recruit-bay -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `70e1b590-1782948400617` · fingerprint: `70e1b590`
+- **Removable worktree: replacement-sweep (branch merged + clean)**
+  - Branch agent/replacement-sweep is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 replacement-sweep -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `81e9d57a-1782948400617` · fingerprint: `81e9d57a`
+- **Removable worktree: repo-hygiene (branch merged + clean)**
+  - Branch agent/repo-hygiene is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 repo-hygiene -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `804e0aff-1782948400618` · fingerprint: `804e0aff`
+- **Removable worktree: runtime-self-knowledge (branch merged + clean)**
+  - Branch agent/runtime-self-knowledge is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 runtime-self-knowledge -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `d75bc721-1782948400618` · fingerprint: `d75bc721`
+- **Removable worktree: satisfaction-xp (branch merged + clean)**
+  - Branch agent/satisfaction-xp is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 satisfaction-xp -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8a035408-1782948400619` · fingerprint: `8a035408`
+- **Removable worktree: satisfaction-xp-sweep (branch merged + clean)**
+  - Branch agent/satisfaction-xp-sweep is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 satisfaction-xp-sweep -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `d625d999-1782948400619` · fingerprint: `d625d999`
+- **Removable worktree: skynet-beginner-run-scout (branch merged + clean)**
+  - Branch agent/skynet-beginner-run-scout is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 skynet-beginner-run-scout -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `65adde71-1782948400620` · fingerprint: `65adde71`
+- **Removable worktree: skynet-truth-auditor (branch merged + clean)**
+  - Branch agent/skynet-truth-auditor is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 skynet-truth-auditor -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `81bead5e-1782948400620` · fingerprint: `81bead5e`
+- **Removable worktree: starnet-backend-audit (branch merged + clean)**
+  - Branch agent/starnet-backend-audit is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-backend-audit -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `3def80bb-1782948400621` · fingerprint: `3def80bb`
+- **Removable worktree: starnet-gap-analysis (branch merged + clean)**
+  - Branch agent/starnet-gap-analysis is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-gap-analysis -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `5721fc62-1782948400621` · fingerprint: `5721fc62`
+- **Removable worktree: starnet-fullscreen (branch merged + clean)**
+  - Branch agent/starnet-fullscreen is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-fullscreen -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `a87610fa-1782948400621` · fingerprint: `a87610fa`
+- **Removable worktree: starnet-hardening-3-4 (branch merged + clean)**
+  - Branch agent/starnet-hardening-3-4 is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-hardening-3-4 -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `02b07ca2-1782948400622` · fingerprint: `02b07ca2`
+- **Removable worktree: starnet-hermes-audit (branch merged + clean)**
+  - Branch agent/starnet-hermes-audit is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-hermes-audit -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `48421db3-1782948400622` · fingerprint: `48421db3`
+- **Removable worktree: starnet-hardening-integration (branch merged + clean)**
+  - Branch agent/starnet-hardening-integration is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-hardening-integration -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `90b74b7c-1782948400622` · fingerprint: `90b74b7c`
+- **Removable worktree: starnet-keep-awake (branch merged + clean)**
+  - Branch agent/starnet-keep-awake is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-keep-awake -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `972eb4ac-1782948400623` · fingerprint: `972eb4ac`
+- **Removable worktree: starnet-latency-audit (branch merged + clean)**
+  - Branch agent/starnet-latency-audit is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-latency-audit -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `c48e8b35-1782948400623` · fingerprint: `c48e8b35`
+- **Removable worktree: starnet-loop-control (branch merged + clean)**
+  - Branch agent/starnet-loop-control is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-loop-control -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `57c333d1-1782948400624` · fingerprint: `57c333d1`
+- **Removable worktree: starnet-path-intake (branch merged + clean)**
+  - Branch agent/starnet-path-intake is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-path-intake -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `14374183-1782948400625` · fingerprint: `14374183`
+- **Removable worktree: starnet-rebrand (branch merged + clean)**
+  - Branch agent/starnet-rebrand is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-rebrand -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `7dd7f0f7-1782948400625` · fingerprint: `7dd7f0f7`
+- **Removable worktree: starnet-oauth-persist (branch merged + clean)**
+  - Branch agent/starnet-oauth-persist is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-oauth-persist -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `92264093-1782948400625` · fingerprint: `92264093`
+- **Removable worktree: starnet-weakness-scan (branch merged + clean)**
+  - Branch agent/starnet-weakness-scan is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 starnet-weakness-scan -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `40d536a6-1782948400626` · fingerprint: `40d536a6`
+- **Removable worktree: summon-fixes (branch merged + clean)**
+  - Branch agent/summon-fixes is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 summon-fixes -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `d5d1bdcc-1782948400626` · fingerprint: `d5d1bdcc`
+- **Removable worktree: t0-bom-proof (branch merged + clean)**
+  - Branch agent/t0-bom-proof is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 t0-bom-proof -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `d712b215-1782948400626` · fingerprint: `d712b215`
+- **Removable worktree: t1-signing-loop (branch merged + clean)**
+  - Branch agent/t1-signing-loop is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 t1-signing-loop -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `d9801ee5-1782948400627` · fingerprint: `d9801ee5`
+- **Removable worktree: t4-update-delivery (branch merged + clean)**
+  - Branch agent/t4-update-delivery is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 t4-update-delivery -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `17dd3afc-1782948400628` · fingerprint: `17dd3afc`
+- **Removable worktree: t1-sweep-steering (branch merged + clean)**
+  - Branch agent/t1-sweep-steering is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 t1-sweep-steering -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `fc504e3d-1782948400628` · fingerprint: `fc504e3d`
+- **Removable worktree: tutorial-fix (branch merged + clean)**
+  - Branch agent/tutorial-fix is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 tutorial-fix -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `3332ffe9-1782948400629` · fingerprint: `3332ffe9`
+- **Removable worktree: ui-shell (branch merged + clean)**
+  - Branch agent/ui-shell is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 ui-shell -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `b0c1c274-1782948400629` · fingerprint: `b0c1c274`
+- **Removable worktree: t5-public-distribution (branch merged + clean)**
+  - Branch agent/t5-public-distribution is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 t5-public-distribution -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `ea5b4799-1782948400629` · fingerprint: `ea5b4799`
+- **Removable worktree: user-study-audit (branch merged + clean)**
+  - Branch agent/user-study-audit is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 user-study-audit -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `e095ebd4-1782948400630` · fingerprint: `e095ebd4`
+- **Removable worktree: visual-harness (branch merged + clean)**
+  - Branch agent/visual-harness is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 visual-harness -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `32f67c70-1782948400631` · fingerprint: `32f67c70`
+- **Removable worktree: workforce-zones (branch merged + clean)**
+  - Branch agent/workforce-zones is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 workforce-zones -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `915d82d5-1782948400632` · fingerprint: `915d82d5`
+- **Removable worktree: workstation-ui (branch merged + clean)**
+  - Branch agent/workstation-ui is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 workstation-ui -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `c1c0f921-1782948400632` · fingerprint: `c1c0f921`
+- **Root litter: 22 loose artifact(s) at repo root**
+  - Untracked binary/image/log files at repo root (removal candidates, flag only): _bottom.png, _hdr_zoom.png, _left.png, _modal_zoom.png, _modalfooter.png, _right.png, _title_zoom.png, crew_bottom.png, crew_center.png, crew_header.png, crew_left.png, crew_modal.png, crew_modal_rightedge.png, crew_right
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `497ec8ae-1782948400633` · fingerprint: `497ec8ae`
+- **Removable worktree: world-game (branch merged + clean)**
+  - Branch agent/world-game is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 world-game -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `523699b8-1782948400633` · fingerprint: `523699b8`
+- **Removable worktree: ws-titles-status (branch merged + clean)**
+  - Branch agent/ws-titles-status is fully merged into feat/harness-backend and its working tree is clean. Propose-only removal command: gen-trees\remove-agent-tree.ps1 ws-titles-status -DeleteBranch
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `f93c66d6-1782948400633` · fingerprint: `f93c66d6`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing frontend/app/halt.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `frontend/app/halt.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `bcb60eb3-1782948400634` · fingerprint: `bcb60eb3`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing frontend/app/economy.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `frontend/app/economy.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `dced02c0-1782948400634` · fingerprint: `dced02c0`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing docs/DESKTOP_RELEASE_CHECKLIST.md**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `docs/DESKTOP_RELEASE_CHECKLIST.md`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `e89e0ebc-1782948400634` · fingerprint: `e89e0ebc`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing frontend/app/queue.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `frontend/app/queue.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `7a4f3c01-1782948400635` · fingerprint: `7a4f3c01`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing qa/QA_STATION.md**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `qa/QA_STATION.md`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `367cb27d-1782948400636` · fingerprint: `367cb27d`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing frontend/data.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `frontend/data.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `fff2d3da-1782948400636` · fingerprint: `fff2d3da`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/capGate.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/capGate.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `9991ad2c-1782948400637` · fingerprint: `9991ad2c`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing scripts/release-smoke.mjs**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `scripts/release-smoke.mjs`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `fdec2b78-1782948400637` · fingerprint: `fdec2b78`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/recovery.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/recovery.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `04f352a4-1782948400638` · fingerprint: `04f352a4`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/pipeline.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/pipeline.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `759b8f5b-1782948400638` · fingerprint: `759b8f5b`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/cron-deliver.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/cron-deliver.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8002aa3d-1782948400638` · fingerprint: `8002aa3d`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/secrets.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/secrets.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `430a1812-1782948400639` · fingerprint: `430a1812`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/run.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/run.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `dbded8b2-1782948400639` · fingerprint: `dbded8b2`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/triggers.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/triggers.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `007a8392-1782948400640` · fingerprint: `007a8392`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing sidecar/worktree.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `sidecar/worktree.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `3b64b74a-1782948400640` · fingerprint: `3b64b74a`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/desktop-release.test.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/desktop-release.test.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `91d21f10-1782948400641` · fingerprint: `91d21f10`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/channels.consent.test.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/channels.consent.test.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `a10fd2d2-1782948400641` · fingerprint: `a10fd2d2`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/cron.deliver.test.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/cron.deliver.test.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `f80e6859-1782948400641` · fingerprint: `f80e6859`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/economy.test.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/economy.test.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `4eb22724-1782948400642` · fingerprint: `4eb22724`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/iteration-budget.test.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/iteration-budget.test.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8da0c041-1782948400642` · fingerprint: `8da0c041`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/starnet-release-manifest.test.js**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/starnet-release-manifest.test.js`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `aa9de2e5-1782948400642` · fingerprint: `aa9de2e5`
+- **Dead doc reference: qa/digests/janitor-2026-07-01.md cites missing test/world.headless.ts**
+  - A non-plan doc references a path that does not exist. qa/digests/janitor-2026-07-01.md cites `test/world.headless.ts`, which is absent from the working tree.
+  - evidence: `qa/digests/janitor-2026-07-01.md`
+  - id: `8df2b2ef-1782948400643` · fingerprint: `8df2b2ef`
+

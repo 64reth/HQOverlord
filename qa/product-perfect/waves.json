@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "campaign": "StarNet product perfection",
+  "terminalVerdict": "PRODUCT PERFECT",
+  "policy": {
+    "serialization": "first-non-pass",
+    "candidateBinding": "exact-commit-and-wave-definition",
+    "unverifiable": "blocked",
+    "staleEvidence": "requeue",
+    "publishAuthorized": false
+  },
+  "waves": [
+    {
+      "id": "W0",
+      "slug": "proof-authority",
+      "name": "Claims and proof authority",
+      "dependsOn": [],
+      "goal": "Define the finite product contract and make later green verdicts exact-build and candidate-bound.",
+      "maxReceiptAgeMs": 86400000,
+      "conditions": [
+        "A finite, source-current advertised-claims ledger covers every material release promise and maps it to current product authority or an explicit gap.",
+        "Build receipts classify official, reproducible-source, custom, and dirty-dev artifacts without treating open-source builders or the machine owner as adversaries.",
+        "Installed proof accepts only a packaged Tauri desktop surface whose executable-derived source and artifact identity matches the explicit candidate; browser, dirty, stale, and mismatched evidence fails closed.",
+        "The product-perfect verdict remains separate from READY, signing, publishing, deployment, and release authority."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-0-proof-authority.mjs"],
+        "timeoutMs": 600000
+      }
+    },
+    {
+      "id": "W1",
+      "slug": "installed-first-run",
+      "name": "Installed first-user journey",
+      "dependsOn": ["W0"],
+      "goal": "Prove that a new user can reach one real useful result in the clean installed app without getting stranded or seeing false health.",
+      "maxReceiptAgeMs": 86400000,
+      "conditions": [
+        "On one clean installed candidate, a new user connects a real provider, creates an Overseer, completes one real task, and opens its deliverable in under ten minutes.",
+        "The journey walks visible failure and recovery states rather than checking only that controls exist.",
+        "Beginner Run no longer stops at STUCK@title and records the exact installed candidate.",
+        "A healthy idle transport never renders LINK DOWN, while an actually disconnected transport still does."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-1-installed-first-run.mjs"],
+        "timeoutMs": 900000
+      }
+    },
+    {
+      "id": "W2",
+      "slug": "security-trust",
+      "name": "Verdict-filtered security and authority",
+      "dependsOn": ["W1"],
+      "goal": "Close only the security, privacy, and capability escapes the W0 verdict proved open.",
+      "maxReceiptAgeMs": 86400000,
+      "conditions": [
+        "Child environments, browser and web egress, recursive filesystem access, channel pairing, scoped Workshop reads, delegation consent, secret custody, and boot egress pass their W0-identified negative tests.",
+        "Slack and Matrix token persistence uses the desktop keychain with read-back before deleting any prior copy; Signal is not assigned a token requirement it does not have.",
+        "Every run mode uses persisted effective station authority or fails closed to its proven subset; no execution-mode shortcut silently grants full office capability.",
+        "Known shipped contracts remain intact, including durable E-STOP, consent visibility, leash pre-spend, truthful /api/version, and HTTP 200 degraded-workspace refusal."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-2-security-trust.mjs"],
+        "timeoutMs": 900000
+      }
+    },
+    {
+      "id": "W3",
+      "slug": "last-mile-recovery",
+      "name": "Last-mile UI and recovery",
+      "dependsOn": ["W2"],
+      "goal": "Unify existing work and recovery machinery into reachable, truthful user surfaces.",
+      "maxReceiptAgeMs": 86400000,
+      "conditions": [
+        "One visible work-and-deliverables ledger and a cold-boot recap read from the existing authoritative stores.",
+        "Settings exposes the existing full-agent export and post-onboarding base-URL editor without creating parallel storage.",
+        "Export, backup, restore, OPEN, undo, OAuth cancellation, and destructive-action recovery complete end to end with truthful feedback.",
+        "Every user-facing failure has a specific next action and no control ends in a silent or permanent busy state.",
+        "The attended visual pass finds no clipped, overlapping, inaccessible, placeholder, or inconsistent release-facing UI."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-3-last-mile-recovery.mjs"],
+        "timeoutMs": 900000
+      }
+    },
+    {
+      "id": "W4",
+      "slug": "capability-enforcement",
+      "name": "Capability enforcement decisions",
+      "dependsOn": ["W3"],
+      "goal": "Make the run-mode by capability contract explicit before changing the locked object-equals-capability promise.",
+      "maxReceiptAgeMs": 86400000,
+      "conditions": [
+        "Direct, scheduled, channel, Night Shift, and delegated runs each have a code-evidenced ENFORCED or NOT ENFORCED capability row.",
+        "Any proposed narrowing of object-equals-capability is recorded as an owner decision and stops implementation until Andrew decides it.",
+        "Approved enforcement fixes are covered across removal, restoration, interruption, and restart.",
+        "Every status and capability label reads from the owning backend authority rather than decorative or account-presence state."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-4-capability-enforcement.mjs"],
+        "timeoutMs": 1200000
+      }
+    },
+    {
+      "id": "W5",
+      "slug": "autonomy-honesty",
+      "name": "Autonomy and lifecycle honesty",
+      "dependsOn": ["W4"],
+      "goal": "Unify adaptation without inventing background hosting or another user-understanding silo.",
+      "maxReceiptAgeMs": 86400000,
+      "conditions": [
+        "All while-closed copy says while StarNet is running unless background hosting is independently proven on that platform.",
+        "Night Shift, routines, and interactive work use one server-owned Commander context composer rather than parallel understanding stores.",
+        "Keep and decline reasons extend the unified composer, and declined ideas remain suppressed across restart.",
+        "Learning claims are measurable, inspectable, interruptible, budget-bounded, and permission-gated."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-5-autonomy-honesty.mjs"],
+        "timeoutMs": 1800000
+      }
+    },
+    {
+      "id": "W6",
+      "slug": "integration-full-proof",
+      "name": "Integration and full behavioral proof",
+      "dependsOn": ["W5"],
+      "goal": "Prove every advertised integration, UI surface, and backend promise against the same installed candidate.",
+      "maxReceiptAgeMs": 21600000,
+      "conditions": [
+        "Each advertised provider, channel, MCP connector, OAuth flow, and remote service has attended connect, success, failure, restart, revoke, and secret-removal proof or a visible experimental label.",
+        "The claims ledger is terminal on this candidate: every advertised promise is proven or visibly experimental at its point of use.",
+        "The Station Atlas is fresh on the candidate and reports perfected-fresh equal to total, with zero unmapped, mapped-only, audited-only, stale, or missing entries.",
+        "Backend-only tools, persistence boundaries, desktop commands, integrations, and lifecycle promises not represented by the Atlas have explicit machine/live proof.",
+        "Fast, HTTP/E2E, journey, recovery, restart, long-lived, visual, and installed-desktop suites all pass on the same candidate.",
+        "The product-facing ledger has zero open P0, P1, or P2 findings; accepted limitations are explicit non-product release exclusions, not hidden debt."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-6-integration-full-proof.mjs"],
+        "timeoutMs": 3600000
+      }
+    },
+    {
+      "id": "W7",
+      "slug": "frozen-candidate",
+      "name": "Frozen product-validation candidate",
+      "dependsOn": ["W6"],
+      "goal": "Validate one immutable desktop candidate long enough to justify the PRODUCT PERFECT verdict.",
+      "maxReceiptAgeMs": 3600000,
+      "conditions": [
+        "Every receipt names the same clean source commit, app version, packaged artifact SHA-256 values, and wave-definition hash.",
+        "The frozen candidate completes at least 48 continuous hours of representative real-provider dogfood, including the first real Night Shift overnight, with no P0/P1, truth escape, data-loss event, wedged run, or unexplained sidecar death.",
+        "Five attended beginner sessions, ten clean-machine installs, and a current eyes-on visual review pass on the unchanged artifact.",
+        "READY, installed desktop, full Atlas, security, recovery, integration, and behavioral gates are rerun after the soak without rebuilding the artifact.",
+        "The terminal output is PRODUCT PERFECT; it does not authorize publishing, signing, deployment, credential rotation, or public release."
+      ],
+      "verifier": {
+        "command": ["node", "scripts/qa/product-perfect/gates/wave-7-frozen-candidate.mjs"],
+        "timeoutMs": 3600000
+      }
+    }
+  ]
+}

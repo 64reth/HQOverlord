@@ -1,0 +1,3781 @@
+{
+  "area": "props",
+  "updatedAt": "2026-07-18T04:06:15.100Z",
+  "entries": [
+    {
+      "id": "prop/airlock",
+      "kind": "prop",
+      "area": "props",
+      "name": "AIRLOCK [functional/isolation] 1x1",
+      "purpose": "An airlock — seals a room on the floor (a staging / merge gate): the agent’s body can’t path in or out when sealed. Click to cycle open / sealed / jammed. Functional-but-not-capability, so it grants no tool.",
+      "promise": "setDoorState cycles open/sealed/jammed; doorSeals blocks pathing through a sealed door, while SOFT_CROSS keeps an OPEN airlock freely crossable (a door is meant to be walked). CAP_PROP_MAP has no entry. Renders at 1x1 (blocks:false), foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/world.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "prop-awareness.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (prop-awareness.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/arc-floorlight",
+      "kind": "prop",
+      "area": "props",
+      "name": "FLOOR LIGHT [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/arc-indexwall",
+      "kind": "prop",
+      "area": "props",
+      "name": "INDEX WALL [cosmetic/comms] 4x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/arc-ladder",
+      "kind": "prop",
+      "area": "props",
+      "name": "LADDER [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/arc-microfiche",
+      "kind": "prop",
+      "area": "props",
+      "name": "MICROFICHE [cosmetic/comms] 2x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/arcade",
+      "kind": "prop",
+      "area": "props",
+      "name": "ARCADE [cosmetic/lounge] 1x2",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null). As a lounge prop it also carries a `use` descriptor so idle agents drift over and interact with it.",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing. propanchor.deriveAnchor resolves an approach/seat tile so an idle agent can use it.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js",
+          "frontend/app/propanchor.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "propanchor.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test, propanchor.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/arcade2",
+      "kind": "prop",
+      "area": "props",
+      "name": "ARCADE II [cosmetic/lounge] 1x2",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null). As a lounge prop it also carries a `use` descriptor so idle agents drift over and interact with it.",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing. propanchor.deriveAnchor resolves an approach/seat tile so an idle agent can use it.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js",
+          "frontend/app/propanchor.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "propanchor.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test, propanchor.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bar",
+      "kind": "prop",
+      "area": "props",
+      "name": "BAR [cosmetic/lounge] 4x1",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null). As a lounge prop it also carries a `use` descriptor so idle agents drift over and interact with it.",
+      "promise": "Renders at its 4x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing. propanchor.deriveAnchor resolves an approach/seat tile so an idle agent can use it.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js",
+          "frontend/app/propanchor.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "propanchor.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test, propanchor.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bay",
+      "kind": "prop",
+      "area": "props",
+      "name": "BAY [functional/workflow] 2x2",
+      "purpose": "The agent dock: bind one agent and work for that agent lands here (no belts required); the capability props sharing its ROOM become that agent’s powers (the capability-isolation anchor).",
+      "promise": "addProp carries prop.agentId; worldmodel.bayObjects(agent) reads exactly the cap-props in the bay’s room and the sidecar router.stationFor feeds them to resolveTools — a bay’s tools are what you placed in its room. Renders at 2x2 (solid), foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/pipeline.js",
+          "sidecar/routing/router.js",
+          "frontend/app/build.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (routing.b5.test, worldmodel.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bench",
+      "kind": "prop",
+      "area": "props",
+      "name": "BENCH [functional/workstation] 4x1",
+      "purpose": "A workstation — the agent’s seat: assign ONE agent and it walks here and sits to work when tasked. As a `computer` object it also opens the COMPUTE gate (the precondition to spend any model turn).",
+      "promise": "Assigning binds prop.agentId; a dedicated computer in the bay’s room makes bayObjects grant ‘computer’ → resolveTools sets hasCompute (the run may proceed) + quest.update. Renders at its footprint with a chair + seated agent, foot-anchored; a bare bay with no computer honestly nags NO COMPUTE.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/bigscreen",
+      "kind": "prop",
+      "area": "props",
+      "name": "BIG SCREEN [cosmetic/screens] 8x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 8x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/boxes",
+      "kind": "prop",
+      "area": "props",
+      "name": "BOXES [cosmetic/storage] 2x1",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bridge-dispatch-pylon",
+      "kind": "prop",
+      "area": "props",
+      "name": "DISPATCH PYLON [cosmetic/screens] 1x2",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bridge-orderqueue",
+      "kind": "prop",
+      "area": "props",
+      "name": "ORDER QUEUE [cosmetic/screens] 2x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bridge-relaystack",
+      "kind": "prop",
+      "area": "props",
+      "name": "RELAY STACK [functional/capability] 1x2",
+      "purpose": "A notebook object — placing it in a BAY’s room grants that agent MEMORY. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘notebook’ → the sidecar’s resolveTools projects notebook.read/write, todo, recall_conversation, skill.* and widget.set. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (capgate.test, routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bridge-tacscreen",
+      "kind": "prop",
+      "area": "props",
+      "name": "TAC SCREEN [cosmetic/screens] 2x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/bunk",
+      "kind": "prop",
+      "area": "props",
+      "name": "BED [cosmetic/lounge] 2x2",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/calwall",
+      "kind": "prop",
+      "area": "props",
+      "name": "CAL WALL [cosmetic/screens] 6x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 6x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/cans",
+      "kind": "prop",
+      "area": "props",
+      "name": "CANS [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/chair",
+      "kind": "prop",
+      "area": "props",
+      "name": "CHAIR [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/chartwall",
+      "kind": "prop",
+      "area": "props",
+      "name": "CHART WALL [cosmetic/screens] 3x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 3x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/coffee",
+      "kind": "prop",
+      "area": "props",
+      "name": "COFFEE [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/comms-beacon",
+      "kind": "prop",
+      "area": "props",
+      "name": "BEACON [functional/capability] 1x2",
+      "purpose": "A dish object — placing it in a BAY’s room grants that agent WEB. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘dish’ → the sidecar’s resolveTools projects web_search, web_fetch and the browser.* read/act tools. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (capgate.test, routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/comms-dish",
+      "kind": "prop",
+      "area": "props",
+      "name": "DISH [functional/capability] 2x2",
+      "purpose": "A dish object — placing it in a BAY’s room grants that agent WEB. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘dish’ → the sidecar’s resolveTools projects web_search, web_fetch and the browser.* read/act tools. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (capgate.test, routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/comms-inbox",
+      "kind": "prop",
+      "area": "props",
+      "name": "INBOX [cosmetic/comms] 2x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/comms-uplink",
+      "kind": "prop",
+      "area": "props",
+      "name": "UPLINK [functional/capability] 2x2",
+      "purpose": "A dish object — placing it in a BAY’s room grants that agent WEB. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘dish’ → the sidecar’s resolveTools projects web_search, web_fetch and the browser.* read/act tools. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (capgate.test, routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/commswall",
+      "kind": "prop",
+      "area": "props",
+      "name": "COMMS WALL [cosmetic/comms] 6x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 6x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/connector-portal",
+      "kind": "prop",
+      "area": "props",
+      "name": "CONNECTOR [functional/capability] 1x2",
+      "purpose": "A connector portal — bind an MCP server here to grant the room’s agent LIVE TOOLS: that server’s live tools. Click it to bind one.",
+      "promise": "A BOUND portal (prop.connectorId set) makes bayObjects emit {objectType:‘connector’,connectorId}; the sidecar connector manager unions the bound server’s live tools/list into the run. An UNBOUND portal grants nothing. Renders at its footprint riding the connector’s live state (offline/online + tool-fire pulse), foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/console",
+      "kind": "prop",
+      "area": "props",
+      "name": "CONSOLE [functional/workstation] 2x1",
+      "purpose": "A workstation — the agent’s seat: assign ONE agent and it walks here and sits to work when tasked. As a `computer` object it also opens the COMPUTE gate (the precondition to spend any model turn).",
+      "promise": "Assigning binds prop.agentId; a dedicated computer in the bay’s room makes bayObjects grant ‘computer’ → resolveTools sets hasCompute (the run may proceed) + quest.update. Renders at its footprint with a chair + seated agent, foot-anchored; a bare bay with no computer honestly nags NO COMPUTE.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/consolel",
+      "kind": "prop",
+      "area": "props",
+      "name": "CONSOLE L [functional/workstation] 3x1",
+      "purpose": "A workstation — the agent’s seat: assign ONE agent and it walks here and sits to work when tasked. As a `computer` object it also opens the COMPUTE gate (the precondition to spend any model turn).",
+      "promise": "Assigning binds prop.agentId; a dedicated computer in the bay’s room makes bayObjects grant ‘computer’ → resolveTools sets hasCompute (the run may proceed) + quest.update. Renders at its footprint with a chair + seated agent, foot-anchored; a bare bay with no computer honestly nags NO COMPUTE.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (worldmodel.test, capgate.test, routing.b5.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/core",
+      "kind": "prop",
+      "area": "props",
+      "name": "CORE [functional/capability] 1x2",
+      "purpose": "A notebook object — placing it in a BAY’s room grants that agent MEMORY. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘notebook’ → the sidecar’s resolveTools projects notebook.read/write, todo, recall_conversation, skill.* and widget.set. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/couch",
+      "kind": "prop",
+      "area": "props",
+      "name": "COUCH [cosmetic/lounge] 5x1",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null). As a lounge prop it also carries a `use` descriptor so idle agents drift over and interact with it.",
+      "promise": "Renders at its 5x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing. propanchor.deriveAnchor resolves an approach/seat tile so an idle agent can use it.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js",
+          "frontend/app/propanchor.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "propanchor.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test, propanchor.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/crate",
+      "kind": "prop",
+      "area": "props",
+      "name": "CRATE [cosmetic/storage] 2x1",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/desk",
+      "kind": "prop",
+      "area": "props",
+      "name": "DESK [functional/workstation] 2x1",
+      "purpose": "A workstation — the agent’s seat: assign ONE agent and it walks here and sits to work when tasked. As a `computer` object it also opens the COMPUTE gate (the precondition to spend any model turn).",
+      "promise": "Assigning binds prop.agentId; a dedicated computer in the bay’s room makes bayObjects grant ‘computer’ → resolveTools sets hasCompute (the run may proceed) + quest.update. Renders at its footprint with a chair + seated agent, foot-anchored; a bare bay with no computer honestly nags NO COMPUTE.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "LIVE: present in the running seed — GET /api/save.station carries this as an agentId-bound workstation prop at (8,1) 2x1 (the auto-materialized overseer desk). Compute grant proven in-process by capgate.test/routing.b5.test; placement/blocking/persist by worldmodel.test; renderer+footprint+tier by qa-cartographer.test. All 7 rubric points hold."
+    },
+    {
+      "id": "prop/desk2",
+      "kind": "prop",
+      "area": "props",
+      "name": "DESK ×2 [functional/workstation] 2x1",
+      "purpose": "A workstation — the agent’s seat: assign ONE agent and it walks here and sits to work when tasked. As a `computer` object it also opens the COMPUTE gate (the precondition to spend any model turn).",
+      "promise": "Assigning binds prop.agentId; a dedicated computer in the bay’s room makes bayObjects grant ‘computer’ → resolveTools sets hasCompute (the run may proceed) + quest.update. Renders at its footprint with a chair + seated agent, foot-anchored; a bare bay with no computer honestly nags NO COMPUTE.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/djbooth",
+      "kind": "prop",
+      "area": "props",
+      "name": "DJ BOOTH [cosmetic/lounge] 4x2",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/easel",
+      "kind": "prop",
+      "area": "props",
+      "name": "EASEL [cosmetic/lab] 3x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 3x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/etsy-dyevat",
+      "kind": "prop",
+      "area": "props",
+      "name": "DYE VAT [cosmetic/lab] 2x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/etsy-kiln",
+      "kind": "prop",
+      "area": "props",
+      "name": "KILN [cosmetic/lab] 2x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/etsy-packbot",
+      "kind": "prop",
+      "area": "props",
+      "name": "PACK BOT [cosmetic/lab] 2x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/etsy-threadrack",
+      "kind": "prop",
+      "area": "props",
+      "name": "THREAD RACK [cosmetic/lab] 2x1",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/fabricator",
+      "kind": "prop",
+      "area": "props",
+      "name": "FABRICATOR [cosmetic/lab] 3x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 3x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/filter",
+      "kind": "prop",
+      "area": "props",
+      "name": "FILTER [functional/workflow] 1x1",
+      "purpose": "Sorts UNADDRESSED work by its content, sending each kind down a different belt lane; work already bound to an agent rides straight home past it. Click to set the routes.",
+      "promise": "Compiles into the RoutingPlan as a junction with real content routes; resolveTarget follows them to pick the running agent. Sits ON a belt tile (blocks:false). Renders at 1x1, foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/pipeline.js",
+          "sidecar/routing/router.js",
+          "frontend/app/build.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (routing.b5.test, worldmodel.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/gigs-amp",
+      "kind": "prop",
+      "area": "props",
+      "name": "AMP [cosmetic/comms] 1x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/gigs-partsbin",
+      "kind": "prop",
+      "area": "props",
+      "name": "PARTS BIN [cosmetic/storage] 2x1",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/gigs-servercart",
+      "kind": "prop",
+      "area": "props",
+      "name": "SERVER CART [functional/capability] 1x1",
+      "purpose": "A notebook object — placing it in a BAY’s room grants that agent MEMORY. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘notebook’ → the sidecar’s resolveTools projects notebook.read/write, todo, recall_conversation, skill.* and widget.set. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (capgate.test, routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/gigs-thumbwall",
+      "kind": "prop",
+      "area": "props",
+      "name": "THUMB WALL [cosmetic/comms] 2x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/goldcrate",
+      "kind": "prop",
+      "area": "props",
+      "name": "GOLD CRATE [cosmetic/storage] 2x1",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/holotable",
+      "kind": "prop",
+      "area": "props",
+      "name": "HOLOTABLE [cosmetic/screens] 4x2",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/intake",
+      "kind": "prop",
+      "area": "props",
+      "name": "INBOX [functional/workflow] 2x2",
+      "purpose": "The dock where OUTSIDE work (a DM, a routine, a gig) arrives on the floor and drops onto a belt; orders given in COMMS skip it and land straight at the agent’s BAY.",
+      "promise": "Placed with belts it compiles into the RoutingPlan as a source (pipeline.js), so admitted work-items ride the laid belts to a bound bay; grants no tool. Renders at its 2x2 footprint (solid), foot-anchored; belt MOTION is honest visualization telemetry, not the router.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/pipeline.js",
+          "sidecar/routing/router.js",
+          "frontend/app/build.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (routing.b5.test, worldmodel.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/jukebox",
+      "kind": "prop",
+      "area": "props",
+      "name": "JUKEBOX [cosmetic/lounge] 1x2",
+      "purpose": "A jukebox object — placing it in a BAY’s room grants that agent SPOTIFY. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘jukebox’ → the sidecar’s resolveTools projects spotify_search/now_playing/playlists + consent-gated play/pause/next/queue. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "propanchor.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "818768f7"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (toolprops.test, propanchor.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6). CAP_PROP_MAP per-prop-id lock added (test/capprop-map.contract.test.js); finding e08db5b6 remediated. Stays audited: separate finding 818768f7 remains open."
+    },
+    {
+      "id": "prop/merger",
+      "kind": "prop",
+      "area": "props",
+      "name": "MERGER [functional/workflow] 1x1",
+      "purpose": "A lane funnel: several belt lanes converge into one. Every crate rides straight through.",
+      "promise": "Compiles into a RoutingPlan junction of kind \"merge\" and carries no config. Crates are CONSERVED — K in, K out — because the harness dispatches every work-item independently; a merger tidies lanes, it never combines the jobs on them. Sits ON a belt tile (blocks:false). Renders at 1x1, foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/pipeline.js",
+          "frontend/app/conveyor.js",
+          "sidecar/routing/router.js",
+          "frontend/app/build.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "conveyor.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "CORRECTED 2026-07-26 (conveyor audit): the previous promise — \"a real bufferSize; the router holds K items then emits one\" — was FALSE. No router ever buffered; sidecar/routing/router.js and Pipeline.resolveTarget dispatch each work-item on its own, so K messages were always K paid runs. The engine meanwhile absorbed K-1 crates (they vanished, never delivered) and emitted a `merged` id list no consumer read; below-threshold work was swallowed outright. The merger is now a truthful lane funnel and its REFIT \"combine K\" control is gone. Status dropped audited->mapped: the by-trace audit at c06bdef7 certified the false promise, so this entry needs a fresh audit against the corrected behaviour. Prior note kept below.\nPRIOR: AUDITED-BY-TRACE at HEAD c06bdef7; not in the default dev seed, so WORKS was by-trace + machine assertion, not per-prop live placement. KNOWN: cap-prop id->objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/missionboard",
+      "kind": "prop",
+      "area": "props",
+      "name": "MISSION BOARD [functional/command] 3x1",
+      "purpose": "The quest log made physical: every pinned card is a real OPEN quest; click the board to read them. It suggests, never gates — functional-but-not-capability, so it grants no tool.",
+      "promise": "CAP_PROP_MAP has no entry (grantLabelForProp → null; bayObjects stays empty when only a board is placed); world.js missionBoardAt hit-test → app.js openTerm(‘quests’); setMissionPins feeds the REAL open-quest count (pins never invented). Renders at 3x1 (blocks:false), foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/world.js",
+          "frontend/app/app.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "g1bprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (g1bprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/outbox",
+      "kind": "prop",
+      "area": "props",
+      "name": "OUTBOX [functional/workflow] 2x2",
+      "purpose": "The dispatch chute where an agent’s finished reply leaves the station; click it to read and rate every finished run waiting for you.",
+      "promise": "Compiles into the RoutingPlan as the legibility end; the sprite stacks the ReturnStore’s pending-crate count (setOutboxCrates, real uncollected while-away runs). Grants no tool. Renders at 2x2 (solid), foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/pipeline.js",
+          "sidecar/routing/router.js",
+          "frontend/app/build.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (routing.b5.test, worldmodel.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/parcels",
+      "kind": "prop",
+      "area": "props",
+      "name": "PARCELS [cosmetic/storage] 1x2",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/pixelrig",
+      "kind": "prop",
+      "area": "props",
+      "name": "PIXEL RIG [functional/workstation] 2x1",
+      "purpose": "A workstation — the agent’s seat: assign ONE agent and it walks here and sits to work when tasked. As a `computer` object it also opens the COMPUTE gate (the precondition to spend any model turn).",
+      "promise": "Assigning binds prop.agentId; a dedicated computer in the bay’s room makes bayObjects grant ‘computer’ → resolveTools sets hasCompute (the run may proceed) + quest.update. Renders at its footprint with a chair + seated agent, foot-anchored; a bare bay with no computer honestly nags NO COMPUTE.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/plant",
+      "kind": "prop",
+      "area": "props",
+      "name": "PLANT [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/poster",
+      "kind": "prop",
+      "area": "props",
+      "name": "POSTER [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/pub-mailpod",
+      "kind": "prop",
+      "area": "props",
+      "name": "MAIL POD [cosmetic/comms] 2x1",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/pub-outboundchute",
+      "kind": "prop",
+      "area": "props",
+      "name": "OUTBOUND CHUTE [cosmetic/comms] 1x2",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/pub-publishpress",
+      "kind": "prop",
+      "area": "props",
+      "name": "PUBLISH PRESS [cosmetic/comms] 2x2",
+      "purpose": "Decorative comms dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/quarters-lockerbank",
+      "kind": "prop",
+      "area": "props",
+      "name": "LOCKERS [cosmetic/lounge] 3x1",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 3x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/quarters-minifridge",
+      "kind": "prop",
+      "area": "props",
+      "name": "MINIFRIDGE [cosmetic/lounge] 1x1",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/quarters-pooltable",
+      "kind": "prop",
+      "area": "props",
+      "name": "POOL TABLE [cosmetic/lounge] 4x2",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/quarters-vending",
+      "kind": "prop",
+      "area": "props",
+      "name": "VENDING [cosmetic/lounge] 1x2",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/rack",
+      "kind": "prop",
+      "area": "props",
+      "name": "RACK [functional/capability] 2x1",
+      "purpose": "A cabinet object — placing it in a BAY’s room grants that agent FILES. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘cabinet’ → the sidecar’s resolveTools projects fs.read/list/search + consent-gated fs.write/append/edit/patch. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/rackv",
+      "kind": "prop",
+      "area": "props",
+      "name": "RACK V [cosmetic/storage] 1x2",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/research-corelens",
+      "kind": "prop",
+      "area": "props",
+      "name": "CORE LENS [cosmetic/lab] 1x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/research-papers",
+      "kind": "prop",
+      "area": "props",
+      "name": "PAPERS [cosmetic/lab] 2x1",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/research-samplecart",
+      "kind": "prop",
+      "area": "props",
+      "name": "SAMPLE CART [cosmetic/lab] 2x1",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/research-trendpillar",
+      "kind": "prop",
+      "area": "props",
+      "name": "TREND PILLAR [cosmetic/lab] 1x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/rug",
+      "kind": "prop",
+      "area": "props",
+      "name": "RUG [cosmetic/decor] 4x3",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x3 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "prop-awareness.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test, prop-awareness.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/safe",
+      "kind": "prop",
+      "area": "props",
+      "name": "SAFE [functional/capability] 1x2",
+      "purpose": "A cabinet object — placing it in a BAY’s room grants that agent FILES. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘cabinet’ → the sidecar’s resolveTools projects fs.read/list/search + consent-gated fs.write/append/edit/patch. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/screens",
+      "kind": "prop",
+      "area": "props",
+      "name": "SCREENS [cosmetic/screens] 2x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/shelf",
+      "kind": "prop",
+      "area": "props",
+      "name": "SHELF [functional/capability] 4x1",
+      "purpose": "A cabinet object — placing it in a BAY’s room grants that agent FILES. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘cabinet’ → the sidecar’s resolveTools projects fs.read/list/search + consent-gated fs.write/append/edit/patch. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/speaker",
+      "kind": "prop",
+      "area": "props",
+      "name": "SPEAKER [cosmetic/lounge] 1x1",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/splitter",
+      "kind": "prop",
+      "area": "props",
+      "name": "SPLITTER [functional/workflow] 1x1",
+      "purpose": "Fans one work stream across its lanes to run several agents in parallel (round-robin load-balance).",
+      "promise": "Compiles into a RoutingPlan junction; resolveTarget round-robins across its lanes. Sits ON a belt tile (blocks:false). Renders at 1x1, foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/pipeline.js",
+          "sidecar/routing/router.js",
+          "frontend/app/build.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (routing.b5.test, worldmodel.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/stool",
+      "kind": "prop",
+      "area": "props",
+      "name": "STOOL [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/studio",
+      "kind": "prop",
+      "area": "props",
+      "name": "STUDIO [functional/capability] 2x2",
+      "purpose": "A studio object — placing it in a BAY’s room grants that agent IMAGES. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘studio’ → the sidecar’s resolveTools projects image_generate (consent-gated) + image_analyze. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "g1bprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (g1bprops.test, capgate.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/tank",
+      "kind": "prop",
+      "area": "props",
+      "name": "TANK [cosmetic/screens] 2x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/ticker",
+      "kind": "prop",
+      "area": "props",
+      "name": "TICKER [cosmetic/screens] 4x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/treasury-coinsorter",
+      "kind": "prop",
+      "area": "props",
+      "name": "COIN SORTER [cosmetic/storage] 2x1",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/treasury-pnl-holo",
+      "kind": "prop",
+      "area": "props",
+      "name": "PNL HOLO [cosmetic/decor] 1x1",
+      "purpose": "Decorative decor dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/treasury-token-furnace",
+      "kind": "prop",
+      "area": "props",
+      "name": "TOKEN FURNACE [cosmetic/storage] 1x2",
+      "purpose": "Decorative storage dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/trophycase",
+      "kind": "prop",
+      "area": "props",
+      "name": "TROPHY CASE [functional/command] 2x2",
+      "purpose": "The station’s real achievements made permanent: earned milestones and completed quests stand behind glass. Click to open the case. It grants nothing — it remembers.",
+      "promise": "CAP_PROP_MAP has no entry (bayObjects stays empty); world.js trophyCaseAt → app.js openTerm(‘trophies’); setTrophyCount feeds the REAL earned-trophy count (real completions only). Renders at 2x2 (solid), foot-anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "frontend/app/world.js",
+          "frontend/app/app.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "g3btrophy.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (g3btrophy.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/tube",
+      "kind": "prop",
+      "area": "props",
+      "name": "TUBE [cosmetic/lab] 2x1",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/tv",
+      "kind": "prop",
+      "area": "props",
+      "name": "TV [cosmetic/lounge] 3x1",
+      "purpose": "Decorative lounge dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null). As a lounge prop it also carries a `use` descriptor so idle agents drift over and interact with it.",
+      "promise": "Renders at its 3x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing. propanchor.deriveAnchor resolves an approach/seat tile so an idle agent can use it.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js",
+          "frontend/app/propanchor.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        },
+        {
+          "kind": "test",
+          "ref": "propanchor.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test, propanchor.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/vat",
+      "kind": "prop",
+      "area": "props",
+      "name": "VAT [cosmetic/lab] 3x2",
+      "purpose": "Decorative lab dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 3x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/vault",
+      "kind": "prop",
+      "area": "props",
+      "name": "VAULT [functional/capability] 3x2",
+      "purpose": "A cabinet object — placing it in a BAY’s room grants that agent FILES. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘cabinet’ → the sidecar’s resolveTools projects fs.read/list/search + consent-gated fs.write/append/edit/patch. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    },
+    {
+      "id": "prop/war-intelcab",
+      "kind": "prop",
+      "area": "props",
+      "name": "INTEL CAB [functional/capability] 1x2",
+      "purpose": "A cabinet object — placing it in a BAY’s room grants that agent FILES. Object = capability, made real on the placed floor.",
+      "promise": "When it shares a bound bay’s room, bayObjects(agent) includes ‘cabinet’ → the sidecar’s resolveTools projects fs.read/list/search + consent-gated fs.write/append/edit/patch. A firing mapped tool pulses this prop (toolprops.js). Renders at its footprint, foot-shadow anchored.",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "routing.b5.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [
+        "e08db5b6"
+      ],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (capgate.test, routing.b5.test, toolprops.test, qa-cartographer.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/war-pivotpanel",
+      "kind": "prop",
+      "area": "props",
+      "name": "PIVOT PANEL [cosmetic/screens] 2x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 2x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/war-threatcore",
+      "kind": "prop",
+      "area": "props",
+      "name": "THREAT CORE [cosmetic/screens] 1x2",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 1x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/wartable",
+      "kind": "prop",
+      "area": "props",
+      "name": "WAR TABLE [cosmetic/screens] 5x2",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 5x2 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; occupies its tiles for pathfinding (blocks:true). bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/whiteboard",
+      "kind": "prop",
+      "area": "props",
+      "name": "WHITEBOARD [cosmetic/screens] 4x1",
+      "purpose": "Decorative screens dressing; grants no capability (CAP_PROP_MAP has no entry → capForProp null).",
+      "promise": "Renders at its 4x1 footprint over the station bake and under the lightmap, foot-shadow anchored to the floor line; is walkable floor/wall decor (blocks:false), skipped by projectGeometry’s blockedTiles. bayObjects never lists it — placing it grants the room’s agent nothing.",
+      "wiring": {
+        "files": [
+          "frontend/app/propsprites.js",
+          "frontend/app/worldmodel.js",
+          "frontend/app/build.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "worldmodel.test"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18T02:15:26.725Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "AUDITED-BY-TRACE: seam traced emitter→store→renderer and guarded by green machine tests (qa-cartographer.test, worldmodel.test) at HEAD c06bdef7. Not present in the default dev seed (only the overseer desk is placed), so not individually live-placed — WORKS is by-trace + machine assertion, not a per-prop live placement. KNOWN: cap-prop id→objectType is only per-id locked for studio (finding e08db5b6)."
+    },
+    {
+      "id": "prop/workbench",
+      "kind": "prop",
+      "area": "props",
+      "name": "WORKBENCH [functional/workstation] 2x1",
+      "purpose": "A workbench — grants the room’s agent TERMINAL: real, consent-gated code execution (shell.exec + verify.run). Pair with a workstation in the same room.",
+      "promise": "bayObjects grants ‘workbench’ → resolveTools projects shell.exec + verify.run (consent-gated) plus browser.test_* and shell.bg.*. Renders at its footprint, foot-anchored; a room-scoped pulse glows on shell/verify and flashes red on a verify failure (truthful — a denied/errored call never reads as the green surge).",
+      "wiring": {
+        "files": [
+          "frontend/app/worldmodel.js",
+          "sidecar/capability/registry.js",
+          "sidecar/capability/resolve.js",
+          "frontend/app/toolprops.js",
+          "frontend/app/propsprites.js",
+          "frontend/app/world.js"
+        ],
+        "events": []
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "capgate.test"
+        },
+        {
+          "kind": "test",
+          "ref": "toolprops.test"
+        },
+        {
+          "kind": "test",
+          "ref": "qa-cartographer.test"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capprop-map.contract.test.js",
+          "gate": "test:fast"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:06:15.100Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-10T05:18:57.443Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Every CAP_PROP_MAP prop id → registered CAP_REGISTRY objectType is now locked table-driven in test/capprop-map.contract.test.js (a dropped/renamed id fails BY NAME). Combined with the objectType-level gates (capgate/routing.b5) this closes the per-prop-id gap. Atlas finding e08db5b6 remediated."
+    }
+  ]
+}

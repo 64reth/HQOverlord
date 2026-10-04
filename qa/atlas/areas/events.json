@@ -1,0 +1,2509 @@
+{
+  "area": "events",
+  "updatedAt": "2026-07-18T04:05:08.230Z",
+  "entries": [
+    {
+      "id": "event/agent-compact",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.compact",
+      "purpose": "Reports context was compacted mid-run (tokens before/after, items removed) so the UI can note the compaction.",
+      "promise": "On a mid-run compaction agent.compact carries {agentId,runId,beforeTokens,afterTokens,removed,reason}; stationui marks it and world.js tickers it.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "frontend/app/stationui.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.compact"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/compaction.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (compaction.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/agent-cost",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.cost",
+      "purpose": "The reconciled per-run cost — the single truthful spend figure the floor stats and topbar display.",
+      "promise": "At run end agent.cost carries {agentId,runId,usd,tokensIn,tokensOut,...,reconciled:true}; FloorStats folds it and topbar.js shows the cost. Observed live with reconciled:true.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "sidecar/index.js",
+          "frontend/app/floorstats.js",
+          "frontend/app/world.js",
+          "frontend/app/topbar.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.cost"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "audit",
+          "ref": ".uiatlas/events-evidence/run-events-result.json"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.run.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: re-proven LIVE on :8968 — POST /api/run NDJSON emitted agent.run.start→token→cost.estimate→agent.cost{reconciled:true}→agent.run.end{reason:done}, payloads exactly matching shared/events.js. Evidence .uiatlas/events-evidence/run-events-result.json. Consumer wiring traced real; consumer-render not DOM-round-tripped this session → held at audited, not perfected.]"
+    },
+    {
+      "id": "event/agent-reasoning",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.reasoning",
+      "purpose": "FROZEN CONTRACT SLOT: was meant to toggle a per-run reasoning-display indicator (on/off).",
+      "promise": "Would emit {agentId,runId,on:bool} when a model's reasoning stream opens/closes so the UI can show a 'thinking' state.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.reasoning"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/agent-run-end",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.run.end",
+      "purpose": "Announces a run finished with its reason, turn count and cost — the terminal event that drives crate delivery, XP, and dozens of stores.",
+      "promise": "The LAST NDJSON line is agent.run.end {agentId,runId,reason:'done|max_iters|budget|cancelled|error|refusal|empty',turns,usd,finishReason?}; the frontend delivers a crate only on a clean 'done'. Observed live with reason:'done'.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "frontend/app/chat.js",
+          "frontend/app/floorstats.js",
+          "frontend/app/goalstore.js",
+          "frontend/app/understandingstore.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.run.end"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "audit",
+          "ref": ".uiatlas/events-evidence/run-events-result.json"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.run.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: re-proven LIVE on :8968 — POST /api/run NDJSON emitted agent.run.start→token→cost.estimate→agent.cost{reconciled:true}→agent.run.end{reason:done}, payloads exactly matching shared/events.js. Evidence .uiatlas/events-evidence/run-events-result.json. Consumer wiring traced real; consumer-render not DOM-round-tripped this session → held at audited, not perfected.]"
+    },
+    {
+      "id": "event/agent-run-error",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.run.error",
+      "purpose": "Reports a run-level error (with transient flag) so the world can flash the desk and audio can alarm.",
+      "promise": "On a run failure agent.run.error carries {agentId,runId,message,transient}; world.js flashes the CAM-HUD and audio.js alarms; transient drives retry framing.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "frontend/js/audio.js",
+          "frontend/app/stationui.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.run.error"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/iteration-budget.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (iteration-budget.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/agent-run-start",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.run.start",
+      "purpose": "Announces a run has begun so the world can start showing that agent as busy and the HUD can open a live run ticker.",
+      "promise": "When POST /api/run fires, the FIRST NDJSON line is agent.run.start with {agentId,runId,trigger:'directive|schedule|event',model}; the frontend marks the desk active and opens the CAM-HUD ticker.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "frontend/app/stationui.js",
+          "frontend/app/tutorial.js",
+          "frontend/app/workqueststore.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.run.start"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "audit",
+          "ref": ".uiatlas/events-evidence/run-events-result.json"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.run.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: re-proven LIVE on :8968 — POST /api/run NDJSON emitted agent.run.start→token→cost.estimate→agent.cost{reconciled:true}→agent.run.end{reason:done}, payloads exactly matching shared/events.js. Evidence .uiatlas/events-evidence/run-events-result.json. Consumer wiring traced real; consumer-render not DOM-round-tripped this session → held at audited, not perfected.]"
+    },
+    {
+      "id": "event/agent-token",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.token",
+      "purpose": "Streams each assistant text delta so the world can treat token flow as a liveness/heat signal for the running agent.",
+      "promise": "During a run, agent.token lines carry {agentId,runId,delta:str}; the frontend bumps the agent's run TTL/heat on each (it is a liveness signal, not a transcript renderer).",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.token"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "audit",
+          "ref": ".uiatlas/events-evidence/run-events-result.json"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.run.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: re-proven LIVE on :8968 — POST /api/run NDJSON emitted agent.run.start→token→cost.estimate→agent.cost{reconciled:true}→agent.run.end{reason:done}, payloads exactly matching shared/events.js. Evidence .uiatlas/events-evidence/run-events-result.json. Consumer wiring traced real; consumer-render not DOM-round-tripped this session → held at audited, not perfected.]"
+    },
+    {
+      "id": "event/agent-tool-call",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.tool_call",
+      "purpose": "Signals the agent invoked a tool, so the world can show a work glyph and adaptive-recruitment/quest stores can learn what the agent does.",
+      "promise": "On each tool invocation, agent.tool_call carries {agentId,runId,callId,name,argsSummary?}; world.js paints a work glyph and worksignalstore/stationqueststore fold it.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "frontend/app/world.js",
+          "frontend/app/worksignalstore.js",
+          "frontend/app/stationqueststore.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.tool_call"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js + tools.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/agent-tool-result",
+      "kind": "event",
+      "area": "events",
+      "name": "agent.tool_result",
+      "purpose": "Reports a tool call's outcome so the world can tally work done and play an error alarm on failure.",
+      "promise": "After a tool runs, agent.tool_result carries {agentId,runId,callId,ok,isError,ms?,summary?}; world.js tallies runWork and audio.js alarms when isError.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "frontend/app/world.js",
+          "frontend/js/audio.js",
+          "frontend/app/stationqueststore.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "agent.tool_result"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/tools.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js + tools.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/budget-threshold",
+      "kind": "event",
+      "area": "events",
+      "name": "budget.threshold",
+      "purpose": "Warns a spend cap (run/day/global) threshold was crossed so the UI can note remaining budget.",
+      "promise": "On a threshold crossing budget.threshold carries {scope:'run|day|global',usd,cap}; world.js hudNotes 'X of $Y spent'. De-duped per run.",
+      "wiring": {
+        "files": [
+          "sidecar/budget.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "budget.threshold"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/budget.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (budget.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/capdenied",
+      "kind": "event",
+      "area": "events",
+      "name": "capdenied",
+      "purpose": "Reports a capability need was denied so the run is blocked visibly instead of silently failing.",
+      "promise": "On a capability denial capdenied carries {agentId,need,reason}; harness.js accumulates the error and world.js flashes the desk + hudNote 'run blocked'.",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "frontend/app/harness.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "capdenied"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/capgate.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (capgate.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/channel-connect",
+      "kind": "event",
+      "area": "events",
+      "name": "channel.connect",
+      "purpose": "Adapter transport health: poll up / network down / fatal token error.",
+      "promise": "On a health change channel.connect carries {channel,state:'up|down|error',detail?}; stationui refreshes the Telegram/Discord status lines in the Messaging panel.",
+      "wiring": {
+        "files": [
+          "sidecar/channels/hub.js",
+          "sidecar/index.js",
+          "frontend/app/stationui.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "channel.connect"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lifecycle-armed.http.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (lifecycle-armed.http.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/channel-delivery",
+      "kind": "event",
+      "area": "events",
+      "name": "channel.delivery",
+      "purpose": "The agent's reply was delivered back to the platform (chunk count + ok/why) — outbound telemetry.",
+      "promise": "On a delivery channel.delivery carries {channel,chatId,runId,ok,chunks?,reason?,agentId?}; world.js pulses the right agent's dish.",
+      "wiring": {
+        "files": [
+          "sidecar/channels/hub.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "channel.delivery"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/channels.telegram.e2e.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (channels.telegram.e2e.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/channel-inbound",
+      "kind": "event",
+      "area": "events",
+      "name": "channel.inbound",
+      "purpose": "A message arrived on a platform (Telegram/Discord), was admitted, and mapped to an agent — the trigger-source telemetry.",
+      "promise": "On admitted ingress channel.inbound carries {channel,chatId,agentId,userId?,kind:'dm|group'}; world.js pulses the agent's dish and audio plays msg SFX.",
+      "wiring": {
+        "files": [
+          "sidecar/channels/hub.js",
+          "frontend/app/world.js",
+          "frontend/js/audio.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "channel.inbound"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/channels.telegram.e2e.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (channels.telegram.e2e.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/chat",
+      "kind": "event",
+      "area": "events",
+      "name": "chat",
+      "purpose": "FROZEN v7-reused SLOT: a generic {from,txt} chat line. Not wired in the current harness (COMMS chat flows via /api/run + chat.js directly).",
+      "promise": "Would emit {from,txt}. NOTE: no emitter and no consumer in the current harness — a reserved v7 name.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "chat"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/checkpoint-created",
+      "kind": "event",
+      "area": "events",
+      "name": "checkpoint.created",
+      "purpose": "A shadow-git workspace snapshot was taken before a mutating turn (the rollback net).",
+      "promise": "On a snapshot checkpoint.created carries {agentId,runId,turn,snapshotId,files?,bytes?}. Intentionally QUIET — frequent + no UI consumer by design (docs/GAME_SESSION_PLAN.md).  [emitted, intentionally no UI consumer (frequent/quiet snapshot telemetry).]",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "checkpoint.created"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: EMIT-ONLY by design — emit machine-guarded in the gate (contract.test.js); trace confirms NO frontend consumer (intentional observability/telemetry, not a dead surface). Capped at audited.] Consumed sidecar-side by subagents.js WATCH set; no frontend renderer by design."
+    },
+    {
+      "id": "event/checkpoint-restored",
+      "kind": "event",
+      "area": "events",
+      "name": "checkpoint.restored",
+      "purpose": "The workspace was rolled back to a prior snapshot (manual rewind or policy auto-restore).",
+      "promise": "On a restore checkpoint.restored carries {agentId,runId,toSnapshotId,reason?}; world.js hudNotes '↶ rewound'.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "checkpoint.restored"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/cost-estimate",
+      "kind": "event",
+      "area": "events",
+      "name": "cost.estimate",
+      "purpose": "Audit-only per-run cost estimate emitted before final reconciliation (superseded by agent.cost).",
+      "promise": "During a run cost.estimate carries {agentId,runId,usd,tokens}; observability only — no UI renderer (agent.cost is the reconciled truth the UI reads).  [emitted live (observed on 8966) but no UI consumer by design — the reconciled agent.cost is what the UI displays.]",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "cost.estimate"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        },
+        {
+          "kind": "audit",
+          "ref": ".uiatlas/events-evidence/run-events-result.json"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: EMIT-ONLY by design — emit machine-guarded in the gate (contract.test.js); trace confirms NO frontend consumer (intentional observability/telemetry, not a dead surface). Capped at audited.] Also observed live in the same run (cost.estimate line present)."
+    },
+    {
+      "id": "event/crew-summon-request",
+      "kind": "event",
+      "area": "events",
+      "name": "crew.summon.request",
+      "purpose": "A backend->frontend COMMAND: the orchestrator's team.summon tool asks the live station to create a new worker agent (mirrors permission.prompt).",
+      "promise": "On team.summon crew.summon.request carries {requestId,agentId,name?,specId?,...}; harness runs the real summonAgent() and POSTs /api/summon/ack with the new agentId.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/harness.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "crew.summon.request"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.summon.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (e2e.summon.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/cron-fire",
+      "kind": "event",
+      "area": "events",
+      "name": "cron.fire",
+      "purpose": "A scheduled job fired a run — links jobId to the agent run it launched so the floor shows a routine firing.",
+      "promise": "On a fire cron.fire carries {jobId,runId,scheduledFor?}; autosessions/maintqueststore fold it, widgets repaint, world.js hudNotes '◷ routine fired'.",
+      "wiring": {
+        "files": [
+          "sidecar/cron-driver.js",
+          "frontend/app/autosessions.js",
+          "frontend/app/maintqueststore.js",
+          "frontend/app/widgets.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "cron.fire"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.tick.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.session-transcript.e2e.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (cron.tick.test.js + cron.session-transcript.e2e.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/cron-result",
+      "kind": "event",
+      "area": "events",
+      "name": "cron.result",
+      "purpose": "A fired job's run finished (ok/failed/silent) — the terminal cron telemetry.",
+      "promise": "On completion cron.result carries {jobId,runId,outcome:'ok|failed|silent',reason?}; autosessions/maintqueststore clear and world.js hudNotes the reason.",
+      "wiring": {
+        "files": [
+          "sidecar/cron-driver.js",
+          "frontend/app/autosessions.js",
+          "frontend/app/maintqueststore.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "cron.result"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.tick.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.session-transcript.e2e.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (cron.tick.test.js + cron.session-transcript.e2e.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/cron-skipped",
+      "kind": "event",
+      "area": "events",
+      "name": "cron.skipped",
+      "purpose": "A due job was NOT fired this tick with the reason (already-running/disabled/caught-up/no-capability/stale-lock-reclaimed/at-capacity).",
+      "promise": "On a skip cron.skipped carries {jobId,reason:<enum>}; maintqueststore logs it (read-only subscription).",
+      "wiring": {
+        "files": [
+          "sidecar/cron-driver.js",
+          "frontend/app/maintqueststore.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "cron.skipped"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.tick.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (cron.tick.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/cron-tick",
+      "kind": "event",
+      "area": "events",
+      "name": "cron.tick",
+      "purpose": "The scheduler pulse: how many due jobs it planned/fired/skipped/deferred this pass.",
+      "promise": "Each tick cron.tick carries {fired,skipped,planned?,deferred?}. NOTE: no frontend consumer — it is console/telemetry only (cron.fire/cron.result are the UI-facing cron events).  [emitted, no UI consumer — telemetry/console only; cron.fire+cron.result carry the UI signal.]",
+      "wiring": {
+        "files": [
+          "sidecar/cron-driver.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "cron.tick"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.tick.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: EMIT-ONLY by design — emit machine-guarded in the gate (cron.tick.test.js); trace confirms NO frontend consumer (intentional observability/telemetry, not a dead surface). Capped at audited.]"
+    },
+    {
+      "id": "event/day",
+      "kind": "event",
+      "area": "events",
+      "name": "day",
+      "purpose": "RETIRED v7 cosmetic: a day-tick. Not emitted in the current harness.",
+      "promise": "Would carry a day payload. NOTE: no emitter and no consumer — a retired cosmetic kept VALID in the frozen registry.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "day"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/deliverable",
+      "kind": "event",
+      "area": "events",
+      "name": "deliverable",
+      "purpose": "A real deliverable was produced (skill/file/image/notebook) — opens the skill aside and plays a ship SFX.",
+      "promise": "On a produced deliverable it carries {id,agentId?,room?,kind?,title?}; chat.js opens a skill aside (kind:'skill'), stationui refreshes skills, world.js tallies dels, audio.js plays SFX.ship().",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "sidecar/skillreview.js",
+          "sidecar/tools/builtin/fs.js",
+          "sidecar/tools/builtin/notebook.js",
+          "sidecar/tools/builtin/skills.js",
+          "frontend/app/chat.js",
+          "frontend/app/stationui.js",
+          "frontend/app/world.js",
+          "frontend/js/audio.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "deliverable"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/deliverable-store.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/workshop.e2e.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (deliverable-store.test.js + workshop.e2e.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/flagged",
+      "kind": "event",
+      "area": "events",
+      "name": "flagged",
+      "purpose": "RETIRED v7 cosmetic: a consumer (audio.js SFX.alarm) is still wired but nothing emits it.",
+      "promise": "Would carry a flagged payload; audio.js:27 would alarm. NOTE: consumer wired, NO emitter — a retired cosmetic that never fires.",
+      "wiring": {
+        "files": [
+          "frontend/js/audio.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "flagged"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "1019f6e1"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/hazard",
+      "kind": "event",
+      "area": "events",
+      "name": "hazard",
+      "purpose": "RETIRED v7 cosmetic. Not emitted in the current harness.",
+      "promise": "Would carry a hazard payload. NOTE: no emitter and no consumer — a retired cosmetic.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "hazard"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/intel",
+      "kind": "event",
+      "area": "events",
+      "name": "intel",
+      "purpose": "RETIRED v7 cosmetic. Not emitted in the current harness.",
+      "promise": "Would carry an intel payload. NOTE: no emitter and no consumer — a retired cosmetic.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "intel"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/iteration-refunded",
+      "kind": "event",
+      "area": "events",
+      "name": "iteration.refunded",
+      "purpose": "Audit/determinism telemetry: a no-op turn (empty/duplicate) was refunded from the iteration budget instead of counting against maxIters.",
+      "promise": "On a refunded no-op turn iteration.refunded carries {agentId,runId,turn?,reason:'empty|duplicate',refundsUsed}; observability only — no UI consumer by design.  [emitted, no UI consumer — legitimate observability-only telemetry.]",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "iteration.refunded"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/iteration-budget.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: EMIT-ONLY by design — emit machine-guarded in the gate (iteration-budget.test.js); trace confirms NO frontend consumer (intentional observability/telemetry, not a dead surface). Capped at audited.]"
+    },
+    {
+      "id": "event/level",
+      "kind": "event",
+      "area": "events",
+      "name": "level",
+      "purpose": "FROZEN v7-reused SLOT: a level snapshot. Not wired on the bus (XP/level flows via xp.js reading run.end + memory events).",
+      "promise": "Would carry a level snapshot. NOTE: no emitter and no consumer — a reserved v7 name (the 'level' SFX key is unrelated).",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "level"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/memory-feedback",
+      "kind": "event",
+      "area": "events",
+      "name": "memory.feedback",
+      "purpose": "A signed trust adjustment for a memory record (Keep/Edit/Discard, pin, forget) folded into computed trust.",
+      "promise": "On a trust change memory.feedback carries {agentId,id,delta,reason?}; truststore folds it, confbeats shows a beat, xp reads quality.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "sidecar/tools/builtin/notebook.js",
+          "frontend/app/truststore.js",
+          "frontend/app/confbeats.js",
+          "frontend/app/stationui.js",
+          "frontend/app/xp.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "memory.feedback"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/trust.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/reflect.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (trust.test.js + reflect.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/memory-forget",
+      "kind": "event",
+      "area": "events",
+      "name": "memory.forget",
+      "purpose": "Reports a memory record was removed (forget pressed or proposal discarded) so the UI drops it.",
+      "promise": "On a forget memory.forget carries {agentId,id,reason?}; stationui bumps and world.js hudNotes '✕ memory forgotten'.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/stationui.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "memory.forget"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/sidecar.http.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js + sidecar.http.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/memory-proposed",
+      "kind": "event",
+      "area": "events",
+      "name": "memory.proposed",
+      "purpose": "Reports reflection PROPOSED a record for Keep/Edit/Discard turn-in (not yet committed) so a confirm-deck slot opens.",
+      "promise": "On a proposal memory.proposed carries {agentId,runId,id,kind,scope?}; chat.js reserves a confirm-deck slot.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "memory.proposed"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/study.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js + study.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/memory-recall",
+      "kind": "event",
+      "area": "events",
+      "name": "memory.recall",
+      "purpose": "Reports a recalled-memory fence was injected into a run's prompt so the world can note 'recalled N memories'.",
+      "promise": "On recall injection memory.recall carries {agentId,runId,count,chars?}; world.js hudNote shows the recall count.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "memory.recall"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/memory-used",
+      "kind": "event",
+      "area": "events",
+      "name": "memory.used",
+      "purpose": "Reports a stored record was actually surfaced into a prompt this run (drives useCount/trust).",
+      "promise": "Per surfaced record memory.used carries {agentId,runId,id}; stationui bumps and xp folds it (zero XP by design).",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/stationui.js",
+          "frontend/app/xp.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "memory.used"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/memcore.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (memcore.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/memory-write",
+      "kind": "event",
+      "area": "events",
+      "name": "memory.write",
+      "purpose": "Reports a memory record was committed (after approval or notebook.write) so the notebook prop glows and stores refresh.",
+      "promise": "On a memory commit memory.write carries {agentId,runId,id,kind,scope?,streamId?}; chat.js/stationui refresh and world.js glows the notebook.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "sidecar/tools/builtin/notebook.js",
+          "frontend/app/chat.js",
+          "frontend/app/stationui.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "memory.write"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/notebook.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (notebook.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/notify",
+      "kind": "event",
+      "area": "events",
+      "name": "notify",
+      "purpose": "A bare-string toast pushed onto the durable SSE bus so a station HUD notice can surface it (used by the night-shift immediate-visibility path).",
+      "promise": "notify carries a bare string payload; sidecar chanEmit('notify', str) fires it (e.g. a night-shift draft landing while the app is open) and stationui.js wires U.bus.on('notify') to toast it gold.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/stationui.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "notify"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: STALE-NOTE CORRECTED — prior mapping claimed \"no bus emitter and no bus consumer\". At HEAD it IS wired: emit sidecar/index.js:3665 (night-shift draft toast), consumer frontend/app/stationui.js:6996 (U.bus.on notify → gold toast). Payload guarded by contract.test.js. KNOWN: the specific live emit lacks a dedicated gate assertion → audited.]"
+    },
+    {
+      "id": "event/object-place",
+      "kind": "event",
+      "area": "events",
+      "name": "object.place",
+      "purpose": "RESERVED (P3 builder mutation API): would announce a capability object was placed in a room (object=capability projection).",
+      "promise": "Would emit {room,objectType,instanceId} when the builder places a prop. NOTE: documented in frontend/app/BUILDER.md as the placement vocabulary but not emitted or consumed on the bus in the current harness — a reserved P3 slot.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "object.place"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/object-reclaim",
+      "kind": "event",
+      "area": "events",
+      "name": "object.reclaim",
+      "purpose": "RESERVED (P3 builder mutation API): would announce a capability object was reclaimed/removed from a room.",
+      "promise": "Would emit {room,objectType,instanceId} when the builder reclaims a prop. NOTE: not emitted or consumed on the bus in the current harness — a reserved P3 slot.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "object.reclaim"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/objectives",
+      "kind": "event",
+      "area": "events",
+      "name": "objectives",
+      "purpose": "FROZEN v7-reused SLOT: an objectives snapshot. Not wired in the current harness.",
+      "promise": "Would carry an objectives snapshot. NOTE: no emitter and no consumer — a reserved v7 name.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "objectives"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/parcel",
+      "kind": "event",
+      "area": "events",
+      "name": "parcel",
+      "purpose": "RETIRED v7 cosmetic. Not emitted in the current harness.",
+      "promise": "Would carry a parcel payload. NOTE: no emitter and no consumer — a retired cosmetic.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "parcel"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/party",
+      "kind": "event",
+      "area": "events",
+      "name": "party",
+      "purpose": "RETIRED v7 cosmetic. Not emitted in the current harness.",
+      "promise": "Would carry a party payload. NOTE: no emitter and no consumer — a retired cosmetic.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "party"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/permission-prompt",
+      "kind": "event",
+      "area": "events",
+      "name": "permission.prompt",
+      "purpose": "Asks the browser to show a consent prompt for a gated tool before it runs (the M1.4 consent gate).",
+      "promise": "On a gated tool permission.prompt carries {promptId,agentId,tool,scope,argsSummary?}; harness routes to onPermission and world.js enters an await state by promptId.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/harness.js",
+          "frontend/app/world.js",
+          "frontend/app/tutorial.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "permission.prompt"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/consentwait.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.pathtrust.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (consentwait.test.js + e2e.pathtrust.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/permission-response",
+      "kind": "event",
+      "area": "events",
+      "name": "permission.response",
+      "purpose": "The Commander's consent decision for a permission.prompt — a FRONTEND-originated bus event (browser POSTs /api/consent), consumed to clear the await state.",
+      "promise": "On a consent decision the browser emits permission.response {promptId,decision:'once|session|always|deny|full'}; world.js clears the await and tutorial narrates a Deny honestly. NOTE: emitted by the FRONTEND (chat.js), not the sidecar — no backend emitter by design.  [frontend-emitted event; backend has no emitter by design (asymmetry, not an orphan).]",
+      "wiring": {
+        "files": [
+          "frontend/app/chat.js",
+          "frontend/app/world.js",
+          "frontend/app/tutorial.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "permission.response"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.] Frontend-emitted (chat.js), consumed by world.js/tutorial.js — asymmetry by design, not an orphan."
+    },
+    {
+      "id": "event/provider-fallback",
+      "kind": "event",
+      "area": "events",
+      "name": "provider.fallback",
+      "purpose": "Makes a mid-run provider/model failover or credential rotation VISIBLE telemetry (previously only inferable from the switched cost model).",
+      "promise": "When the loop advances its failover chain, provider.fallback carries {agentId,runId,fromModel,toModel,reason,...}; FloorStats increments failovers and stationui surfaces it (H3.1).",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "frontend/app/floorstats.js",
+          "frontend/app/world.js",
+          "frontend/app/stationui.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "provider.fallback"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/floorstats.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (floorstats.test.js (asserts the FloorStats failover fold — a consumer-side guard)) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/queue-status",
+      "kind": "event",
+      "area": "events",
+      "name": "queue.status",
+      "purpose": "Queue-depth telemetry for the backpressure HUD — emitted whenever a per-agent queue depth changes.",
+      "promise": "On a depth change queue.status carries {queueId,depth?,maxCapacity?,nextAdvanceAt?}; world.js updates chanQueues and the floor backpressure HUD.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "queue.status"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/floorstats.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (floorstats.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/run-cancel",
+      "kind": "event",
+      "area": "events",
+      "name": "run.cancel",
+      "purpose": "FROZEN CONTRACT SLOT: reserved to signal a run was cancelled over the bus by runId.",
+      "promise": "Would emit {runId} to tell listeners a specific run was cancelled. NOTE: cancellation currently flows via POST /api/cancel + agent.run.end reason:'cancelled'; run.cancel itself is not emitted anywhere.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "run.cancel"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/sale",
+      "kind": "event",
+      "area": "events",
+      "name": "sale",
+      "purpose": "RETIRED v7 cosmetic: kept VALID as an optional cosmetic off real completions. Not emitted in the current harness.",
+      "promise": "Would carry a sale payload. NOTE: no emitter and no consumer — a retired cosmetic (the 'sale' SFX key is unrelated).",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "sale"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/shell-bg-exit",
+      "kind": "event",
+      "area": "events",
+      "name": "shell.bg.exit",
+      "purpose": "A background/long-running shell process ended AFTER its run's stream closed — rides the durable SSE bus.",
+      "promise": "On a bg exit shell.bg.exit carries {agentId,bgId,exitCode,ms?,killed?}; chat.js logs a terse COMMS system line.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/chat.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "shell.bg.exit"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/shell-bg.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (contract.test.js + shell-bg.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/shell-exec",
+      "kind": "event",
+      "area": "events",
+      "name": "shell.exec",
+      "purpose": "A shell command ran (gated by consent + an auto-checkpoint) — pulses the workbench prop.",
+      "promise": "On a shell run shell.exec carries {agentId,runId,callId,cmdSummary?,cwd?,exitCode,ms?,truncated?}; world.js pulses the workbench.",
+      "wiring": {
+        "files": [
+          "sidecar/tools/builtin/shell.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "shell.exec"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/shell.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (shell.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/stats",
+      "kind": "event",
+      "area": "events",
+      "name": "stats",
+      "purpose": "FROZEN v7-reused SLOT: listeners were meant to read a stats snapshot the telemetry layer maintains. Not wired in the current harness.",
+      "promise": "Would carry a snapshot object. NOTE: no emitter and no consumer — a reserved v7 name (floor stats fold agent.cost/run.end directly).",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "stats"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    },
+    {
+      "id": "event/task",
+      "kind": "event",
+      "area": "events",
+      "name": "task",
+      "purpose": "A v7-reused name re-emitted from a REAL subagent lifecycle transition — drives desk progress + a SFX.",
+      "promise": "On a subagent status change task carries {id,agentId?,status:'queued|running|done|failed|todo',kind?,title?}; world.js stores deskProg and audio.js plays a SFX.",
+      "wiring": {
+        "files": [
+          "sidecar/subagents.js",
+          "frontend/app/world.js",
+          "frontend/js/audio.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "task"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/e2e.subagent-background.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (e2e.subagent-background.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/tool-args-repaired",
+      "kind": "event",
+      "area": "events",
+      "name": "tool.args.repaired",
+      "purpose": "Audit-only telemetry: a non-Anthropic model's mechanically-broken tool-call JSON args were repaired before use (L2).",
+      "promise": "When repairCalls fixes broken tool args, tool.args.repaired carries {agentId,runId,callId,name,before,after}; it is observability only — no frontend renderer consumes it (by design, it rides the NDJSON stream for the audit trail).  [emitted, no UI consumer — legitimate audit-only telemetry; not a purposeless surface.]",
+      "wiring": {
+        "files": [
+          "sidecar/loop.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "tool.args.repaired"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/contract.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: EMIT-ONLY by design — emit machine-guarded in the gate (contract.test.js); trace confirms NO frontend consumer (intentional observability/telemetry, not a dead surface). Capped at audited.]"
+    },
+    {
+      "id": "event/verify-result",
+      "kind": "event",
+      "area": "events",
+      "name": "verify.result",
+      "purpose": "Post-edit verification result (project check or LSP lint-delta) — pulses the workbench green/red.",
+      "promise": "On verification verify.result carries {agentId,runId,tool?,passed,added?,removed?,summary?}; world.js pulses the workbench red on fail, green on pass.",
+      "wiring": {
+        "files": [
+          "sidecar/tools/builtin/verify.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "verify.result"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/verify.run.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (verify.run.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/workitem-delivered",
+      "kind": "event",
+      "area": "events",
+      "name": "workitem.delivered",
+      "purpose": "A work-item rode into a bay/sink and its payload was consumed — the end of the belt journey.",
+      "promise": "On delivery workitem.delivered carries {workitemId,finalQueueId,agentId?,box?,ms?,ts?}; world.js floor.onEvent drops it at the sink.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "workitem.delivered"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/floorstats.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (floorstats.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/workitem-placed",
+      "kind": "event",
+      "area": "events",
+      "name": "workitem.placed",
+      "purpose": "A real inbound work-item was queued at a SOURCE — the start of the belt journey.",
+      "promise": "On placement workitem.placed carries {workitemId,queueId,agentId?,kind?,preview?,queueDepth?,ts?}; world.js intakes it into the HUD and the floor conveyor.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "workitem.placed"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/cron.run-now.e2e.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/floorstats.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: emit+payload machine-guarded in the gate (cron.run-now.e2e.test.js + floorstats.test.js) + frozen-shape guard events-contract.test.js; emit site + frontend consumer both traced live at HEAD. KNOWN: consumer-render lacks a dedicated journey → capped at audited.]"
+    },
+    {
+      "id": "event/workitem-superseded",
+      "kind": "event",
+      "area": "events",
+      "name": "workitem.superseded",
+      "purpose": "A newer message for the same chat ABORTED this work-item's run (hub supersede) — its box drops off the belt.",
+      "promise": "On a supersede workitem.superseded carries {workitemId,agentId?,ts?}; world.js drops the workitem from the conveyor.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/world.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "workitem.superseded"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/atlas-events.emit.e2e.test.js",
+          "gate": "test:http"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:05:08.230Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "Emit seam now asserted BY NAME with payload {workitemId,agentId,ts} in test/atlas-events.emit.e2e.test.js (fake Telegram + held run #1 → second same-chat message supersedes it, event rides the SSE bus). Consumer half (world.js drops the superseded box off the belt) is guarded by conveyor.test.js. Contract shape by events-contract.test.js; emit-site by lint-emits.js. Atlas finding 40203e5e remediated."
+    },
+    {
+      "id": "event/workshop-built",
+      "kind": "event",
+      "area": "events",
+      "name": "workshop.built",
+      "purpose": "An away-workshop shift finished with a VALIDATED manifest (files proven on disk) — the return-card trigger.",
+      "promise": "After validation workshop.built carries {agentId,runId,manifest}; emitted ONLY after the manifest validates. Consumed on the bus by frontend/app/workshopstore.js (U.bus.on(workshop.built)→onBuilt) which folds it into the return-card queue.",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "frontend/app/workshopstore.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "workshop.built"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/workshop.e2e.test.js"
+        }
+      ],
+      "status": "audited",
+      "auditedAt": {
+        "sha": "c06bdef7b3ac60daab6e1b9516c290264b2cec90",
+        "date": "2026-07-18"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "[wave-2 events-H @ HEAD c06bdef7: STALE-NOTE CORRECTED — prior mapping claimed \"no frontend bus consumer\". At HEAD workshopstore.js:427 subscribes U.bus.on(workshop.built)→onBuilt. Emit gate-guarded by workshop.e2e.test.js. KNOWN: consumer-render (return card) lacks a dedicated journey → audited.]"
+    },
+    {
+      "id": "event/workshop-decided",
+      "kind": "event",
+      "area": "events",
+      "name": "workshop.decided",
+      "purpose": "Records the Commander decided a pending deliverable: keep/discard/later.",
+      "promise": "On a decision workshop.decided carries {agentId,runId,decision:'keep|discard|later',destPath?}. NOTE: no frontend bus consumer — decision state flows via the /api/workshop/decide response.  [emitted, no bus consumer — state mutation confirmed by the HTTP response, not this event.]",
+      "wiring": {
+        "files": [
+          "sidecar/index.js",
+          "shared/events.js"
+        ],
+        "events": [
+          "workshop.decided"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/atlas-events.emit.e2e.test.js",
+          "gate": "test:http"
+        }
+      ],
+      "status": "perfected",
+      "auditedAt": {
+        "sha": "c3ec18964ddfaa94b093be20f01139dbc7ceac69",
+        "date": "2026-07-18T04:05:08.230Z"
+      },
+      "findings": [],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false,
+      "notes": "EMIT-ONLY by design (state flows via the /api/workshop/decide HTTP response, no bus consumer). Emit seam now asserted BY NAME with payload {agentId,runId,decision} in test/atlas-events.emit.e2e.test.js via the deterministic decision:later path. Contract shape by events-contract.test.js; emit-site by lint-emits.js. Atlas finding cf61a8e9 remediated."
+    },
+    {
+      "id": "event/worldchange",
+      "kind": "event",
+      "area": "events",
+      "name": "worldChange",
+      "purpose": "RESERVED (P3 mutation API): would carry a world-mutation seq + dirty tiles for incremental world sync.",
+      "promise": "Would emit {seq,dirtyTiles:[]} on a world mutation. NOTE: not emitted or consumed anywhere — a reserved P3 stub.",
+      "wiring": {
+        "files": [
+          "shared/events.js"
+        ],
+        "events": [
+          "worldChange"
+        ]
+      },
+      "coverage": [
+        {
+          "kind": "test",
+          "ref": "test/events-contract.test.js"
+        },
+        {
+          "kind": "test",
+          "ref": "test/lint-emits.js"
+        }
+      ],
+      "status": "mapped",
+      "auditedAt": null,
+      "findings": [
+        "9c5ec90c"
+      ],
+      "firstSeen": "2026-07-07T08:09:25.409Z",
+      "lastSeen": "2026-07-18T00:54:02.711Z",
+      "missing": false
+    }
+  ]
+}

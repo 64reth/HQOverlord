@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "starnet.wave-a.executable-verdict.v1",
+  "capturedAt": "2026-08-03",
+  "release": "0.9.0",
+  "verdict": "gates-not-met",
+  "receiptSigning": {
+    "algorithm": "Ed25519",
+    "keyId": "29275039d8cc21d3488ee397bdfd9dcbc7ffed7f2de4b559303bb076f7ed081d"
+  },
+  "candidate": {
+    "name": "StarNet",
+    "version": "0.8.5",
+    "commit": "865d87fbb9c2f91e5e47ca0368a90c7bee2552ec",
+    "sourceTree": "a2f58d289ba282088d294a3a3089bf0cce4cbe6f",
+    "describe": "snapshot/preupdate-beginner-20260802-0837-3-g865d87fb",
+    "executableSha256": "26c94a802e81a317fa385b63168ccbe44ca7722615884d97a9159cfafc158f85",
+    "authenticode": "NotSigned",
+    "runtimeFilesChecked": 4212,
+    "runtimeMissing": 0,
+    "runtimeMismatched": 0,
+    "manifestSha256": "40cfd6e58b89c1139de97cf3cf475ed3d2b433190e4a4595e5dd3a2e06d8ef25",
+    "bound": true
+  },
+  "reference": {
+    "name": "Hermes Agent",
+    "version": "0.19.1",
+    "tag": "v2026.7.30",
+    "tagObject": "d25e2dbdbc40b49808c0a0e9cfed21cc90cffab3",
+    "commit": "cc4cab2f592e60a197e796506de9168f74baf3ea",
+    "sourceTree": "fcdc6093750ed0a3a556e20927799d7245ba65e4",
+    "pythonExecutableSha256": "a026b3c1ea6da6fd570355f92bcee990dd400f51ec497e5499e6abaf05cf150d",
+    "authenticode": "NotSigned",
+    "manifestSha256": "d4db1b66e2f8a1b1b79d5c333f784ea4b51166e2c4fc42cce3ccbe16ee8447a5",
+    "bound": true
+  },
+  "faultGauntlet": {
+    "receiptSha256": "3fa17368fd6e5b8d096e2ddcde4a42b3eaf2b4bceaf0732b5c4c7abef582878a",
+    "signatureVerified": true,
+    "attempts": 1000,
+    "passed": 700,
+    "failed": 300,
+    "passRatePct": 70,
+    "criticalGatePct": 100,
+    "gatePassed": false,
+    "zeroToleranceViolations": {
+      "falseDone": 0,
+      "wrongDestination": 0,
+      "duplicateMutation": 0,
+      "authorityEscape": 0
+    },
+    "failedBoundaries": [
+      "fault-read-intent-before-dispatch",
+      "fault-compaction-rotation",
+      "fault-routine-subagent-finalization"
+    ]
+  },
+  "sameModelPreflight": {
+    "model": "openai-codex/gpt-5.6-sol",
+    "sameModel": true,
+    "probeSha256": "6f187767baaf4919b13ca4a3c476cb5568c8298c976f6c8949484cca801f4bbb",
+    "performanceReceiptSha256": "003750224da55126cc1f1e9a11b8f8b5ef268960a30b1f8a034bbe5a943a85f3",
+    "signatureVerified": true,
+    "starNet": {
+      "installedSidecarBootMs": 4712.8685,
+      "providerRunOk": false,
+      "httpStatus": 200,
+      "firstTokenMs": null,
+      "totalMs": 489.6309,
+      "tokens": 0
+    },
+    "hermes": {
+      "providerRunOk": true,
+      "exitCode": 0,
+      "firstOutputMs": 15859.0661,
+      "totalMs": 24051.1472,
+      "tokens": 27161
+    },
+    "baselineUsable": false,
+    "limitations": [
+      "single preflight only",
+      "StarNet failed before first token",
+      "desktop cold boot and useful-artifact latency unmeasured",
+      "48-hour resource soak unmeasured"
+    ]
+  },
+  "parity": {
+    "receiptSha256": "81b7f6337d5c4d1455b449413dd413da29ed6d102e64bce3ba5ad73d3fa73a11",
+    "signatureVerified": true,
+    "candidateBound": true,
+    "referenceBound": true,
+    "rowsPerHarness": 96,
+    "status": "not-executed",
+    "displayedStarNetPassRatePct": 0,
+    "displayedReferencePassRatePct": 0,
+    "displayedGapPoints": 0,
+    "displayedValuesAreAvailabilitySentinels": true,
+    "overallGatePct": 95,
+    "maxReferenceGapPoints": 5,
+    "gatePassed": false,
+    "blockers": [
+      "credential rotation required after OAuth token exposure in diagnostic output",
+      "32 concrete executable fixtures and host-grounded graders are not implemented"
+    ]
+  },
+  "credentialIncident": {
+    "secretRepeatedHere": false,
+    "isolatedCredentialCopiesDeleted": true,
+    "isolatedCredentialCopyAbsenceVerified": true,
+    "originalCredentialStoresModified": false,
+    "requiredUserAction": "Revoke and re-authenticate the StarNet ChatGPT connection before another provider run."
+  }
+}

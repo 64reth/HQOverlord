@@ -1,0 +1,34 @@
+{
+  "name": "starnet-chibi-character",
+  "version": 1,
+  "description": "Locked recipe for generating diverse but format-identical agent characters (cute chibi, high-top-down). Only the character `description` changes between characters; everything else is fixed so every character is the same size, proportions, view and animation set.",
+  "pixellab_create_character": {
+    "mode": "standard",
+    "body_type": "humanoid",
+    "n_directions": 4,
+    "proportions": { "type": "preset", "name": "chibi" },
+    "outline": "single color black outline",
+    "shading": "basic shading",
+    "detail": "medium detail",
+    "view": "high top-down",
+    "size": 48,
+    "_note": "standard mode is REQUIRED — it is the only mode that respects fixed `proportions`, which is what guarantees every character is the same build/size. pro/v3 ignore proportions and would vary."
+  },
+  "animations": {
+    "walk":  { "tool": "animate_character", "template_animation_id": "walk", "directions": ["south","north","east","west"] },
+    "blink": { "tool": "create_character_state", "edit_description": "both eyes fully closed, blinking, relaxed closed eyelids", "use_color_palette_from_reference": true },
+    "sit":   { "tool": "create_character_state", "edit_description": "sitting down with knees bent in front, upright posture, hands resting forward as if typing, NO chair, NO desk, no furniture at all, same slim body size", "use_color_palette_from_reference": true, "_note": "NEVER mention chair/desk — the game has its own chair+workstation props; a baked-in chair makes the agent look ~40% wider when seated" },
+    "type":  { "tool": "animate_character", "mode": "v3", "action_description": "typing on a keyboard, both hands moving up and down, seated", "directions": ["north"], "frame_count": 6, "_source": "run on the (chairless) sit state id; do NOT say 'at a desk' or it bakes a desk in" }
+  },
+  "postprocess": {
+    "far_eye_fix": "Run fix_eyes.py on every east/west frame (idle, blink, sit, walk). Pixellab side profiles often render a stray SECOND eye on the back of the head; fix_eyes paints it out with fur, keeping the near eye + ears. assemble_character.py expects already-fixed frames."
+  },
+  "output": {
+    "canvas": [92, 92],
+    "target_char_height": 46,
+    "foot_y": 69,
+    "anchor": "feet centered horizontally; single registration transform from base south applied to ALL frames so nothing jitters",
+    "naming": "<set>/rot_<dir>.png, blink_<dir>.png, walk_<dir>_<n>.png, sit_<dir>.png, type_north_<n>.png",
+    "manifest_keys": "<set>.<state>.<dir>"
+  }
+}

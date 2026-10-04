@@ -1,0 +1,13 @@
+# Approved room lighting — integration validation
+
+The owner accepted the saved HAB-16 reference lighting after a slight ambient lift (darkness 0.84 to 0.82) and reduced animated glow (0.07 to 0.06), then explicitly requested validation and merge. Rooms retain one column with two top/bottom lights, scaled from the 15x14 reference. Original falloff, sheen and temperature remain. CRT lab Reset matches the approved controls.
+
+Combined source candidate 1d5b8e414 includes trunk c6738dddd (final recruitment panel update). `npm run test:fast` completed all 722 steps, exit 0; log `.worldshots/room-lighting/test-fast-combined-final.log`. No lighting changes touch sidecar, credentials, shared contracts, package.json or conveyor UI relative to trunk.
+
+Live checks after restarting the seeded preview at :9197: seven room sizes preserve two sources, bright top/bottom light, dark sides and lit north wall. CRT lab Reset restored ambient .82 and glow .06 after deliberate temporary changes. Reference comparison uses the owner's actual saved room geometry plus its two adjacent corridors copied into the disposable preview; the real save is unchanged.
+
+`dev/room-lighting-reference-proof.mjs` compares fresh renderer instances on the same frozen geometry because the renderer's existing rounded-key shade cache retains slight floor-color differences from earlier rooms. With equivalent cache histories, the original renderer (with the same approved ambient lift) and current candidate produce identical base image and lightmap. The running production renderer's lightmap is also identical. This does not claim pixel equality of animated crew, CRT grain or screenshot framing. Local receipts: `reference-parity.json`, `reset-final.json`, `approved-final.json`, and PNGs under `.worldshots/room-lighting/`.
+
+The comparison script's final change isolates geometry/cache history; it changes no product code. Syntax and source-text-integrity validation cover it.
+
+Merged into `feat/harness-backend` at `0f463132565ee4eae868e003d35354a68e2dc7ac`, from trunk snapshot `c6738dddd14a61103ae581f0a614ca9b4268b8dd`. The required post-merge `npm run test:fast` completed all 722 steps, exit 0; log `.worldshots/room-lighting/test-fast-trunk.log`. The merged tracked tree was identical to the running preview's source. Reference base/lightmap parity and the live Reset check passed again after integration. Existing QA notes and the Rooms handoff were hash-verified unchanged. No installer build, installed-app verification, push or public release is included. The local preview remains available at http://127.0.0.1:9197/.

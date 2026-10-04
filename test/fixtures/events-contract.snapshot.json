@@ -1,0 +1,800 @@
+{
+  "agent.compact": {
+    "required": [
+      "agentId",
+      "runId"
+    ],
+    "properties": [
+      "afterTokens",
+      "agentId",
+      "beforeTokens",
+      "reason",
+      "removed",
+      "runId"
+    ]
+  },
+  "agent.cost": {
+    "required": [
+      "agentId",
+      "reconciled",
+      "runId",
+      "usd"
+    ],
+    "properties": [
+      "agentId",
+      "cachedTokens",
+      "model",
+      "reasoningTokens",
+      "reconciled",
+      "runId",
+      "tokensIn",
+      "tokensOut",
+      "usd"
+    ]
+  },
+  "agent.reasoning": {
+    "required": [
+      "agentId",
+      "on",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "on",
+      "runId"
+    ]
+  },
+  "agent.run.end": {
+    "required": [
+      "agentId",
+      "reason",
+      "runId",
+      "turns",
+      "usd"
+    ],
+    "properties": [
+      "agentId",
+      "budgetCapUsd",
+      "budgetScope",
+      "finishReason",
+      "reason",
+      "runId",
+      "turns",
+      "usd"
+    ]
+  },
+  "agent.run.error": {
+    "required": [
+      "agentId",
+      "message",
+      "runId",
+      "transient"
+    ],
+    "properties": [
+      "agentId",
+      "message",
+      "runId",
+      "transient"
+    ]
+  },
+  "agent.run.start": {
+    "required": [
+      "agentId",
+      "model",
+      "runId",
+      "trigger"
+    ],
+    "properties": [
+      "agentId",
+      "model",
+      "runId",
+      "trigger"
+    ]
+  },
+  "agent.token": {
+    "required": [
+      "agentId",
+      "delta",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "delta",
+      "runId"
+    ]
+  },
+  "agent.tool_call": {
+    "required": [
+      "agentId",
+      "callId",
+      "name",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "argsSummary",
+      "callId",
+      "name",
+      "runId"
+    ]
+  },
+  "agent.tool_result": {
+    "required": [
+      "agentId",
+      "callId",
+      "isError",
+      "ok",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "callId",
+      "isError",
+      "ms",
+      "ok",
+      "runId",
+      "summary"
+    ]
+  },
+  "agent.waiting": {
+    "required": [
+      "agentId",
+      "phase",
+      "runId",
+      "sinceMs"
+    ],
+    "properties": [
+      "agentId",
+      "model",
+      "phase",
+      "runId",
+      "sinceMs"
+    ]
+  },
+  "budget.threshold": {
+    "required": [
+      "cap",
+      "scope",
+      "usd"
+    ],
+    "properties": [
+      "cap",
+      "scope",
+      "usd"
+    ]
+  },
+  "capdenied": {
+    "required": [
+      "agentId",
+      "need",
+      "reason"
+    ],
+    "properties": [
+      "agentId",
+      "need",
+      "reason"
+    ]
+  },
+  "channel.connect": {
+    "required": [
+      "channel",
+      "state"
+    ],
+    "properties": [
+      "channel",
+      "detail",
+      "state"
+    ]
+  },
+  "channel.delivery": {
+    "required": [
+      "channel",
+      "chatId",
+      "ok",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "channel",
+      "chatId",
+      "chunks",
+      "ok",
+      "reason",
+      "runId"
+    ]
+  },
+  "channel.inbound": {
+    "required": [
+      "agentId",
+      "channel",
+      "chatId"
+    ],
+    "properties": [
+      "agentId",
+      "channel",
+      "chatId",
+      "kind",
+      "userId"
+    ]
+  },
+  "chat": {
+    "required": [
+      "from",
+      "txt"
+    ],
+    "properties": [
+      "from",
+      "txt"
+    ]
+  },
+  "checkpoint.created": {
+    "required": [
+      "agentId",
+      "runId",
+      "snapshotId",
+      "turn"
+    ],
+    "properties": [
+      "agentId",
+      "bytes",
+      "files",
+      "label",
+      "runId",
+      "snapshotId",
+      "turn"
+    ]
+  },
+  "checkpoint.restored": {
+    "required": [
+      "agentId",
+      "runId",
+      "toSnapshotId"
+    ],
+    "properties": [
+      "agentId",
+      "reason",
+      "runId",
+      "toSnapshotId"
+    ]
+  },
+  "connector_required": {
+    "required": [
+      "connectorId",
+      "kind",
+      "reason",
+      "runId",
+      "toolName"
+    ],
+    "properties": [
+      "connectorId",
+      "kind",
+      "reason",
+      "runId",
+      "toolName"
+    ]
+  },
+  "cost.estimate": {
+    "required": [
+      "agentId",
+      "runId",
+      "tokens",
+      "usd"
+    ],
+    "properties": [
+      "agentId",
+      "runId",
+      "tokens",
+      "usd"
+    ]
+  },
+  "credits.low": {
+    "required": [
+      "balanceUsd",
+      "thresholdUsd"
+    ],
+    "properties": [
+      "balanceUsd",
+      "exhausted",
+      "purchaseUrl",
+      "thresholdUsd"
+    ]
+  },
+  "crew.summon.request": {
+    "required": [
+      "agentId",
+      "requestId"
+    ],
+    "properties": [
+      "agentId",
+      "name",
+      "persona",
+      "purpose",
+      "requestId",
+      "skin",
+      "specId"
+    ]
+  },
+  "cron.fire": {
+    "required": [
+      "jobId",
+      "runId"
+    ],
+    "properties": [
+      "jobId",
+      "runId",
+      "scheduledFor"
+    ]
+  },
+  "cron.result": {
+    "required": [
+      "jobId",
+      "outcome",
+      "runId"
+    ],
+    "properties": [
+      "jobId",
+      "outcome",
+      "reason",
+      "runId"
+    ]
+  },
+  "cron.skipped": {
+    "required": [
+      "jobId",
+      "reason"
+    ],
+    "properties": [
+      "jobId",
+      "reason"
+    ]
+  },
+  "cron.tick": {
+    "required": [
+      "fired",
+      "skipped"
+    ],
+    "properties": [
+      "deferred",
+      "fired",
+      "planned",
+      "skipped"
+    ]
+  },
+  "day": {
+    "required": [],
+    "properties": []
+  },
+  "deliverable": {
+    "required": [
+      "id"
+    ],
+    "properties": [
+      "agentId",
+      "id",
+      "kind",
+      "room",
+      "title"
+    ]
+  },
+  "flagged": {
+    "required": [],
+    "properties": []
+  },
+  "hazard": {
+    "required": [],
+    "properties": []
+  },
+  "intel": {
+    "required": [],
+    "properties": []
+  },
+  "iteration.refunded": {
+    "required": [
+      "agentId",
+      "reason",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "reason",
+      "refundsUsed",
+      "runId",
+      "turn"
+    ]
+  },
+  "level": {
+    "required": [],
+    "properties": []
+  },
+  "memory.feedback": {
+    "required": [
+      "agentId",
+      "delta",
+      "id"
+    ],
+    "properties": [
+      "agentId",
+      "delta",
+      "id",
+      "reason"
+    ]
+  },
+  "memory.forget": {
+    "required": [
+      "agentId",
+      "id"
+    ],
+    "properties": [
+      "agentId",
+      "id",
+      "reason"
+    ]
+  },
+  "memory.proposed": {
+    "required": [
+      "agentId",
+      "id",
+      "kind",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "id",
+      "kind",
+      "runId",
+      "scope",
+      "streamId"
+    ]
+  },
+  "memory.recall": {
+    "required": [
+      "agentId",
+      "count",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "chars",
+      "count",
+      "runId"
+    ]
+  },
+  "memory.used": {
+    "required": [
+      "agentId",
+      "id",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "id",
+      "runId"
+    ]
+  },
+  "memory.write": {
+    "required": [
+      "agentId",
+      "id",
+      "kind",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "id",
+      "kind",
+      "runId",
+      "scope",
+      "streamId"
+    ]
+  },
+  "notify": {
+    "required": [],
+    "properties": []
+  },
+  "object.place": {
+    "required": [
+      "instanceId",
+      "objectType",
+      "room"
+    ],
+    "properties": [
+      "instanceId",
+      "objectType",
+      "room"
+    ]
+  },
+  "object.reclaim": {
+    "required": [
+      "instanceId",
+      "objectType",
+      "room"
+    ],
+    "properties": [
+      "instanceId",
+      "objectType",
+      "room"
+    ]
+  },
+  "objectives": {
+    "required": [],
+    "properties": []
+  },
+  "parcel": {
+    "required": [],
+    "properties": []
+  },
+  "party": {
+    "required": [],
+    "properties": []
+  },
+  "permission.prompt": {
+    "required": [
+      "agentId",
+      "promptId",
+      "scope",
+      "tool"
+    ],
+    "properties": [
+      "agentId",
+      "argsSummary",
+      "promptId",
+      "scope",
+      "tool"
+    ]
+  },
+  "permission.response": {
+    "required": [
+      "decision",
+      "promptId"
+    ],
+    "properties": [
+      "decision",
+      "promptId"
+    ]
+  },
+  "provider.fallback": {
+    "required": [
+      "agentId",
+      "fromModel",
+      "reason",
+      "runId",
+      "toModel"
+    ],
+    "properties": [
+      "agentId",
+      "fromModel",
+      "fromProvider",
+      "reason",
+      "rotate",
+      "runId",
+      "toModel",
+      "toProvider"
+    ]
+  },
+  "provider.retry": {
+    "required": [
+      "agentId",
+      "attempt",
+      "delayMs",
+      "reason",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "attempt",
+      "delayMs",
+      "maxAttempts",
+      "model",
+      "patienceMs",
+      "reason",
+      "retryAfterMs",
+      "runId",
+      "stage",
+      "waitedMs"
+    ]
+  },
+  "queue.status": {
+    "required": [
+      "queueId"
+    ],
+    "properties": [
+      "depth",
+      "maxCapacity",
+      "nextAdvanceAt",
+      "queueId"
+    ]
+  },
+  "run.cancel": {
+    "required": [
+      "runId"
+    ],
+    "properties": [
+      "runId"
+    ]
+  },
+  "sale": {
+    "required": [],
+    "properties": []
+  },
+  "shell.bg.exit": {
+    "required": [
+      "agentId",
+      "bgId",
+      "exitCode"
+    ],
+    "properties": [
+      "agentId",
+      "bgId",
+      "exitCode",
+      "killed",
+      "ms"
+    ]
+  },
+  "shell.exec": {
+    "required": [
+      "agentId",
+      "callId",
+      "exitCode",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "callId",
+      "cmdSummary",
+      "cwd",
+      "exitCode",
+      "ms",
+      "runId",
+      "truncated"
+    ]
+  },
+  "station.command": {
+    "required": [
+      "id",
+      "verb"
+    ],
+    "properties": [
+      "args",
+      "id",
+      "verb"
+    ]
+  },
+  "stats": {
+    "required": [],
+    "properties": []
+  },
+  "task": {
+    "required": [
+      "id",
+      "status"
+    ],
+    "properties": [
+      "agentId",
+      "id",
+      "kind",
+      "status",
+      "title"
+    ]
+  },
+  "taskbrief.settled": {
+    "required": [
+      "agentId",
+      "objective",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "assumptions",
+      "audience",
+      "deliverable",
+      "objective",
+      "runId",
+      "success"
+    ]
+  },
+  "tool.args.repaired": {
+    "required": [
+      "agentId",
+      "callId",
+      "name",
+      "runId"
+    ],
+    "properties": [
+      "after",
+      "agentId",
+      "before",
+      "callId",
+      "name",
+      "runId"
+    ]
+  },
+  "verify.result": {
+    "required": [
+      "agentId",
+      "passed",
+      "runId"
+    ],
+    "properties": [
+      "added",
+      "agentId",
+      "passed",
+      "removed",
+      "runId",
+      "summary",
+      "tool"
+    ]
+  },
+  "workitem.delivered": {
+    "required": [
+      "finalQueueId",
+      "workitemId"
+    ],
+    "properties": [
+      "agentId",
+      "box",
+      "finalQueueId",
+      "ms",
+      "ts",
+      "workitemId"
+    ]
+  },
+  "workitem.placed": {
+    "required": [
+      "queueId",
+      "workitemId"
+    ],
+    "properties": [
+      "agentId",
+      "kind",
+      "preview",
+      "queueDepth",
+      "queueId",
+      "ts",
+      "workitemId"
+    ]
+  },
+  "workitem.superseded": {
+    "required": [
+      "workitemId"
+    ],
+    "properties": [
+      "agentId",
+      "ts",
+      "workitemId"
+    ]
+  },
+  "workshop.built": {
+    "required": [
+      "agentId",
+      "manifest",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "manifest",
+      "runId"
+    ]
+  },
+  "workshop.decided": {
+    "required": [
+      "agentId",
+      "decision",
+      "runId"
+    ],
+    "properties": [
+      "agentId",
+      "decision",
+      "destPath",
+      "runId"
+    ]
+  },
+  "worldChange": {
+    "required": [
+      "seq"
+    ],
+    "properties": [
+      "dirtyTiles",
+      "seq"
+    ]
+  }
+}

@@ -1,0 +1,173 @@
+/* Left-side construction console. The inventory scrolls independently;
+   item details stay inside the console and its physical width stays bounded. */
+.refit-top .bb, .refit-title { white-space: nowrap; flex-shrink: 0; }
+.refit-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.refit-dock {
+  container-type: inline-size;
+  left: 12px; right: auto; top: 58px; bottom: 12px;
+  width: min(calc(340px * var(--sn-unzoom,1)),calc(100% - 76px));
+  height: auto; max-height: none; overflow-y: auto; scrollbar-width: thin;
+  border: 1px solid var(--ph-dim); border-radius: 6px;
+  box-shadow: 0 0 0 3px rgba(0,0,0,.8), 8px 0 24px rgba(0,0,0,.4), inset 0 1px var(--ui-highlight);
+}
+.refit-dock-head { display: flex; gap: 6px; padding: 9px 10px; min-height: 22px; }
+.refit-dock-head-t { background: transparent; color: var(--ph-bright); box-shadow: none; padding: 0; font-size: 12px; letter-spacing: 1.5px; }
+.refit-dock-caption { display: none; }
+#refit-kit-toggle { margin-left: auto; padding: 4px 7px; min-height: 22px; font-size: 10px; letter-spacing: .5px; }
+.refit-mode-section { padding: 6px 8px; background: var(--ui-face); }
+#refit-tools { display: flex; flex-direction: column; gap: 6px; }
+.refit-toolset { min-width: 0; }
+.refit-toolset-label { color: var(--ph-dim); font-size: 9px; letter-spacing: 1.2px; padding: 0 2px 3px; }
+.refit-toolset-buttons { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+.refit-toolset-buttons.is-edit { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.refit-toolset-buttons.is-edit .refit-tool { flex-direction: row; gap: 4px; padding: 3px 4px; font-size: 10px; }
+.refit-toolset-buttons.is-edit .refit-toolname { text-align: center; }
+.refit-toolset-buttons.is-edit .refit-key { display: none; }
+.refit-dock .refit-tool { min-width: 0; min-height: 24px; padding: 3px 7px; font-size: 12px; letter-spacing: .3px; gap: 7px; }
+.refit-toolname { flex: 1; text-align: left; letter-spacing: .3px; }
+.refit-toolicon { width: 13px; height: 13px; flex-shrink: 0; }
+.refit-tool-reclaim { grid-column: auto; }
+.refit-tool .refit-key { font-size: 9px; border: 1px solid currentColor; padding: 1px 3px; opacity: .5; }
+.refit-dock .refit-tool.active { border-color: var(--ph-bright); color: var(--ph-bright); background: var(--ph-faint); box-shadow: inset 2px 0 var(--ph); }
+.refit-option-section { padding: 8px 10px; gap: 6px; min-height: 400px; }
+.refit-overlay[data-tool="prop"] .refit-option-section { min-height: calc(540px * var(--sn-unzoom,1)); }
+.refit-section-label { font-size: 10px; padding-bottom: 5px; }
+.refit-hint { flex: 0 0 auto; min-height: 0; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; background: var(--ui-face); }
+.refit-hint-verb { font-size: 12px; line-height: 1.25; }
+.refit-hint-keys { font-size: 10px; opacity: .65; }
+.refit-overlay[data-tool="prop"] .refit-hint:not(.is-feedback) { display: none; }
+.refit-dock.is-collapsed { bottom: auto; }
+.refit-dock.is-collapsed :is(.refit-option-section,.refit-mode-section,.refit-hint) { display: none; }
+.refit-selectnote { display: flex; flex-direction: column; gap: 7px; margin: 2px 0 14px; font-size: 13px; letter-spacing: .3px; }
+.refit-selectnote b { font-size: 23px; font-weight: 400; color: var(--ph-bright); }
+.refit-quicksteps { margin: 8px 0 0; padding: 0 0 0 20px; display: grid; gap: 10px; line-height: 1.35; }
+.refit-quicksteps li::marker { color: var(--ph-bright); }
+.refit-quicksteps b { font-size: inherit; }
+.refit-starts { display: grid; grid-template-columns: 1fr; width: 100%; gap: 8px; }
+.refit-start { position: relative; display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 12px; min-height: 88px; background: var(--ui-face), var(--panel2); border: 1px solid var(--ui-edge); border-radius: 3px; color: var(--ph-dim); cursor: pointer; font: 13px 'VT323',monospace; }
+.refit-start b { color: var(--ph-bright); font-weight: 400; font-size: 18px; padding-right: 16px; }
+.refit-start em { color: var(--ph); font-size: 10px; letter-spacing: 1px; font-style: normal; }
+.refit-start-key { position: absolute; right: 10px; top: 12px; opacity: .5; }
+.refit-start:hover { border-color: var(--ph); background: var(--ph-faint); }
+.refit-overlay[data-tool="prop"] .refit-palette { display: block; overflow-y: auto; padding: 0; }
+.refit-propworkspace { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.refit-propbrowser { display: flex; flex-direction: column; min-width: 0; min-height: calc(340px * var(--sn-unzoom,1)); overflow-y: auto; flex: 1; gap: 7px; }
+.refit-propworkspace.is-core-view .refit-core-access { display: none; }
+.refit-propworkspace.is-core-view .refit-access-head { margin-bottom: 0; }
+.refit-prop-sections { display: grid; grid-template-columns: .8fr 1.5fr 1fr; gap: 4px; flex: 0 0 auto; }
+.refit-prop-sections .bb { min-width: 0; padding: 7px 3px; font-size: 10px; line-height: 1.2; letter-spacing: .3px; white-space: normal; }
+.refit-prop-sections .active { border-color: var(--ph-bright); background: var(--ph-faint); color: var(--ph-bright); box-shadow: inset 0 -2px var(--ph); }
+.refit-ability-overview { flex: 0 0 auto; padding: 7px; border: 1px solid var(--ui-edge); border-radius: 3px; background: var(--ui-well-bg,var(--panel2)); }
+.refit-access-head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.refit-access-head label { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; font-size: 9px; letter-spacing: .4px; color: var(--ph-dim); }
+.refit-access-head .refit-input { min-width: 0; width: 0; flex: 1; font-size: 11px; padding: 3px 16px 3px 5px; }
+.refit-access-head .bb { padding: 3px 5px; font-size: 13px; }
+.refit-core-access { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 3px; }
+.refit-core-access .bb { min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 5px 1px; font-size: 9px; letter-spacing: 0; white-space: normal; }
+.refit-access-chip b { font-weight: 400; color: var(--ph-bright); font-size: 10px; }
+.refit-access-chip span { font-size: 8px; line-height: 1.1; }
+.refit-access-chip[data-state="available"] { border-color: var(--ok); }
+.refit-access-chip[data-state="available"] span { color: var(--ok); }
+.refit-access-chip[data-state="available"] b::before { content: '✓ '; }
+.refit-access-chip[data-state="missing"] b::before { content: '+ '; }
+.refit-access-chip[data-state="unknown"] b::before, .refit-access-chip[data-state="off"] b::before { content: '? '; }
+.refit-ability-intro { display: flex; flex-direction: column; gap: 5px; margin: 3px 0 9px; font-size: 11px; line-height: 1.3; color: var(--ph-dim); }
+.refit-ability-intro b { color: var(--ph-bright); font-weight: 400; font-size: 12px; letter-spacing: .6px; }
+.refit-ability-back { margin-bottom: 4px; }
+.refit-category-menu[hidden] { display: none; }
+.refit-propsearch { flex: 0 0 auto; }
+.refit-propsearch .refit-searchfield { font-size: 13px; letter-spacing: .2px; min-height: 30px; margin: 0; padding: 6px 8px; box-shadow: var(--ui-well); }
+.refit-shelves { display: flex; flex-direction: column; gap: 8px; min-height: 200px; flex: 1; }
+.refit-category-menu { position: relative; flex: 0 0 auto; min-width: 0; }
+.refit-category-menu > summary { display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; list-style: none; border: 1px solid var(--ui-edge); border-radius: 3px; background: var(--ui-face); }
+.refit-category-menu > summary::-webkit-details-marker { display: none; }
+.refit-category-label { font-size: 9px; color: var(--ph-dim); letter-spacing: .6px; }
+.refit-category-current { font-size: 12px; font-weight: 400; color: var(--ph-bright); }
+.refit-category-arrow { margin-left: auto; }
+.refit-category-menu[open] > summary { border-color: var(--ph); }
+.refit-propcats { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; padding: 7px; margin: 0; border: 1px solid var(--ph-dim); border-radius: 3px; background: var(--bg); box-shadow: 0 6px 20px #000; overflow-y: auto; max-height: min(280px,calc(45vh * var(--sn-unzoom,1))); }
+.refit-propcats .refit-propcat { display: flex; justify-content: space-between; align-items: center; gap: 4px; min-height: 30px; white-space: normal; text-align: left; font-size: 12px; letter-spacing: 0; padding: 6px; opacity: 1; border-color: transparent; background: transparent; box-shadow: none; }
+.refit-propcat small { opacity: .5; font-size: 9px; }
+.refit-propcats .refit-propcat.active { color: var(--ph-bright); border-color: var(--ui-edge); background: var(--ph-faint); box-shadow: inset 0 -1px var(--ph); }
+#refit-propgrid-host { overflow-y: auto; height: 0; min-height: 160px; flex: 1; padding-right: 5px; box-sizing: border-box; scrollbar-width: thin; }
+.refit-searchnote { font-size: 10px; letter-spacing: .5px; margin: 2px 0 8px; }
+.refit-propgrid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin: 0; padding: 0 0 5px; justify-content: initial; }
+.refit-dock .refit-proptile { width: auto; min-width: 0; min-height: 112px; padding: 28px 5px 6px; border: 1px solid var(--ui-edge); border-radius: 3px; background: var(--panel2); color: var(--ph-dim); gap: 4px; }
+.refit-proptile-lbl { white-space: normal; max-width: 100%; font-size: 13px; line-height: 1.1; overflow: visible; }
+.refit-proptile-size { font-size: 10px; color: var(--ph-dim); opacity: .7; }
+.refit-proptile-grant { display: flex; align-items: center; gap: 4px; font-size: 9px; top: 5px; left: 5px; right: 13px; border: 0; background: transparent; padding: 0; letter-spacing: .2px; text-align: left; line-height: 1.1; white-space: normal; }
+.refit-purpose-icon { width: 10px; height: 10px; flex-shrink: 0; image-rendering: pixelated; }
+.refit-proptile[data-purpose="decoration"] .refit-proptile-grant { opacity: .8; }
+.refit-core-grid { grid-template-columns: 1fr; gap: 3px; }
+.refit-dock .refit-core-card { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; grid-template-rows: auto; align-items: center; min-height: 0; gap: 5px; padding: 3px 7px; text-align: left; }
+.refit-core-card .refit-proptile-cv { grid-column: 1; grid-row: 1; width: 24px !important; height: 18px !important; }
+.refit-core-card .refit-proptile-grant, .refit-core-card .refit-proptile-size { display: none; }
+.refit-core-card .refit-proptile-lbl { grid-column: 2; grid-row: 1; color: var(--ph-bright); font-size: 12px; }
+.refit-core-status { grid-column: 3; grid-row: 1; font-size: 8px; padding-right: 10px; }
+.refit-propworkspace.is-core-view .refit-ability-intro:first-child > span { display: none; }
+.refit-core-card[data-state="available"] .refit-core-status { color: var(--ok); }
+.refit-core-card[data-state="missing"] .refit-core-status { color: var(--ph-bright); }
+.refit-dock .refit-proptile.active { border-color: var(--ph-bright); box-shadow: inset 0 -2px var(--ph), var(--ui-well); background: var(--ph-faint); color: var(--ph-bright); }
+.refit-dock .refit-proptile.active::after { content: '✓'; position: absolute; right: 5px; top: 3px; color: var(--ph-bright); }
+.refit-propinspector { display: flex; flex-direction: column; flex: 0 0 auto; min-width: 0; min-height: 0; border: 1px solid var(--ui-edge); border-radius: 3px; padding: 8px; background: var(--ui-face); }
+.refit-selected-prop { display: grid; margin: 0; border: 0; border-radius: 0; padding: 0; background: none; box-shadow: none; grid-template-columns: 52px minmax(0,1fr); gap: 4px; }
+.refit-preview-art { min-height: 58px; border-radius: 2px; }
+.refit-preview-art canvas { width: 56px; height: 56px; }
+.refit-preview-info { display: grid; grid-template-columns: minmax(0,1fr) auto; font-size: 10px; gap: 2px; align-items: center; }
+.refit-preview-info b { grid-column: 1 / -1; grid-row: 1; }
+.refit-preview-info .refit-preview-grant { grid-column: 1 / -1; grid-row: 2; }
+.refit-preview-info > span:not(.ui-overline):not(.refit-preview-grant) { grid-column: 1; grid-row: 3; }
+.refit-preview-info .refit-preview-actions { grid-column: 2; grid-row: 3; }
+.refit-preview-info b { font-size: 16px; }
+.refit-preview-info .refit-preview-grant { display: block; font-size: 10px; letter-spacing: .3px; color: var(--ph-bright); }
+.refit-preview-actions .bb.xs { font-size: 10px; padding: 3px 5px; min-height: 22px; }
+.refit-placement-note { display: block; grid-column: 1 / -1; font-size: 10px; color: var(--ph-dim); line-height: 1.35; }
+.refit-propinspector .refit-equipment-info { grid-column: 1 / -1; display: block; padding: 6px 0; margin: 0; border: 0; border-top: 1px solid var(--ui-edge); background: none; color: var(--ph-dim); font-size: 11px; line-height: 1.3; }
+.refit-purpose { margin: 0 0 6px; color: var(--ph-bright); }
+/* Keep browsing primary: details expand in place without enlarging the preview.
+   A complete gallery row remains available even when UI scaling makes the chrome taller. */
+.refit-propworkspace .refit-propinspector { padding: 6px; }
+.refit-propworkspace .refit-selected-prop { grid-template-columns: 36px minmax(0,1fr); }
+.refit-propworkspace .refit-preview-art { min-height: 36px; }
+.refit-propworkspace .refit-preview-art canvas { width: 34px; height: 34px; }
+.refit-propworkspace:not(.show-details) :is(.refit-equipment-info,.refit-placement-note) { display: none; }
+.refit-propworkspace:not(.show-details) :is(.equipment-status,.refit-equipment-scope) { display: none; }
+.equipment-status { margin-bottom: 6px; }
+.refit-equipment-scope { font-size: 10px; }
+.refit-equipment-detail { display: none; margin-top: 10px; }
+.refit-propworkspace.show-details .refit-equipment-detail { display: block; }
+.refit-prop-more { display: flex; gap: 5px; margin-top: 5px; }
+.refit-prop-more .bb { flex: 1; min-width: 0; padding: 4px 2px; margin: 0; font-size: 10px; letter-spacing: .3px; }
+.refit-designs { padding: 3px; font-size: 10px; }
+.refit-propinspector .refit-input { font-size: 12px; max-width: 100%; }
+.refit-dock .refit-details-toggle { display: flex; order: 1; justify-content: center; padding: 3px; margin-top: 4px; font-size: 10px; }
+.refit-propworkspace.show-details .refit-equipment-info { display: block; max-height: calc(140px * var(--sn-unzoom,1)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.refit-propworkspace .refit-placement-note { display: none; }
+.refit-dock :is(button,input,select,summary):focus-visible { outline: 2px solid var(--ph-bright); outline-offset: 2px; }
+.refit-selection { display:grid; gap:7px; padding:12px; border-block:1px solid var(--gold); background:var(--panel); flex-shrink:0; }
+.refit-selection[hidden] { display:none; }
+.refit-selection > span { font-size:12px; color:var(--muted); }
+.refit-selection-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+.refit-selection-actions .bb { min-height:30px; padding:5px; }
+.refit-overlay.has-selection[data-tool="select"] #refit-option-section { display:none; }
+.refit-finline { max-height: calc(100vh * var(--sn-unzoom,1) - 150px); overflow-y: auto; }
+@container (max-width: 270px) {
+  .refit-propcat small, .refit-tool .refit-key { display: none; }
+  .refit-propcats .refit-propcat { font-size: 11px; }
+  .refit-hint-keys { display: none; }
+}
+@media (max-width: 1100px) { .refit-dock { top: 88px; } }
+.refit-position{font-size:12px;color:var(--muted,#ad9b79)}
+.refit-object-finder{width:100%;min-height:38px;padding:8px;color:var(--text,#e6d5a5);background:var(--panel,#16130d);border:1px solid var(--border,#746546);font:inherit}
+.refit-position summary{cursor:pointer;padding:5px 0}
+.refit-position label{display:inline-flex;gap:5px;align-items:center;margin:6px 8px 6px 0}
+.refit-position input{width:70px;background:#16130d;color:#e6d5a5;border:1px solid #746546;padding:5px}
+@media (max-height: 740px) {
+  .refit-dock .refit-tool { min-height: 25px; padding-top: 3px; padding-bottom: 3px; }
+}
+@media (max-height: 650px) {
+  .refit-dock { overflow-y: auto; scrollbar-width: thin; }
+  .refit-dock-head { position: sticky; top: 0; z-index: 2; background: var(--panel); }
+  .refit-option-section { flex: 0 0 410px; }
+  .refit-overlay[data-tool="prop"] .refit-option-section { flex-basis: calc(540px * var(--sn-unzoom,1)); }
+}

@@ -1,0 +1,92 @@
+# Exact, reviewed false-positive fingerprints from the pre-publication full-history scan.
+# Do not add path-wide or rule-wide exclusions: new findings must still fail the gate.
+#
+# Test fixtures exercise redaction, token parsing, TLS, and secret-removal behavior.
+011e7c7d44dd0653d2464e1b9d9e9ec5c077eba8:test/saveversion.test.js:generic-api-key:633
+12b2b3745ffcd1a83a380ada4ad23c2fdea9eebd:test/codex-auth-state.test.js:generic-api-key:22
+12b2b3745ffcd1a83a380ada4ad23c2fdea9eebd:test/codex-status.e2e.test.js:jwt:45
+12b7726ab97f9c4595065ce27b7f8b250c203282:test/network-policy.test.js:private-key:25
+262415808030f25159e741e7cfe29b84feee4019:test/context.test.js:gcp-api-key:79
+262415808030f25159e741e7cfe29b84feee4019:test/context.test.js:stripe-access-token:82
+27eafe28fa7dbc956da9e26712b151c6e84c352d:test/shell-bg.test.js:curl-auth-header:94
+2e2430780d039e99ec3d7d5be7bdfa808397f12b:test/lint-evidence-secrets.test.js:generic-api-key:27
+4e889eafd40b32b2909f3edf5dcc10c90a36e429:test/oauth-status.e2e.test.js:jwt:42
+836a32b12dd281207af6fea6884cd4701048b5c1:test/saveversion.test.js:generic-api-key:617
+836a32b12dd281207af6fea6884cd4701048b5c1:test/saveversion.test.js:generic-api-key:674
+8c985cd2bdbd14c39d1472c1c8a7209ffe01eef2:test/diagnostics.test.js:jwt:23
+985b1e47714580ac1fd9d5f476e8a366537a9246:test/saveversion.test.js:generic-api-key:313
+aef8b47ce014cc661dd95f18210ac3731edbc48f:test/consent-details.test.js:curl-auth-header:60
+dd1d2468aa8fb6e78fca8f858890a5d2f0d9b0d6:test/saveversion.test.js:generic-api-key:250
+dd1d2468aa8fb6e78fca8f858890a5d2f0d9b0d6:test/saveversion.test.js:generic-api-key:251
+
+# Public Edge Read Aloud trusted-client token (not an account credential).
+6a14a266a0b3f49a33e8243aa928918d7a460773:sidecar/edgetts.js:generic-api-key:21
+
+# Deleted vendored audit rule that matched example text rather than a credential.
+5e9e25666876a0a4bc17ab0e96597f567f1bab7a:skills/vendor/threejs-game-skills/skills/threejs-game-director/scripts/audit_reference_report.py:generic-api-key:137
+
+# Test fixtures from the 2026-07-18 service-keys + openai-compat lanes (fake rk-live /
+# sk_test / e2e-secret strings; verified not real keys before ignoring — v0.5.3 session).
+f79ee6308764f85221a805bff14b905a12f759dc:test/servicekeys.http.test.js:generic-api-key:50
+2ed9fedf08e1c5aab5c26f9b045c16ab7b3ecee9:test/servicekeys.test.js:generic-api-key:75
+a5d72b7232f29e7c2d3ccf81a91d27217bc69559:test/openai-compat.e2e.test.js:generic-api-key:23
+
+# Reviewed 2026-08-02: synthetic values in a redaction unit fixture and a QA bug
+# reproduction. Exact fingerprints only; future findings in either file still fail.
+9ce703b633d1ed2a97149828809a1882ca257bf4:test/agent-eval.test.js:generic-api-key:26
+183a238dd36444e2d712b5585bdf0e00317ef529:qa/bugs/14d4f234-the-keys-tab-unattended-grant-is-enforced-only-a.md:generic-api-key:21
+
+# Reviewed 2026-08-07: deterministic fake provider/redaction values added by the live-doctor
+# test lane. Exact commit/file/rule/line fingerprints only; future findings still fail.
+14e256ba326e6445756403f12f236b038fecdc9d:test/live-doctor.e2e.test.js:generic-api-key:36
+14e256ba326e6445756403f12f236b038fecdc9d:test/live-doctor.test.js:generic-api-key:32
+
+# Reviewed 2026-09-03: the literal fake key 'sk-or-v1-reliability-proof' handed to the mock-provider
+# reliability seed (points at a local mock server; never a real credential). This single finding kept
+# secret-history red on every trunk push from v0.10.11 to v0.10.13. Exact fingerprint only.
+453be7fa0025c955c0efbd0c608a298ed4fd404a:dev/seed-mock-reliability.js:generic-api-key:91
+
+# Reviewed 2026-09-10: deterministic dummy provider key in the rating-upgrade test.
+# Its sidecar points exclusively at the test's 127.0.0.1 mock HTTP server. Exact
+# historical fingerprint only; future findings in this test still fail the scan.
+a55a1ed0705fa53763ee03600322ddb3afd35ce0:test/growth-rating-upgrade.e2e.test.js:generic-api-key:36
+
+# Reviewed 2026-09-11: delegatedFullAccess contains the real Git commit ID
+# b4bcdac904f5574ee4541c0cfae5de400592ee69, not a credential. Verified the
+# historical JSON field and Git object. Ignore only this exact finding.
+a6f05c505b4e1b75fafbb320f302ba9ebd21cd73:qa/evidence/0.11.2-issues-12-13/verification.json:generic-api-key:8
+
+# Reviewed 2026-09-16: the literal sk-or-v1-rating-fixture is a deterministic
+# test value sent only to the rating test's 127.0.0.1 mock provider.
+da0658486766805a2cd3da2e4e4243081c108a11:test/growth-rating-upgrade.e2e.test.js:generic-api-key:29
+da0658486766805a2cd3da2e4e4243081c108a11:test/growth-rating-upgrade.e2e.test.js:generic-api-key:36
+
+# Reviewed 2026-09-16: generated image UUIDs in the Secret Agent art catalog
+# and its source PNG filename, not authentication credentials.
+ebe55d5fe24ee35804b554907d7564948c523a07:output/agent-animation-study/approved-motion/characters.json:generic-api-key:2
+95502157768fdf77ae6e4d0c70cae454fb11d194:output/agent-animation-study/readability-v1/README.md:generic-api-key:3
+87fd4e495fdf06871723990331b7b0c85ba69d2b:output/agent-animation-study/characters.json:generic-api-key:6
+
+# Reviewed 2026-09-16: industrial_partition-r1 and industrial_partition-r3
+# are image/rotation keys for the west/east partition artwork. Keep every
+# exception bound to its exact historical commit, file, rule and line.
+8d7b571ae30413fec1851cfae197b630dceafa36:docs/station-remaster/catalog-storage-rest-1/assignment-contracts.json:generic-api-key:2640
+8d7b571ae30413fec1851cfae197b630dceafa36:docs/station-remaster/catalog-storage-rest-1/assignment-contracts.json:generic-api-key:2656
+eef21c982c9cacd73e6db3e24baf5e2d798cbeee:dev/industrial-textures/coordinated-batch03-recipes.json:generic-api-key:292
+eef21c982c9cacd73e6db3e24baf5e2d798cbeee:dev/industrial-textures/coordinated-batch03-recipes.json:generic-api-key:356
+3d445dbcc5b3b927c1fe148d9ceca2dc11e0a075:dev/industrial-textures/prop-structure-manifest.json:generic-api-key:142
+3d445dbcc5b3b927c1fe148d9ceca2dc11e0a075:dev/industrial-textures/prop-structure-manifest.json:generic-api-key:158
+
+# SHA-256 digests in release evidence (installer hash, log-file hash) — hex, not credentials. Reviewed 2026-09-26.
+2e7d5e71d079c3ea7bab03df2853548806a08e02:docs/releases/0.12.4/NATIVE_RESULTS.md:generic-api-key:12
+f74ba86aafee94930c1509692edda568ce96a7cd:qa/evidence/systemic-bugs-0919/validation.json:generic-api-key:70
+
+# Deliberately secret-SHAPED test fixtures (redaction, keychain migration, process-fault and shell-ledger tests):
+# synthetic token-shaped strings built from sequential digits and letters. Reviewed 2026-09-27.
+49be8d8de7c6bd7e103d562086b533ef45ecff4e:test/channels.keychain-all.e2e.test.js:slack-app-token:30
+ff00d7ccdb6cad7c0dbf0aefee41d7401f9ee84d:test/process-fault.test.js:generic-api-key:38
+ff00d7ccdb6cad7c0dbf0aefee41d7401f9ee84d:test/process-fault.test.js:generic-api-key:44
+eae4248a82dbe17c4a1eebada1c3759cb0402f61:test/redact.known-values.test.js:slack-app-token:24
+99a6dccb9a947be703515dd39c1502900932e28a:test/shell.fg-ledger.test.js:curl-auth-header:102
+# The comment above first quoted one of those fixtures, which the history scan then read as a key in this file.
+1b01aae6c5aa7224b92a1ce029c73ff9aa99a4ea:.gitleaksignore:generic-api-key:85

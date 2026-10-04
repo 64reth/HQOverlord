@@ -1,0 +1,112 @@
+/* STARNET — topbar.css : the TOPBAR INSTRUMENT CLUSTER.
+   One coherent cockpit gauge group in #topbar, right of the logo:
+   STATION (level + XP sliver) · UPLINK · ONLINE · save.
+   Built in the premium CRT hardware language (recessed wells, hairline separators,
+   small dim labels over bright values — the dossier stat-well vocabulary in a
+   compact horizontal form). Additive layer over style.css/app.css/motion.css.
+
+   Rules of this file (same contract as motion.css):
+   - Never a hardcoded colour — only the existing phosphor / role vars, so every
+     theme (amber/green/blue/purple/red/mono) re-tints correctly.
+   - Animate only transform / opacity / colour / border / box-shadow — never layout
+     on a hot path; the 60fps canvas runs behind the chrome.
+   - Composite vars referencing vars would live on `body`; this file uses none. */
+
+/* the cluster wrapper — a single instrument row that lays flat right of the logo.
+   tb-stats already holds it; this styles the members + separators. */
+#topbar .tb-stats { gap: 0; flex-wrap: nowrap; min-width: 0; }
+
+/* hairline separator between instruments — a milled groove line, faint at the ends */
+#topbar .tb-sep {
+  align-self: center; width: 1px; height: 26px; flex: 0 0 auto; margin: 0 2px;
+  background: linear-gradient(180deg, transparent, var(--ph-faint) 18%, var(--ph-dim) 50%, var(--ph-faint) 82%, transparent);
+  opacity: 0.7;
+}
+
+/* ---- a generic instrument WELL: dim label over a bright value, recessed plate ---- */
+.tb-inst {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: 1px; padding: 3px 12px; flex: 0 0 auto; min-width: 0;
+}
+.tb-inst .tb-lbl {
+  font-size: 10px; letter-spacing: var(--ls-3); color: var(--ph-dim);
+  line-height: 1; text-shadow: none; white-space: nowrap;
+}
+.tb-inst .tb-val {
+  font-size: 17px; letter-spacing: var(--ls-2); color: var(--ph-bright); line-height: 1.05;
+  text-shadow: 0 0 8px var(--ph-glow2); white-space: nowrap;
+}
+
+/* ---- STATION chip: keep its gold-ringed identity, add an XP progress sliver ---- */
+/* .tb-stat.station is styled in app.css (gold border + gold value + lvup pulse). We
+   only add the XP sliver underneath and tighten the vertical layout to fit it. */
+#tb-station { position: relative; gap: 3px; }
+#tb-station .tb-xp {
+  /* a thin recessed groove: station XP toward the next level. Mirrors the ctx-gauge
+     engraving language (dark groove, top inner-shadow, faint lower lip). */
+  position: relative; width: 100%; min-width: 74px; height: 4px; border-radius: 2px; overflow: hidden;
+  background: rgba(0,0,0,0.55);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.9), inset 0 -1px 0 rgba(255,255,255,0.05);
+}
+#tb-station .tb-xp-fill {
+  display: block; height: 100%; width: 0%;
+  background: var(--gold); box-shadow: 0 0 6px rgba(var(--gold-rgb),0.5);
+  transition: width var(--t-slow, 400ms) var(--ease-out, ease);
+}
+/* level-up: the app.css .lvup pulse fires on #tb-station; give the sliver a matching
+   brief bright sweep (opacity only) so the whole chip celebrates as a unit. */
+#tb-station.lvup .tb-xp-fill { animation: tb-xp-pop 1.2s var(--ease-out, ease); }
+@keyframes tb-xp-pop { 0% { filter: brightness(2.2); } 100% { filter: brightness(1); } }
+
+/* ---- the moved-up STATUS group: UPLINK meter · ONLINE pill · save dot ----
+   These carry their ORIGINAL ids (#sig / #status-pill / #save-dot) so their existing
+   writers (main.js save(), stationui.js tick()/flashSave()) keep working untouched.
+   style.css / app.css already style #sig and #status-pill; we only lay them out here
+   inside the topbar cluster (their own rules were written screen-agnostic). */
+#topbar .tb-status { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; padding: 0 12px; }
+#topbar #sig { display: inline-flex; align-items: baseline; gap: 4px; }
+/* the ONLINE pill reads a touch smaller in the top chrome so it doesn't tower over the wells */
+#topbar #status-pill { font-size: 12px; padding: 1px 10px; }
+#topbar #save-dot { font-size: 13px; }
+
+/* ============================================================
+   RESPONSIVE — degrade gracefully; hide labels before values so the
+   row never wraps/overflows at 1280 and narrower.
+   ============================================================ */
+/* tighten spacing on mid widths */
+@media (max-width: 1280px) {
+  .tb-inst { padding: 3px 9px; }
+  #topbar .tb-status { gap: 8px; padding: 0 9px; }
+}
+/* drop the small dim labels first — the bright values still read the instruments */
+@media (max-width: 1150px) {
+  .tb-inst .tb-lbl { display: none; }
+  #topbar #sig { letter-spacing: 0; }
+}
+/* very narrow: shed the UPLINK meter's glyphs + the save dot, keep level/spend/status */
+@media (max-width: 1000px) {
+  #topbar #sig b { display: none; }
+  #topbar #save-dot { display: none; }
+  #topbar .tb-sep { margin: 0; }
+}
+/* extreme: the logo subtitle is already hidden by style.css here; keep only the core
+   STATION number + the ONLINE pill so nothing overflows. */
+@media (max-width: 860px) {
+  #topbar #sig { display: none; }
+}
+/* MOBILE CONTROL REACHABILITY: keep connection status in the header;
+   the pinnable rail and level lamp move out of the narrow one-row budget. */
+@media (max-width: 600px) {
+  #topbar { padding-inline: 8px; }
+  #topbar #wr-top,
+  #topbar #tb-station,
+  #topbar .tb-sep { display: none; }
+  #topbar .tb-stats { flex: 0 0 auto; padding-inline: 6px; }
+  #topbar .tb-status { gap: 4px; padding: 0; }
+  #topbar #status-pill { padding-inline: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tb-station.lvup .tb-xp-fill,
+  #tb-station .tb-xp-fill { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

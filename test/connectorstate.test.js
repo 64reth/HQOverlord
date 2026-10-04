@@ -1,0 +1,20 @@
+'use strict';
+const A = require('./_assert.js');
+const S = require('../sidecar/connectorstate.js');
+
+const oauth = { byId: { notion: { accessToken: 'secret', refreshToken: 'refresh', clientSecret: 'confidential', tokenEndpointAuthMethod: 'client_secret_post', authorizationServer: 'https://as.example' } }, clients: { 'https://as.example': { clientId: 'client', clientSecret: 'confidential', tokenEndpointAuthMethod: 'client_secret_post' }, 'https://other.example': { clientId: 'other' } } };
+const start = S.envelope([{ id: 'notion', oauth: true }, { id: 'plain', token: 'key' }], oauth);
+A.eq(start.version, 2, 'state envelope is versioned');
+A.eq(start.oauth.clients['https://as.example'].clientSecret, 'confidential', 'DCR client secret survives the protected envelope round trip');
+const removed = S.removeConnector(start, 'notion');
+A.eq(removed.configs.length, 1, 'removal deletes exactly one connector config');
+A.eq(removed.configs[0].id, 'plain', 'unrelated connector config survives');
+A.eq(removed.oauth.byId.notion, undefined, 'removal deletes the matching OAuth token in the same envelope');
+A.eq(removed.oauth.clients['https://as.example'], undefined, 'removal deletes the matching DCR client in the same envelope');
+A.eq(removed.oauth.clients['https://other.example'].clientId, 'other', 'unrelated DCR cache survives');
+A.eq(start.configs.length, 2, 'transaction builder does not mutate the old in-memory state');
+A.ok(S.same(removed, JSON.parse(JSON.stringify(removed))), 'read-back comparison accepts the exact durable envelope');
+A.eq(S.same(removed, start), false, 'read-back comparison rejects stale state');
+const migrated = S.normalize(null, { configs: [{ id: 'legacy' }], oauth: { byId: {}, clients: {} } });
+A.eq(migrated.configs[0].id, 'legacy', 'legacy split files migrate into the v2 envelope');
+A.report('connectorstate.test');

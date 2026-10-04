@@ -1,0 +1,280 @@
+# T0 clean-install proof — install the exact staged release installer on a FRESH ephemeral
+# Windows VM (a genuinely clean machine: no dev tools, no prior StarNet state, brand-new user
+# profile), observe first launch via the WebView2 CDP port, and emit a
+# starnet.clean-install-proof.v1 evidence JSON for import on the operator machine with
+# STARNET_T0_CLEAN_EVIDENCE (scripts/t0-clean-install.mjs).
+#
+# WHY CI: the operator machine runs Windows 11 Home (no Windows Sandbox / Hyper-V), and a
+# dev box can never earn T0 by definition. Each GitHub-hosted runner is a one-shot clean VM.
+name: t0-clean-install-proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag whose staged draft installer to prove, e.g. v0.10.0"
+        required: true
+      build_run_id:
+        description: "Optional private desktop-build run; proves its exact installer before a draft exists"
+        required: false
+        default: ""
+      installer_sha256:
+        description: "Required expected installer SHA-256 when build_run_id is supplied"
+        required: false
+        default: ""
+      candidate_manifest:
+        description: "Optional prepared updater manifest for the private candidate; includes updater-smoke when supplied"
+        required: false
+        default: ""
+      baseline_tag:
+        description: "Optional historical public release to populate, then reinstall the private candidate over (e.g. v0.11.1)"
+        required: false
+        default: ""
+      verify_static_level:
+        description: "Verify CRT static settings and persistence in the installed candidate"
+        required: false
+        default: "false"
+
+jobs:
+  prove:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+      REPO: androoAGI/starnet-releases
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Download staged draft installer
+        if: inputs.build_run_id == ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force dist | Out-Null
+          gh release download $env:TAG --repo $env:REPO --pattern '*-setup.exe' --dir dist
+          $installer = Get-ChildItem dist -Filter '*-setup.exe' | Select-Object -First 1
+          if ($null -eq $installer) { throw "no installer asset on $env:TAG" }
+          "INSTALLER=$($installer.FullName)" >> $env:GITHUB_ENV
+
+      - name: Download and verify private candidate installer
+        if: inputs.build_run_id != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+          EXPECTED_SHA256: ${{ inputs.installer_sha256 }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:BUILD_RUN_ID -notmatch '^\d+$') { throw 'Invalid build run ID' }
+          if ($env:EXPECTED_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'Expected SHA-256 is required' }
+          $run = gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN_ID" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.path -ne '.github/workflows/desktop-build.yml' -or $run.status -ne 'completed') { throw 'Not a completed desktop-build run' }
+          # Checkout happens after first-launch proof and cleans GITHUB_WORKSPACE.
+          # Keep the verified installer outside it for the later signature check.
+          $candidateDir = Join-Path $env:RUNNER_TEMP 'starnet-candidate'
+          gh run download $env:BUILD_RUN_ID --repo $env:GITHUB_REPOSITORY --name starnet-win-x64 --dir $candidateDir
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate artifact download failed' }
+          $installers = @(Get-ChildItem -LiteralPath $candidateDir -Recurse -Filter '*-setup.exe')
+          if ($installers.Count -ne 1) { throw 'Expected exactly one candidate installer' }
+          $installer = $installers[0]
+          $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower()
+          if ($hash -ne $env:EXPECTED_SHA256.ToLower()) { throw 'Installer hash mismatch' }
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          if ($signature.Status -ne 'Valid') { throw "Installer signature is $($signature.Status)" }
+          "INSTALLER=$($installer.FullName)" >> $env:GITHUB_ENV
+          "CANDIDATE_SOURCE=$($run.head_sha)" >> $env:GITHUB_ENV
+          "CANDIDATE_BUILD_RUN=$env:BUILD_RUN_ID" >> $env:GITHUB_ENV
+
+      - name: Install silently (default per-user path) and record identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $h = Get-FileHash $env:INSTALLER -Algorithm SHA256
+          $bytes = (Get-Item $env:INSTALLER).Length
+          $p = Start-Process -FilePath $env:INSTALLER -ArgumentList '/S' -WindowStyle Hidden -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "installer exited $($p.ExitCode)" }
+          $exe = Get-ChildItem "$env:LOCALAPPDATA" -Recurse -Filter 'skynet-desktop.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'StarNet' } | Select-Object -First 1
+          if ($null -eq $exe) { throw "installed skynet-desktop.exe not found under LOCALAPPDATA" }
+          "EXE=$($exe.FullName)" >> $env:GITHUB_ENV
+          "INSTALL_DIR=$($exe.DirectoryName)" >> $env:GITHUB_ENV
+          "INSTALLER_SHA256=$($h.Hash.ToLower())" >> $env:GITHUB_ENV
+          "INSTALLER_BYTES=$bytes" >> $env:GITHUB_ENV
+
+      - name: First launch, prove packaged UI is up via CDP, prove workspace location
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9333'
+          $proc = Start-Process -FilePath $env:EXE -WindowStyle Hidden -PassThru
+          $targets = $null
+          foreach ($i in 1..120) {
+            Start-Sleep -Seconds 1
+            try {
+              $targets = Invoke-RestMethod "http://127.0.0.1:9333/json/list" -TimeoutSec 2
+              $page = $targets | Where-Object { $_.type -eq 'page' -and $_.url -match 'tauri\.localhost' }
+              if ($page) { break } else { $targets = $null }
+            } catch { $targets = $null }
+            if ($proc.HasExited) { throw "app exited early with code $($proc.ExitCode)" }
+          }
+          if ($null -eq $targets) { throw "WebView2 CDP never exposed a tauri.localhost page within 120s" }
+          $page = $targets | Where-Object { $_.type -eq 'page' -and $_.url -match 'tauri\.localhost' } | Select-Object -First 1
+          "PAGE_URL=$($page.url)" >> $env:GITHUB_ENV
+          "PAGE_TITLE=$($page.title)" >> $env:GITHUB_ENV
+          # give first-boot a moment to create the workspace, then prove where it lives
+          $ws = "$env:APPDATA\ai.skynet.harness\workspaces"
+          foreach ($i in 1..60) { if (Test-Path $ws) { break }; Start-Sleep -Seconds 1 }
+          if (-not (Test-Path $ws)) { throw "workspace root not created at $ws" }
+          "WORKSPACE_ROOT=$ws" >> $env:GITHUB_ENV
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+
+      - name: Emit clean-install-proof.v1 evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $os = Get-CimInstance Win32_OperatingSystem
+          $doc = [ordered]@{
+            schema      = 'starnet.clean-install-proof.v1'
+            generatedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+            machineKind = 'github-hosted-ephemeral-windows-vm'
+            cleanMachine = $true
+            sourceMachine = [ordered]@{
+              hostname = $env:COMPUTERNAME
+              image    = "$env:ImageOS $env:ImageVersion"
+              os       = "$($os.Caption) $($os.Version)"
+              runId    = "$env:GITHUB_RUN_ID"
+            }
+            installer = [ordered]@{
+              name   = (Split-Path $env:INSTALLER -Leaf)
+              sha256 = $env:INSTALLER_SHA256
+              bytes  = [long]$env:INSTALLER_BYTES
+              tag    = $env:TAG
+              buildRun = $env:CANDIDATE_BUILD_RUN
+              sourceCommit = $env:CANDIDATE_SOURCE
+            }
+            install = [ordered]@{
+              succeeded       = $true
+              installLocation = $env:INSTALL_DIR
+              silent          = $true
+            }
+            launch = [ordered]@{
+              succeeded     = $true
+              exePath       = $env:EXE
+              workspaceRoot = $env:WORKSPACE_ROOT
+              pageUrl       = $env:PAGE_URL
+              pageTitle     = $env:PAGE_TITLE
+              cdpProven     = $true
+            }
+            notes = @(
+              'Fresh GitHub-hosted Windows runner: brand-new VM image, no prior StarNet state, no repo checkout, no dev toolchain used by the app.',
+              'First launch proven by attaching to the WebView2 CDP endpoint and observing a live tauri.localhost page.',
+              'Workspace observed under the roaming AppData identifier, outside the install directory.'
+            )
+          }
+          $doc | ConvertTo-Json -Depth 6 | Out-File clean-install-proof.json -Encoding utf8
+          Get-Content clean-install-proof.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clean-install-proof-${{ inputs.tag }}
+          if-no-files-found: error
+          path: clean-install-proof.json
+
+      # The clean-machine proof above runs before checkout or setup-node. Once it is
+      # captured, also exercise the actual shell close/reopen cases on this disposable VM.
+      # Updater feed acceptance remains owed against the eventual staged draft.
+      - uses: actions/checkout@v4
+        if: inputs.build_run_id != ''
+        with:
+          # The verifier may be newer than the installer. Resolve the installer's
+          # exact source tree for the installed-smoke identity check.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        if: inputs.build_run_id != ''
+        with:
+          node-version: 22
+
+      - name: Candidate shell close and reopen acceptance
+        if: inputs.build_run_id != ''
+        shell: pwsh
+        env:
+          CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cli = @('scripts/qa/packaged-lifecycle.mjs', "--exe=$env:EXE", "--install-dir=$env:INSTALL_DIR", "--tag=$env:TAG", '--out=candidate-lifecycle.json')
+          if ($env:CANDIDATE_MANIFEST) {
+            $manifest = $env:CANDIDATE_MANIFEST | ConvertFrom-Json
+            if ("v$($manifest.version)" -ne $env:TAG) { throw 'Candidate manifest version mismatch' }
+            # Private builds store updater signatures separately from the Windows
+            # installer artifact. Verify the manifest's signature against the bytes.
+            Set-Content -LiteralPath candidate-installer.sig -Value $manifest.platforms.'windows-x86_64'.signature -Encoding utf8NoBOM
+            node scripts/minisign-verify.mjs "--artifact=$env:INSTALLER" --sig=candidate-installer.sig
+            if ($LASTEXITCODE -ne 0) { throw 'Candidate manifest signature does not verify against this installer' }
+            Set-Content -LiteralPath candidate-latest.json -Value $env:CANDIDATE_MANIFEST -Encoding utf8NoBOM
+            $cli += '--tag-feed-path=candidate-latest.json'
+          } else { $cli += '--cases=idle-close,close-to-tray' }
+          node @cli
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate shell lifecycle failed' }
+
+      - name: Collect candidate lifecycle evidence
+        if: always() && inputs.build_run_id != ''
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force candidate-evidence | Out-Null
+          if (Test-Path candidate-lifecycle.json) { Copy-Item -LiteralPath candidate-lifecycle.json -Destination candidate-evidence/ }
+          if (Test-Path candidate-latest.json) { Copy-Item -LiteralPath candidate-latest.json -Destination candidate-evidence/ }
+          $log = Join-Path $env:APPDATA 'ai.skynet.harness/startup.log'
+          if (Test-Path -LiteralPath $log) { Copy-Item -LiteralPath $log -Destination candidate-evidence/startup.log }
+
+      - name: Historical public installer to candidate continuity
+        if: inputs.build_run_id != '' && inputs.baseline_tag != ''
+        shell: pwsh
+        env:
+          BASELINE_TAG: ${{ inputs.baseline_tag }}
+          PROOF_STATIC_LEVEL: ${{ inputs.verify_static_level }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:BASELINE_TAG -notmatch '^v\d+\.\d+\.\d+$') { throw 'Invalid baseline tag' }
+          $release = gh release view $env:BASELINE_TAG --repo $env:REPO --json isDraft,isPrerelease | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $release.isDraft -or $release.isPrerelease) { throw 'Baseline must be a published stable release' }
+          $baselineDir = Join-Path $env:RUNNER_TEMP 'starnet-public-baseline'
+          gh release download $env:BASELINE_TAG --repo $env:REPO --pattern '*-setup.exe' --dir $baselineDir
+          if ($LASTEXITCODE -ne 0) { throw 'Public baseline download failed' }
+          $files = @(Get-ChildItem -LiteralPath $baselineDir -Filter '*-setup.exe')
+          if ($files.Count -ne 1) { throw 'Expected one historical installer' }
+          if ((Get-AuthenticodeSignature $files[0].FullName).Status -ne 'Valid') { throw 'Historical installer signature invalid' }
+          $env:BASELINE_INSTALLER = $files[0].FullName
+          $env:BASELINE_VERSION = $env:BASELINE_TAG.Substring(1)
+          node scripts/qa/public-upgrade-continuity.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Historical public-to-candidate continuity failed' }
+
+      - name: Installed provider fallback, delegated connectors and session continuity
+        if: inputs.build_run_id != '' && inputs.baseline_tag != ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installedNode = Join-Path (Split-Path $env:EXE) 'node.exe'
+          New-Item -ItemType Directory -Force candidate-evidence | Out-Null
+          foreach ($suite in @('saved-provider-fallback.e2e.test.js', 'delegated-connectors.e2e.test.js', 'session-reliability.e2e.test.js', 'spend-authority.http.test.js')) {
+            & $installedNode scripts/qa/installed-customer-regressions.cjs $suite 2>&1 | Tee-Object -FilePath "candidate-evidence/$suite.log"
+            if ($LASTEXITCODE -ne 0) { throw "Installed scenario failed: $suite" }
+          }
+
+      - name: Collect public upgrade evidence
+        if: always() && inputs.build_run_id != '' && inputs.baseline_tag != ''
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force candidate-evidence | Out-Null
+          if (Test-Path public-upgrade-continuity.json) { Copy-Item -LiteralPath public-upgrade-continuity.json -Destination candidate-evidence/ }
+          if (Test-Path .dogfood/session-reliability/live.json) { Copy-Item -LiteralPath .dogfood/session-reliability/live.json -Destination candidate-evidence/session-continuity.json }
+          if (Test-Path qa/installed) { Copy-Item -LiteralPath qa/installed -Destination candidate-evidence/installed-smoke -Recurse }
+
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.build_run_id != ''
+        with:
+          name: candidate-shell-lifecycle
+          if-no-files-found: warn
+          path: candidate-evidence/

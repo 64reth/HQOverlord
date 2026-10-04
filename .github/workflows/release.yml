@@ -1,0 +1,128 @@
+# ⚠️ DEPRECATED — superseded by release-train.yml.
+# The release train (release-train.yml) is now the source-of-truth release path: it gates on
+# tests, builds all four platforms with REQUIRED updater signing, assembles one multi-platform
+# latest.json, and stages a DRAFT release so a human clicks Publish. This workflow builds
+# WINDOWS ONLY. It is kept ONLY as an emergency fallback for when the train is broken. Do NOT
+# run this with publish=true unless the train is down — a Windows-only publish strands every
+# Mac/Linux user on their installed version. Do not delete.
+#
+# HARDENED (0.5c): even in the emergency case this workflow can no longer flip the live fleet
+# feed by itself. Publishing now requires BOTH publish=true AND typing the exact phrase
+# I-UNDERSTAND-THIS-BYPASSES-THE-TRAIN into the confirm_emergency input, and the release is
+# always created as a DRAFT (--draft) — a draft does not move releases/latest, so a human must
+# still click Publish in the GitHub UI. That human step is the real 4-platform checkpoint.
+#
+# StarNet release build — machine-independent signed cut.
+#
+# Why this exists: local release builds depend on the dev machine's Smart App Control
+# state (SAC enforce blocks freshly compiled proc-macro DLLs — see docs/LAUNCH_CHECKLIST.md).
+# This workflow produces the same signed installer + updater artifacts on a clean runner.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   TAURI_SIGNING_PRIVATE_KEY          — contents of ~/.tauri/starnet-updater.key (the whole file)
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — empty string (the key is encrypted with an empty password)
+#   RELEASES_TOKEN                     — fine-grained PAT with Contents:write on
+#                                        androoAGI/starnet-releases
+#                                        (only needed for the publish step; build works without it)
+#
+# Trigger: manually (Run workflow), with the version read from src-tauri/tauri.conf.json.
+
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to starnet-releases (true) or just build artifacts (false)"
+        required: true
+        default: "false"
+      confirm_emergency:
+        description: >-
+          EMERGENCY BYPASS CONFIRMATION. This deprecated workflow builds WINDOWS ONLY and a
+          publish here strands every Mac/Linux user. To publish you MUST type exactly:
+          I-UNDERSTAND-THIS-BYPASSES-THE-TRAIN  (ignored when publish=false).
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend/sidecar deps
+        run: npm ci
+
+      - name: Signed release cut (installer + .sig + latest.json into release/)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npm run release:cut
+
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Upload build artifacts (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: starnet-v${{ steps.ver.outputs.version }}
+          path: |
+            release/StarNet_${{ steps.ver.outputs.version }}_x64-setup.exe
+            release/StarNet_${{ steps.ver.outputs.version }}_x64-setup.exe.sig
+            release/latest.json
+          if-no-files-found: error
+
+      # Publish is gated on TWO conditions: publish=true AND the exact confirmation phrase.
+      # It ALWAYS creates a DRAFT (--draft) so a human still has to click Publish in the
+      # GitHub UI — belt-and-suspenders on top of the DEPRECATED framing. A draft does not
+      # move releases/latest, so even an accidental emergency dispatch cannot repoint the
+      # fleet's update feed (which would strand every Mac/Linux user on a Windows-only build).
+      - name: Guard — require emergency confirmation to publish
+        if: ${{ github.event.inputs.publish == 'true' }}
+        shell: pwsh
+        # Read the untrusted input via env (not string-interpolated into the script) so a crafted
+        # confirmation value can never inject PowerShell. The publish/verify steps ALSO gate on the
+        # exact phrase at the Actions-expression level below, so this shell check is defense in depth.
+        env:
+          CONFIRM_EMERGENCY: ${{ github.event.inputs.confirm_emergency }}
+        run: |
+          if ($env:CONFIRM_EMERGENCY -ne "I-UNDERSTAND-THIS-BYPASSES-THE-TRAIN") {
+            Write-Error "publish=true requires confirm_emergency to equal exactly 'I-UNDERSTAND-THIS-BYPASSES-THE-TRAIN'. This is the DEPRECATED Windows-only fallback; use release-train.yml unless the train is down."
+            exit 1
+          }
+          Write-Host "Emergency confirmation accepted — will create a DRAFT release (never auto-published)."
+
+      - name: Publish to starnet-releases (DRAFT)
+        if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.confirm_emergency == 'I-UNDERSTAND-THIS-BYPASSES-THE-TRAIN' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          gh release create "v$v" `
+            --repo androoAGI/starnet-releases `
+            --title "StarNet $v" `
+            --notes-file RELEASE_NOTES.md `
+            --draft `
+            "release/StarNet_${v}_x64-setup.exe" `
+            "release/StarNet_${v}_x64-setup.exe.sig" `
+            "release/latest.json"
+
+      - name: Verify manifest (draft — not live yet)
+        if: ${{ github.event.inputs.publish == 'true' && github.event.inputs.confirm_emergency == 'I-UNDERSTAND-THIS-BYPASSES-THE-TRAIN' }}
+        # The release is a DRAFT, so releases/latest still points at the previous version — the
+        # live endpoint check cannot see this build yet. Verify the freshly built manifest FILE
+        # instead. --require-platforms windows-x86_64 is REQUIRED, not a waiver to remove: this
+        # fallback ships Windows only, and verify-update-host.mjs defaults to demanding all four
+        # platforms (see DEFAULT_REQUIRE), which would fail a Windows-only build. Removing it
+        # breaks this step's only use, so it stays.
+        run: npm run release:verify-host -- --manifest release/latest.json --require-platforms windows-x86_64

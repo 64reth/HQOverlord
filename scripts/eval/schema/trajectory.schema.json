@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starnet.local/schemas/eval-trajectory-v1.json",
+  "title": "StarNet redacted agent trajectory v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "taskId", "events"],
+  "properties": {
+    "schemaVersion": { "const": "starnet.eval.trajectory.v1" },
+    "taskId": { "type": "string", "minLength": 1 },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "runId": { "type": "string" },
+    "startedAt": { "type": "string" },
+    "endedAt": { "type": "string" },
+    "finalText": { "type": "string" },
+    "outcome": { "type": "object" },
+    "routing": { "type": "object" },
+    "fault": { "type": "object" },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "seq": { "type": "number", "minimum": 0 },
+          "at": { "type": "string" },
+          "type": { "type": "string", "minLength": 1 },
+          "data": {}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "mutatedAt": { "type": "string" },
+          "verifiedSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "verifiedAt": { "type": "string" }
+        }
+      }
+    },
+    "metrics": { "type": "object" }
+  }
+}
