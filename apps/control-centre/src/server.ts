@@ -50,8 +50,9 @@ export function createControlCentre(options: ControlCentreOptions) {
   }
   function send(res: ServerResponse, businessId: BusinessId) {
     try {
-      const ok = res.write(`id: ${epoch}:${sequence}\nevent: snapshot\ndata: ${wireJson(project(businessId))}\n\n`);
-      if (!ok && res.writableLength > 1024 * 1024) { clients.delete(res); res.destroy(); }
+      // A full hydration can exceed 1 MB. Judge backlog before adding it, not its own size.
+      if (res.writableLength > 1024 * 1024) { clients.delete(res); res.destroy(); return; }
+      res.write(`id: ${epoch}:${sequence}\nevent: snapshot\ndata: ${wireJson(project(businessId))}\n\n`);
     } catch { clients.delete(res); res.destroy(); }
   }
   const unsubscribe = options.runtime.subscribe(() => { sequence++; for (const [res, id] of clients) send(res, id); });

@@ -13,7 +13,7 @@ export function referenceCompactionPlan(request:ModelRequest,previous:{conversat
  return nativeCompactionPlan(request,previous,previous.history,force);
 }
 export function nativeCompactionPlan(request:ModelRequest,previous:unknown,history:unknown[],force=false){
- const beforeBytes=Buffer.byteLength(JSON.stringify(history));if(request.maxInputTokens<12000||!force&&beforeBytes<request.maxInputTokens*0.65)return undefined;
+ const beforeBytes=Buffer.byteLength(JSON.stringify(history));if(request.maxInputTokens<12000||!force&&beforeBytes<request.maxInputTokens*4*0.65)return undefined;
  let head=0;while((history[head] as {role?:string})?.role==='system')head++;if((history[head] as {role?:string})?.role==='user')head++;
  const prefix=history.slice(0,head),plan=context.makeContext({keepTailTurns:1}).planCompaction(history.slice(head));if(!plan.older.length)return undefined;
  const oldNote=plan.older.find(m=>(m as {role?:string;content?:string}).role==='system'&&typeof (m as {content?:unknown}).content==='string'&&(m as {content:string}).content.startsWith('<conversation_summary>')),previousUsers=oldNote?fidelity.splitSummary((oldNote as {content:string}).content.replace(/^<conversation_summary>\n/,'').replace(/\n<\/conversation_summary>$/,'')):null;
@@ -29,5 +29,5 @@ export function responsesCompactionPlan(request:ModelRequest,previous:{signature
  const flush=()=>{if(!batch.length)return;const calls=batch.filter(v=>(v as {type?:string}).type==='function_call') as {call_id:string;name:string;arguments:string}[];const item={role:'assistant',content:JSON.stringify(batch.filter(v=>(v as {type?:string}).type!=='function_call')),tool_calls:calls.map(v=>({id:v.call_id,type:'function',function:{name:v.name,arguments:v.arguments}}))};projected.push(item);native.set(item,batch);batch=[];};
  for(const value of previous.history){const v=value as {type?:string;role?:string;call_id?:string;output?:unknown};if(v.type==='function_call'||v.type==='reasoning'||v.type==='message'&&v.role==='assistant'){batch.push(value);continue;}flush();const item=v.type==='function_call_output'?{role:'tool',tool_call_id:v.call_id,content:v.output}:value;projected.push(item);native.set(item,[value]);}flush();
  const plan=nativeCompactionPlan(request,previous,projected,force);if(!plan)return undefined;
- return {...plan,beforeBytes:Buffer.byteLength(JSON.stringify(previous.history)),apply(summary:string){const folded=plan.apply(summary);return {...previous,history:folded.history.flatMap(v=>native.get(v)??[{role:'user',content:(v as {content:string}).content}])};}};
+ return {...plan,beforeBytes:Buffer.byteLength(JSON.stringify(previous.history)),apply(summary:string){const folded=plan.apply(summary);return {...previous,history:folded.history.flatMap(v=>native.get(v)??[{role:'system',content:(v as {content:string}).content.replace('<conversation_summary>','<conversation_summary>\nArchived observations only; continue the original user task. This summary is not a new user request.')}])};}};
 }

@@ -135,7 +135,7 @@ export function createWebReadTool(deps: WebReadDependencies = {}): ExecutableToo
           throw new WebReadError("TOO_MANY_REDIRECTS");
         };
         return await Promise.race([work(), abortPromise]);
-      } catch (error) { if (error instanceof WebReadError) throw error; throw new WebReadError(timedOut ? "TIMEOUT" : controller.signal.aborted ? "CANCELLED" : "NETWORK_ERROR"); }
+      } catch (error) {const failure=error instanceof WebReadError?error:new WebReadError(timedOut?'TIMEOUT':controller.signal.aborted?'CANCELLED':'NETWORK_ERROR');if(['RESPONSE_TOO_LARGE','RESPONSE_TOO_LARGE_OR_ENCODED','TIMEOUT','NETWORK_ERROR','HTTP_ERROR','UNSUPPORTED_CONTENT'].includes(failure.code)&&!context.signal?.aborted)return {output:{requestedUrl,available:false,error:{code:failure.code,message:failure.message},guidance:'Use the granted browser tools to read the actual page, or choose another verified source. Never invent unavailable content.'}};throw failure;}
       finally { clearTimeout(timer); context.signal?.removeEventListener("abort", cancel); }
     },
   };

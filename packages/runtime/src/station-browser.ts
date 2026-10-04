@@ -30,7 +30,9 @@ export function registerBrowserTools(registry:ToolRegistry,root:string,options:{
         context.signal?.addEventListener('abort',()=>{void browser.session.close().finally(()=>sessions.delete(key));},{once:true});
       }
       if(def.name==='browser.vision'&&typeof (input as {question?:unknown})?.question==='string'&&(input as {question:string}).question.length>4000)throw new Error('Vision question exceeds 4000 characters');
-      const result=await entry.browser.tools.find(t=>t.name===(def.name==='browser.vision'?'browser.screenshot':def.name))!.run(input,{agentId:key,runId:context.job.id,signal:context.signal});
+      let result:unknown;
+      try{result=await entry.browser.tools.find(t=>t.name===(def.name==='browser.vision'?'browser.screenshot':def.name))!.run(input,{agentId:key,runId:context.job.id,signal:context.signal});}
+      catch(error){context.signal?.throwIfAborted();const failure=error as Error&{code?:string};if(def.name!=='browser.navigate'||!['ENOTFOUND','EAI_AGAIN','ETIMEDOUT','ECONNRESET','ECONNREFUSED'].includes(failure.code??''))throw error;return {output:{available:false,requestedUrl:(input as {url?:string}).url,error:{code:failure.code,message:failure.message},guidance:'Navigation failed. The browser may still show the previous page; it is not evidence for the requested URL. Verify another public URL or report the limitation.'}};}
       if(def.name==='browser.vision'){const shot=result as {content:string;summary:string};shot.content='Actual viewport pixels for the next accounted model turn; no visual answer has been produced yet.\nQuestion (reference data): '+JSON.stringify((input as {question?:unknown})?.question??'Describe what is actually visible.')+'\n'+shot.content;shot.summary='vision frame captured';}
       context.signal?.throwIfAborted();return {output:JSON.parse(JSON.stringify(result).split('/api/file?agent='+encodeURIComponent(key)).join('/api/file?business='+encodeURIComponent(context.businessId)+'&agent='+encodeURIComponent(context.agent.id))) as unknown};
     }});

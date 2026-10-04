@@ -22,7 +22,7 @@ export function pinnedWebFetch(deps:WebReadDependencies={}):typeof fetch{return 
   };
   try{return await Promise.race([work(),new Promise<never>((_r,reject)=>{if(signal.aborted)reject(new WebReadError('CANCELLED'));else signal.addEventListener('abort',()=>reject(new WebReadError('CANCELLED')),{once:true});})]);}catch(error){if(error instanceof WebReadError)throw error;throw new WebReadError(signal.aborted?'CANCELLED':'NETWORK_ERROR');}
 };}
-function sourceWeb(options:Record<string,unknown>):SourceWeb{return (require('../vendor/starnet/tools/builtin/web.js') as {makeWebTools(options:unknown):SourceWeb}).makeWebTools({lookup:null,agentFactory:()=>({close(){}}),politeMinGapMs:0,...options});}
+function sourceWeb(options:Record<string,unknown>):SourceWeb{return (require('../vendor/starnet/tools/builtin/web.js') as {makeWebTools(options:unknown):SourceWeb}).makeWebTools({lookup:null,agentFactory:()=>({close(){}}),...options});}
 /** Source keyless Mojeek -> DDG HTML -> DDG Lite fallback. No hidden paid search generation. */
 export function sourceSearch(deps:WebReadDependencies={}):SourceWeb{return sourceWeb({fetchImpl:pinnedWebFetch(deps)});}
 export interface WebRequestDependencies extends WebReadDependencies {readonly root:string;readonly keyFor?:(context:ToolExecutionContext,origin:string,name:string)=>string|undefined;}
